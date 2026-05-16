@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
@@ -24,6 +26,23 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         'firstName': _firstName.text.trim(),
         'name': _lastName.text.trim(),
       });
+      // Acceptation CGU — endpoint dédié (POST /users/me/legal/accept).
+      // On capture l'erreur séparément pour ne pas bloquer le flow d'inscription
+      // si l'enregistrement légal échoue (réseau, etc.).
+      if (_accepted) {
+        try {
+          await ApiClient.instance.post('/users/me/legal/accept', data: {
+            'documentType': 'CGU',
+            'version': '1.0',
+          });
+          await ApiClient.instance.post('/users/me/legal/accept', data: {
+            'documentType': 'PRIVACY',
+            'version': '1.0',
+          });
+        } catch (e) {
+          debugPrint('[CGU] Enregistrement acceptation échoué: $e');
+        }
+      }
       if (!mounted) return;
       // Navigation explicite — ne pas dépendre du redirect GoRouter
       final role = ref.read(authProvider).role;

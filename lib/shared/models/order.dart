@@ -22,13 +22,27 @@ class OrderItem {
   double get totalPrice => subtotal;
   Map<String, dynamic>? get product => null; // enrichi par l'API si besoin
 
-  factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
-    productId:   j['productId']   as String? ?? '',
-    productName: j['productName'] as String? ?? '',
-    quantity:    j['quantity']    as int? ?? 1,
-    unitPrice:   (j['unitPrice']  as num?)?.toDouble() ?? 0.0,
-    note:        j['note']        as String?,
-  );
+  factory OrderItem.fromJson(Map<String, dynamic> j) {
+    // Backend Prisma : pas de productName à plat. Si l'item inclut le product,
+    // le nom est dans product.name (Json multilingue {fr, en}).
+    final productMap = j['product'] as Map<String, dynamic>?;
+    String resolvedName = j['productName'] as String? ?? '';
+    if (resolvedName.isEmpty && productMap != null) {
+      final raw = productMap['name'];
+      if (raw is Map) {
+        resolvedName = (raw['fr'] ?? raw['en'] ?? '').toString();
+      } else if (raw is String) {
+        resolvedName = raw;
+      }
+    }
+    return OrderItem(
+      productId:   j['productId']   as String? ?? '',
+      productName: resolvedName,
+      quantity:    j['quantity']    as int? ?? 1,
+      unitPrice:   (j['unitPrice']  as num?)?.toDouble() ?? 0.0,
+      note:        j['note']        as String?,
+    );
+  }
 }
 
 class Order {
@@ -72,31 +86,40 @@ class Order {
     this.deliveredAt,
   });
 
-  factory Order.fromJson(Map<String, dynamic> j) => Order(
-    id:               j['id']               as String? ?? '',
-    clientId:         j['clientId']         as String? ?? '',
-    professionalId:   j['professionalId']   as String? ?? '',
-    professionalName: j['professionalName'] as String? ?? '',
-    status:           j['status']           as String? ?? 'PENDING_PAYMENT',
-    paymentStatus:    j['paymentStatus']    as String? ?? 'PENDING',
-    items: (j['items'] as List? ?? [])
-        .whereType<Map<String, dynamic>>()
-        .map((i) => OrderItem.fromJson(i))
-        .toList(),
-    subtotal:        (j['subtotal']        as num?)?.toDouble() ?? 0.0,
-    deliveryFee:     (j['deliveryFee']     as num?)?.toDouble() ?? 0.0,
-    total:           (j['total']           as num?)?.toDouble() ?? 0.0,
-    deliveryAddress:  j['deliveryAddress']  as String? ?? '',
-    deliveryLat:     (j['deliveryLat']     as num?)?.toDouble(),
-    deliveryLng:     (j['deliveryLng']     as num?)?.toDouble(),
-    driverId:         j['driverId']         as String?,
-    promoCode:        j['promoCode']        as String?,
-    discount:        (j['discount']        as num?)?.toDouble() ?? 0.0,
-    createdAt:       DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
-    deliveredAt:     j['deliveredAt'] != null
-        ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')
-        : null,
-  );
+  factory Order.fromJson(Map<String, dynamic> j) {
+    // Backend Prisma : `professional` est imbriqué (businessName/logoUrl).
+    final pro = j['professional'] as Map<String, dynamic>?;
+    final resolvedProName = (j['professionalName'] as String?)
+                            ?? (pro?['businessName'] as String?)
+                            ?? '';
+    return Order(
+      id:               j['id']               as String? ?? '',
+      clientId:         j['clientId']         as String? ?? '',
+      professionalId:   j['professionalId']   as String? ?? '',
+      professionalName: resolvedProName,
+      status:           j['status']           as String? ?? 'PENDING_PAYMENT',
+      paymentStatus:    j['paymentStatus']    as String? ?? 'PENDING',
+      items: (j['items'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((i) => OrderItem.fromJson(i))
+          .toList(),
+      subtotal:        (j['subtotal']        as num?)?.toDouble() ?? 0.0,
+      deliveryFee:     (j['deliveryFee']     as num?)?.toDouble() ?? 0.0,
+      // Backend Prisma → totalAmount. Fallback sur total.
+      total:           ((j['totalAmount']    as num?) ?? (j['total'] as num?))?.toDouble() ?? 0.0,
+      deliveryAddress:  j['deliveryAddress']  as String? ?? '',
+      deliveryLat:     (j['deliveryLat']     as num?)?.toDouble(),
+      deliveryLng:     (j['deliveryLng']     as num?)?.toDouble(),
+      driverId:         j['driverId']         as String?,
+      promoCode:        j['promoCode']        as String?,
+      // Backend Prisma → promoDiscount. Fallback sur discount.
+      discount:        ((j['promoDiscount']  as num?) ?? (j['discount'] as num?))?.toDouble() ?? 0.0,
+      createdAt:       DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
+      deliveredAt:     j['deliveredAt'] != null
+          ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')
+          : null,
+    );
+  }
 
   // Helpers
   // Aliases

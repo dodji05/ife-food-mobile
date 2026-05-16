@@ -62,8 +62,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _bootstrapCompleter = Completer<void>();
   Future<void> get bootstrapDone => _bootstrapCompleter.future;
 
+  StreamSubscription? _sessionExpiredSub;
+
   AuthNotifier() : super(const AuthState()) {
     _bootstrap();
+    // Si l'ApiClient détecte un refresh échoué, on bascule en état "déconnecté".
+    // Le redirect GoRouter pousse ensuite vers /onboarding.
+    _sessionExpiredSub = AuthEvents.onSessionExpired.listen((_) {
+      if (state.isAuthenticated) {
+        debugPrint('[Auth] Session expirée — logout local');
+        state = const AuthState(splashDone: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionExpiredSub?.cancel();
+    super.dispose();
   }
 
   // Chargement initial — restaure la session si JWT valide
@@ -195,9 +211,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {}
   }
 
+  /// Enregistre le token FCM côté backend.
+  /// À appeler après obtention du token Firebase (FirebaseMessaging.getToken).
+  Future<void> registerFcmToken(String fcmToken) async {
+    try {
+      await _api.patch('/users/me/fcm-token', data: {'fcmToken': fcmToken});
+      debugPrint('[FCM] Token enregistré (${fcmToken.substring(0, 12)}…)');
+    } catch (e) {
+      debugPrint('[FCM] Enregistrement échoué: $e');
+    }
+  }
+
   // ── Logout global ─────────────────────────────────────────────────────────
+  // Pas d'endpoint backend /auth/logout — révocation purement locale.
+  // À ajouter côté serveur si on veut invalider le refresh token (blacklist).
   Future<void> logout() async {
-    try { await _api.post('/auth/logout'); } catch (_) {}
     await _api.clearAuth();
     await _storage.deleteAll();
     state = const AuthState(splashDone: true);

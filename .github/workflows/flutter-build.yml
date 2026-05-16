@@ -50,6 +50,7 @@ jobs:
       - name: 🏗️ Build APK debug
         run: |
           flutter build apk --debug \
+            --target-platform android-arm64 \
             --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
             --dart-define=WS_URL=https://ifeapi.associationireni.org
 

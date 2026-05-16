@@ -93,6 +93,16 @@ class Professional {
   String? get phone               => null; // le téléphone est sur le modèle User
   Map<String, dynamic>? get openingHours => null; // retourné par l'API si besoin
 
+  Professional copyWith({bool? isOpen}) => Professional(
+    id: id, userId: userId, businessName: businessName,
+    description: description, logoUrl: logoUrl, coverUrl: coverUrl,
+    category: category, status: status, lat: lat, lng: lng,
+    address: address, city: city, country: country,
+    avgRating: avgRating, reviewCount: reviewCount,
+    isOpen: isOpen ?? this.isOpen,
+    deliveryTimeMin: deliveryTimeMin, deliveryFee: deliveryFee,
+  );
+
   bool get isValidated => status == 'VALIDATED';
   bool get isPending   => status == 'PENDING';
 

@@ -38,7 +38,7 @@ class ProDashboardScreen extends ConsumerWidget {
               ])),
               // Badge statut ouvert / fermé
               GestureDetector(
-                onTap: () {}, // TODO: toggle open/close
+                onTap: () => ref.read(proProvider.notifier).toggleOpen(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(

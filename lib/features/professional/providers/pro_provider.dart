@@ -119,6 +119,23 @@ class ProNotifier extends StateNotifier<ProState> {
     }
   }
 
+  Future<void> toggleOpen() async {
+    final current = state.professional?.isOpen ?? false;
+    // Optimistic update
+    state = state.copyWith(
+      professional: state.professional?.copyWith(isOpen: !current),
+    );
+    try {
+      await ApiClient.instance.patch('/professionals/me/toggle-open');
+    } catch (e) {
+      // Rollback on error
+      state = state.copyWith(
+        professional: state.professional?.copyWith(isOpen: current),
+        error: e.toString(),
+      );
+    }
+  }
+
   Future<void> updateOpeningHours(Map<String, dynamic> hours) async {
     try {
       await ApiClient.instance.patch('/professionals/me', data: {'openingHours': hours});

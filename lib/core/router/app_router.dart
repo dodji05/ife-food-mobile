@@ -120,6 +120,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return '/auth/pending';
         }
       }
+      // 5b. Compte activé sur /auth/pending → rediriger vers le bon tableau de bord
+      if (!authState.isPending && loc == '/auth/pending') {
+        return _homeForRole(authState.role);
+      }
 
       // 6. Vérification cross-role
       if (authState.role == UserRole.client && loc.startsWith('/pro')) return '/home';

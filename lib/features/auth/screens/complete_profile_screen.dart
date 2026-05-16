@@ -25,7 +25,10 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         'name': _lastName.text.trim(),
         'acceptedCGU': _accepted,
       });
-      // Le router redirige automatiquement selon le rôle
+      if (!mounted) return;
+      // Navigation explicite — ne pas dépendre du redirect GoRouter
+      final role = ref.read(authProvider).role;
+      context.go(_dashboardForRole(role));
     } catch (e) {
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -33,6 +36,12 @@ class _State extends ConsumerState<CompleteProfileScreen> {
           backgroundColor: AppColors.danger));
     }
   }
+
+  String _dashboardForRole(UserRole? role) => switch (role) {
+    UserRole.driver       => '/driver/dashboard',
+    UserRole.professional => '/pro/dashboard',
+    _                     => '/home',
+  };
 
   @override
   Widget build(BuildContext context) => Scaffold(

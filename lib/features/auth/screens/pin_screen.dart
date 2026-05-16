@@ -22,6 +22,12 @@ class _PinScreenState extends ConsumerState<PinScreen> {
 
   bool get _isSetting => widget.mode == 'set';
 
+  String _dashboardForRole(UserRole? role) => switch (role) {
+    UserRole.driver       => '/driver/dashboard',
+    UserRole.professional => '/pro/dashboard',
+    _                     => '/home',
+  };
+
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
@@ -62,8 +68,11 @@ class _PinScreenState extends ConsumerState<PinScreen> {
       if (!ok) {
         setState(() { _error = 'Code PIN incorrect.'; _loading = false; });
         _ctrl.clear();
+      } else {
+        // Navigation explicite — ne pas dépendre du redirect GoRouter
+        final role = ref.read(authProvider).role;
+        context.go(_dashboardForRole(role));
       }
-      // Le router réagit automatiquement à authState via GoRouterRefreshStream
     }
   }
 

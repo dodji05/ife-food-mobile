@@ -23,7 +23,6 @@ class _State extends ConsumerState<CompleteProfileScreen> {
       await ref.read(authProvider.notifier).completeProfile({
         'firstName': _firstName.text.trim(),
         'name': _lastName.text.trim(),
-        'acceptedCGU': _accepted,
       });
       if (!mounted) return;
       // Navigation explicite — ne pas dépendre du redirect GoRouter

@@ -1,0 +1,114 @@
+name: ife_food
+description: "ifè FOOD — Application mobile unifiée (Client · Livreur · Professionnel)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.4.9
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # HTTP & realtime
+  dio: ^5.4.0
+  socket_io_client: ^2.0.3+1
+
+  # Storage
+  flutter_secure_storage: ^9.0.0
+  hive_flutter: ^1.1.0
+
+  # Firebase
+  firebase_core: ^2.27.0
+  firebase_messaging: ^14.7.17
+  flutter_local_notifications: ^17.0.0
+
+  # Maps & GPS
+  google_maps_flutter: ^2.5.3
+  geolocator: ^11.0.0
+
+  # OTP & PIN
+  pinput: ^3.0.1
+
+  # Country picker
+  country_picker: ^2.0.20
+
+  # UI & animations
+  shimmer: ^3.0.0
+  lottie: ^3.0.0
+  cached_network_image: ^3.3.1
+  flutter_rating_bar: ^4.0.1
+  fl_chart: ^0.68.0
+  percent_indicator: ^4.2.3
+  table_calendar: ^3.1.0
+
+  # Media (splash vidéo)
+  video_player: ^2.8.2
+  visibility_detector: ^0.4.0
+
+  # Image
+  image_picker: ^1.0.7
+  file_picker: ^8.0.0
+
+  # Payments
+  # stripe_flutter: ^10.1.0   # décommenter pour prod
+  # paypal_payment: ^1.0.7    # décommenter pour prod
+
+  # Utils
+  intl: ^0.20.2
+  equatable: ^2.0.5
+  uuid: ^4.3.3
+  timeago: ^3.6.1
+  url_launcher: ^6.2.5
+  connectivity_plus: ^5.0.2
+  package_info_plus: ^5.0.1
+  local_auth: ^2.1.8
+  csv: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.10
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 26
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/logo.png
+  android: true
+  ios: true
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    - assets/animations/
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-Regular.ttf
+        - asset: assets/fonts/Nunito-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Nunito-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Nunito-Black.ttf
+          weight: 900

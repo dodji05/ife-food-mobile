@@ -1,0 +1,117 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pinput/pinput.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
+
+class PinScreen extends ConsumerStatefulWidget {
+  final String mode; // 'set' | 'login'
+  final String? phone;
+  const PinScreen({super.key, required this.mode, this.phone});
+  // F2: Renommé _State → _PinScreenState
+  @override ConsumerState<PinScreen> createState() => _PinScreenState();
+}
+
+class _PinScreenState extends ConsumerState<PinScreen> {
+  final _ctrl = TextEditingController();
+  String? _first;
+  String _step = 'enter';
+  bool _loading = false;
+  String? _error;
+
+  bool get _isSetting => widget.mode == 'set';
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  Future<void> _handle(String pin) async {
+    if (_isSetting) {
+      if (_step == 'enter') {
+        setState(() { _first = pin; _step = 'confirm'; });
+        _ctrl.clear();
+        return;
+      }
+      if (pin != _first) {
+        setState(() {
+          _error = 'Les codes ne correspondent pas.';
+          _step = 'enter';
+          _first = null;
+        });
+        _ctrl.clear();
+        return;
+      }
+      setState(() => _loading = true);
+      // C1: setPin retourne UserRole? — évite la race condition
+      final role = await ref.read(authProvider.notifier).setPin(pin);
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (role != null) {
+        context.go('/auth/complete-profile', extra: role);
+      } else {
+        // Erreur PIN — message déjà dans authState.error
+        final err = ref.read(authProvider).error;
+        setState(() => _error = err ?? 'Erreur lors de la création du PIN.');
+        _ctrl.clear();
+      }
+    } else {
+      // Connexion par PIN
+      setState(() => _loading = true);
+      final ok = await ref.read(authProvider.notifier).verifyPin(widget.phone ?? '', pin);
+      if (!mounted) return;
+      if (!ok) {
+        setState(() { _error = 'Code PIN incorrect.'; _loading = false; });
+        _ctrl.clear();
+      }
+      // Le router réagit automatiquement à authState via GoRouterRefreshStream
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _isSetting
+        ? (_step == 'enter' ? 'Créez votre PIN' : 'Confirmez votre PIN')
+        : 'Votre PIN';
+    final pt = PinTheme(width: 60, height: 64,
+      textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 26, fontWeight: FontWeight.w900),
+      decoration: BoxDecoration(color: AppColors.lightBg, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.lightBorder, width: 1.5)));
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(children: [
+        const SizedBox(height: 32),
+        Container(width: 68, height: 68,
+          decoration: BoxDecoration(
+              // F: withValues() remplace withOpacity() déprécié
+              color: AppColors.primary.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2)),
+          child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32)),
+        const SizedBox(height: 20),
+        Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 24,
+            fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+        if (!_isSetting) ...[
+          const SizedBox(height: 6),
+          Text('Bonjour ${ref.watch(authProvider).user?.firstName ?? ''} !',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.lightSubtext)),
+        ],
+        const SizedBox(height: 40),
+        Pinput(controller: _ctrl, length: 4, obscureText: true, autofocus: true,
+          defaultPinTheme: pt,
+          focusedPinTheme: pt.copyDecorationWith(
+              border: Border.all(color: AppColors.primary, width: 2.5)),
+          onCompleted: _handle),
+        if (_error != null) ...[const SizedBox(height: 12),
+          Text(_error!, style: const TextStyle(color: AppColors.danger,
+              fontFamily: 'Nunito', fontSize: 13))],
+        const Spacer(),
+        if (!_isSetting) TextButton(
+          onPressed: () => context.go('/auth/phone', extra: ref.read(authProvider).role),
+          child: const Text('Me connecter avec OTP', style: TextStyle(
+              fontFamily: 'Nunito', fontWeight: FontWeight.w600, color: AppColors.lightSubtext))),
+        if (_loading) const CircularProgressIndicator(color: AppColors.primary),
+      ]))),
+    );
+  }
+}

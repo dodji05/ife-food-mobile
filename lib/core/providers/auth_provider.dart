@@ -9,7 +9,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -68,14 +67,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Chargement initial — restaure la session si JWT valide
+  //
+  // IMPORTANT : splashDone est mis ICI (dans _bootstrap), pas dans le widget SplashScreen.
+  //
+  // Pourquoi : GoRouterRefreshStream peut démonter SplashScreen avant que son onComplete()
+  // soit appelé (race condition entre bootstrap et le redirect GoRouter), laissant
+  // splashDone=false pour toujours → boucle infinie de redirections → page blanche.
+  //
+  // On attend la durée minimale du splash ET la fin du bootstrap avant de marquer splashDone.
   Future<void> _bootstrap() async {
     state = state.copyWith(isLoading: true);
-    try {
-      await _bootstrapImpl().timeout(const Duration(seconds: 3));
-    } catch (e) {
-      debugPrint('[Auth] Bootstrap timeout ou erreur: $e');
-    }
-    state = state.copyWith(isLoading: false);
+    await Future.wait([
+      _bootstrapImpl()
+          .timeout(const Duration(seconds: 3))
+          .catchError((e) { debugPrint('[Auth] Bootstrap erreur: $e'); }),
+      Future.delayed(const Duration(milliseconds: AppConstants.splashMinDurationMs)),
+    ]);
+    state = state.copyWith(isLoading: false, splashDone: true);
     if (!_bootstrapCompleter.isCompleted) _bootstrapCompleter.complete();
   }
 
@@ -217,9 +225,3 @@ class AuthNotifier extends StateNotifier<AuthState> {
 // ── Provider global ───────────────────────────────────────────────────────────
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
     (ref) => AuthNotifier());
-
-extension AuthNotifierExt on AuthNotifier {
-  void markSplashDone() {
-    state = state.copyWith(splashDone: true);
-  }
-}

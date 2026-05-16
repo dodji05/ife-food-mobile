@@ -45,11 +45,10 @@ class SplashConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 // Widget Splash Screen
 // ─────────────────────────────────────────────────────────────────────────────
+// Le SplashScreen est purement visuel.
+// La navigation est entièrement gérée par AuthNotifier._bootstrap() + GoRouter redirect.
 class SplashScreen extends StatefulWidget {
-  // M7: bootstrapFuture permet d'attendre la fin du bootstrap avant de naviguer
-  final Future<void>? bootstrapFuture;
-  final VoidCallback onComplete;
-  const SplashScreen({super.key, this.bootstrapFuture, required this.onComplete});
+  const SplashScreen({super.key});
   @override State<SplashScreen> createState() => _SplashScreenState();
 }
 
@@ -68,7 +67,6 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeCtrl.forward();
 
     if (SplashConfig.type == SplashType.video) _initVideo();
-    _scheduleDone();
   }
 
   Future<void> _initVideo() async {
@@ -76,14 +74,6 @@ class _SplashScreenState extends State<SplashScreen>
     await _videoCtrl!.initialize();
     _videoCtrl!.play();
     setState(() {});
-  }
-
-  void _scheduleDone() {
-    final minDelay = Future.delayed(Duration(milliseconds: SplashConfig.minDurationMs));
-    final bootstrap = widget.bootstrapFuture ?? Future.value();
-    Future.wait([minDelay, bootstrap]).then((_) {
-      if (mounted) widget.onComplete();
-    });
   }
 
   @override

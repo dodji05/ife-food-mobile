@@ -134,12 +134,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     routes: [
       // ── Splash ─────────────────────────────────────────────────────────────
+      // splashDone est géré dans AuthNotifier._bootstrap() — le SplashScreen
+      // n'a plus besoin d'onComplete pour déclencher la navigation.
       GoRoute(
         path: '/splash',
-        builder: (_, __) => SplashScreen(
-          bootstrapFuture: ref.read(authProvider.notifier).bootstrapDone,
-          onComplete: () => ref.read(authProvider.notifier).markSplashDone(),
-        ),
+        builder: (_, __) => const SplashScreen(),
       ),
 
       // ── Auth partagé ────────────────────────────────────────────────────────

@@ -27,23 +27,11 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-// Force Java 11 sur tous les plugins Flutter pour éviter les warnings Java 8 obsolètes
-subprojects {
-    plugins.withId("com.android.library") {
-        android {
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_11
-                targetCompatibility JavaVersion.VERSION_11
-            }
-        }
-    }
-    plugins.withId("com.android.application") {
-        android {
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_11
-                targetCompatibility JavaVersion.VERSION_11
-            }
-        }
+// Supprime -Werror de tous les plugins Flutter (warnings Java 8 obsolètes non bloquants)
+allprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.removeAll { it == '-Werror' }
+        options.compilerArgs << '-Xlint:-options'
     }
 }
 

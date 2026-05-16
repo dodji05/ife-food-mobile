@@ -35,12 +35,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     _startTimer();
     // Auto-remplissage si le backend renvoie l'OTP directement (mode dev/test)
     if (widget.prefillOtp != null) {
+      // Vérification immédiate sans délai — le délai de 400ms laissait
+      // le temps au GoRouter redirect de démonter l'écran avant que
+      // _verify() soit appelé, résultant en aucune requête serveur.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 400), () {
-          if (!mounted) return;
-          _ctrl.text = widget.prefillOtp!;
-          _verify(widget.prefillOtp!);
-        });
+        if (!mounted) return;
+        _ctrl.text = widget.prefillOtp!;
+        _verify(widget.prefillOtp!);
       });
     }
   }

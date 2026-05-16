@@ -63,7 +63,7 @@ dependencies:
   # paypal_payment: ^1.0.7    # décommenter pour prod
 
   # Utils
-  intl: ^0.20.2
+  intl: ^0.19.0
   equatable: ^2.0.5
   uuid: ^4.3.3
   timeago: ^3.6.1

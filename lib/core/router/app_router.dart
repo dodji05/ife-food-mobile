@@ -95,6 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // 3. Non authentifié
+      // Toutes les routes accessibles sans token
       const publicRoutes = ['/onboarding', '/auth/role',
           '/auth/phone', '/auth/otp', '/auth/pin', '/auth/complete-profile'];
       final isPublic = publicRoutes.any((r) => loc.startsWith(r));
@@ -103,8 +104,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isPublic ? null : '/onboarding';
       }
 
-      // 3. Authentifié — rediriger depuis les routes publiques
-      if (isPublic) {
+      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes de pré-connexion.
+      //     /auth/pin et /auth/complete-profile ne déclenchent PAS de redirect :
+      //     l'utilisateur est en train de finir son inscription, il faut le laisser
+      //     passer sans l'éjecter vers le dashboard.
+      const preAuthRoutes = ['/onboarding', '/auth/role', '/auth/phone', '/auth/otp'];
+      if (preAuthRoutes.any((r) => loc.startsWith(r))) {
         return _homeForRole(authState.role);
       }
 

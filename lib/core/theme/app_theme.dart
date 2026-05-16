@@ -80,7 +80,7 @@ class AppTheme {
       elevation: 0,
       textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800),
     )),
-    cardTheme: CardThemeData(color: AppColors.lightCard, elevation: 0,
+    cardTheme: CardTheme(color: AppColors.lightCard, elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: const BorderSide(color: AppColors.lightBorder))),
@@ -136,7 +136,7 @@ class AppTheme {
       elevation: 0,
       textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800),
     )),
-    cardTheme: const CardThemeData(color: AppColors.darkCard, elevation: 0,
+    cardTheme: const CardTheme(color: AppColors.darkCard, elevation: 0,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
           side: BorderSide(color: AppColors.darkBorder))),
@@ -162,7 +162,7 @@ class AppTheme {
   static ThemeData get driver => dark.copyWith(
     scaffoldBackgroundColor: AppColors.driverBg,
     colorScheme: dark.colorScheme.copyWith(background: AppColors.driverBg),
-    cardTheme: CardThemeData(color: AppColors.driverCard, elevation: 0,
+    cardTheme: CardTheme(color: AppColors.driverCard, elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.driverBorder))),
   );

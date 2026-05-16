@@ -84,9 +84,9 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         Container(width: 68, height: 68,
           decoration: BoxDecoration(
               // F: withValues() remplace withOpacity() déprécié
-              color: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primary.withOpacity(0.10),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2)),
           child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32)),
         const SizedBox(height: 20),
         Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 24,

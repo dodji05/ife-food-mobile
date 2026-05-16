@@ -147,7 +147,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.primary.withValues(alpha: 0.15)
+                            ? AppColors.primary.withOpacity(0.15)
                             : AppColors.darkCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -176,7 +176,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                           Text(_stepLabel(m.deliveryStatus),
                             style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
                               color: isActive
-                                ? AppColors.primary.withValues(alpha: 0.7)
+                                ? AppColors.primary.withOpacity(0.7)
                                 : AppColors.darkSubtext)),
                         ],
                       ),
@@ -219,7 +219,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurface.withValues(alpha: 0.9),
+                  color: AppColors.darkSurface.withOpacity(0.9),
                   shape: BoxShape.circle),
                 child: const Icon(Icons.keyboard_arrow_up_rounded,
                     color: AppColors.darkText),
@@ -268,17 +268,17 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [
-                AppColors.primary.withValues(alpha: 0.15),
-                AppColors.primary.withValues(alpha: 0.05),
+                AppColors.primary.withOpacity(0.15),
+                AppColors.primary.withOpacity(0.05),
               ], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.4), width: 1.5),
+                color: AppColors.primary.withOpacity(0.4), width: 1.5),
             ),
             child: Row(children: [
               Container(width: 50, height: 50,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: AppColors.primary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(13)),
                 child: Icon(step.icon, color: AppColors.primary, size: 24)),
               const SizedBox(width: 14),
@@ -347,7 +347,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                         color: isDone
                           ? AppColors.primary
                           : isActive
-                            ? AppColors.primary.withValues(alpha: 0.2)
+                            ? AppColors.primary.withOpacity(0.2)
                             : AppColors.darkBorder,
                         shape: BoxShape.circle),
                       child: isDone

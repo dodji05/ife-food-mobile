@@ -187,10 +187,9 @@ class DriverNotifier extends StateNotifier<DriverState> {
   void _connectSocket() {
     _socket?.disconnect(); // FIX: ferme le socket existant avant d'en créer un nouveau
     _socket = io.io(
-      AppConstants.wsUrl,
+      '${AppConstants.wsUrl}/tracking',
       io.OptionBuilder()
           .setTransports(['websocket'])
-          .setNamespace('/tracking')
           .enableReconnection()
           .setReconnectionAttempts(10)
           .setReconnectionDelay(2000)

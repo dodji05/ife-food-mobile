@@ -28,9 +28,8 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
   }
 
   void _connectSocket() {
-    _socket = io.io(AppConstants.wsUrl, io.OptionBuilder()
+    _socket = io.io('${AppConstants.wsUrl}/tracking', io.OptionBuilder()
       .setTransports(['websocket'])
-      .setNamespace('/tracking')
       .build());
 
     _socket!.onConnect((_) {

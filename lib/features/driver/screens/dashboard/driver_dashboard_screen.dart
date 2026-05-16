@@ -39,7 +39,7 @@ class DriverDashboardScreen extends ConsumerWidget {
                     color: isOnline ? AppColors.primary : AppColors.darkMuted,
                     shape: BoxShape.circle,
                     boxShadow: isOnline ? [BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.5),
+                      color: AppColors.primary.withOpacity(0.5),
                       blurRadius: 6, spreadRadius: 2)] : null,
                   )),
                   const SizedBox(width: 6),
@@ -121,16 +121,16 @@ class DriverDashboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary.withValues(alpha: 0.15), AppColors.darkCard],
+                  colors: [AppColors.primary.withOpacity(0.15), AppColors.darkCard],
                   begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.4), width: 1.5),
+                  color: AppColors.primary.withOpacity(0.4), width: 1.5),
               ),
               child: Row(children: [
                 Container(width: 42, height: 42,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.15),
+                    color: AppColors.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.delivery_dining_rounded,
                     color: AppColors.primary, size: 22)),
@@ -223,18 +223,18 @@ class _AvailabilityToggle extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isOnline
-            ? [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)]
+            ? [AppColors.primary, AppColors.primary.withOpacity(0.7)]
             : [AppColors.darkCard, AppColors.darkSurface],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOnline
-            ? AppColors.primary.withValues(alpha: 0.5)
+            ? AppColors.primary.withOpacity(0.5)
             : AppColors.darkBorder,
           width: 1.5),
         boxShadow: isOnline
-          ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3),
+          ? [BoxShadow(color: AppColors.primary.withOpacity(0.3),
               blurRadius: 24, offset: const Offset(0, 8))]
           : [],
       ),
@@ -248,7 +248,7 @@ class _AvailabilityToggle extends StatelessWidget {
           const SizedBox(height: 4),
           Text(isOnline ? 'Vous recevez des missions' : 'Appuyez pour vous mettre en ligne',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700,
-              color: isOnline ? Colors.black.withValues(alpha: 0.8) : AppColors.darkSubtext)),
+              color: isOnline ? Colors.black.withOpacity(0.8) : AppColors.darkSubtext)),
         ])),
         const SizedBox(width: 16),
         loading
@@ -258,7 +258,7 @@ class _AvailabilityToggle extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               width: 64, height: 34,
               decoration: BoxDecoration(
-                color: isOnline ? Colors.black.withValues(alpha: 0.25) : AppColors.darkBorder,
+                color: isOnline ? Colors.black.withOpacity(0.25) : AppColors.darkBorder,
                 borderRadius: BorderRadius.circular(17),
               ),
               child: AnimatedAlign(

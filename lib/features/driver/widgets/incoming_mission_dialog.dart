@@ -75,12 +75,12 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
             child: Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
+                color: AppColors.primary.withOpacity(0.15),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.5), width: 2.5),
+                    color: AppColors.primary.withOpacity(0.5), width: 2.5),
                 boxShadow: [BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 20, spreadRadius: 4)],
               ),
               child: const Center(child: Text('🛵', style: TextStyle(fontSize: 36))),
@@ -114,9 +114,9 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
             margin: const EdgeInsets.only(top: 6),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.15),
+              color: AppColors.accent.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+              border: Border.all(color: AppColors.accent.withOpacity(0.4)),
             ),
             child: Text("S'ajoutera à vos $count mission(s) en cours",
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,

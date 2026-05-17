@@ -60,16 +60,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (code.length != AppConstants.otpLength) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final isNew = await ref.read(authProvider.notifier).verifyOtp(
+      await ref.read(authProvider.notifier).verifyOtp(
           phone: widget.phone, code: code,
           sessionId: widget.sessionId, role: widget.role);
-      if (!mounted) return;
-      if (isNew) {
-        context.go('/auth/pin', extra: {'mode': 'set', 'phone': widget.phone});
-      } else {
-        context.go('/auth/pin', extra: {'mode': 'login', 'phone': widget.phone});
-      }
+      // Pas de context.go ici : verifyOtp() met `pendingPin: true` dans
+      // l'AuthState, ce qui déclenche le redirect GoRouter vers /auth/pin.
+      // Cf. lib/core/router/app_router.dart, section "AUTH FLOW EN COURS".
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString().replaceAll('Exception: ', '');
         _loading = false;

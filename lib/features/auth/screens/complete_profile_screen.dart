@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -27,39 +26,29 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         'name': _lastName.text.trim(),
       });
       // Acceptation CGU — endpoint dédié (POST /users/me/legal/accept).
-      // On capture l'erreur séparément pour ne pas bloquer le flow d'inscription
-      // si l'enregistrement légal échoue (réseau, etc.).
+      // On capture l'erreur séparément pour ne pas bloquer le flow si
+      // l'enregistrement légal échoue (réseau, etc.).
       if (_accepted) {
         try {
-          await ApiClient.instance.post('/users/me/legal/accept', data: {
-            'documentType': 'CGU',
-            'version': '1.0',
-          });
-          await ApiClient.instance.post('/users/me/legal/accept', data: {
-            'documentType': 'PRIVACY',
-            'version': '1.0',
-          });
+          await ApiClient.instance.post('/users/me/legal/accept',
+              data: {'documentType': 'CGU', 'version': '1.0'});
+          await ApiClient.instance.post('/users/me/legal/accept',
+              data: {'documentType': 'PRIVACY', 'version': '1.0'});
         } catch (e) {
           debugPrint('[CGU] Enregistrement acceptation échoué: $e');
         }
       }
-      if (!mounted) return;
-      // Navigation explicite — ne pas dépendre du redirect GoRouter
-      final role = ref.read(authProvider).role;
-      context.go(_dashboardForRole(role));
+      // Pas de context.go : completeProfile met à jour user.firstName,
+      // donc hasProfile passe à true et le redirect GoRouter envoie
+      // automatiquement vers le dashboard du rôle.
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString().replaceAll('Exception: ', '')),
           backgroundColor: AppColors.danger));
     }
   }
-
-  String _dashboardForRole(UserRole? role) => switch (role) {
-    UserRole.driver       => '/driver/dashboard',
-    UserRole.professional => '/pro/dashboard',
-    _                     => '/home',
-  };
 
   @override
   Widget build(BuildContext context) => Scaffold(

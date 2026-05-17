@@ -7,10 +7,12 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 class PinScreen extends ConsumerStatefulWidget {
-  final String mode; // 'set' | 'login'
+  /// `mode` et `phone` sont OPTIONNELS et conservés pour rétro-compat.
+  /// La source de vérité est `authProvider.isNewUser` / `authProvider.user.phone`,
+  /// le redirect GoRouter pilote la navigation post-action.
+  final String? mode;
   final String? phone;
-  const PinScreen({super.key, required this.mode, this.phone});
-  // F2: Renommé _State → _PinScreenState
+  const PinScreen({super.key, this.mode, this.phone});
   @override ConsumerState<PinScreen> createState() => _PinScreenState();
 }
 
@@ -21,19 +23,17 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   bool _loading = false;
   String? _error;
 
-  bool get _isSetting => widget.mode == 'set';
-
-  String _dashboardForRole(UserRole? role) => switch (role) {
-    UserRole.driver       => '/driver/dashboard',
-    UserRole.professional => '/pro/dashboard',
-    _                     => '/home',
-  };
+  /// Mode dérivé de l'AuthState (isNewUser). Fallback sur la prop `mode`
+  /// si on est arrivé ici sans passer par verifyOtp (peu probable).
+  bool get _isSetting =>
+      ref.read(authProvider).isNewUser || widget.mode == 'set';
 
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
   Future<void> _handle(String pin) async {
     if (_isSetting) {
+      // ── Mode 'set' : double saisie pour confirmation ──────────────────
       if (_step == 'enter') {
         setState(() { _first = pin; _step = 'confirm'; });
         _ctrl.clear();
@@ -49,31 +49,30 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         return;
       }
       setState(() => _loading = true);
-      // C1: setPin retourne UserRole? — évite la race condition
       final role = await ref.read(authProvider.notifier).setPin(pin);
       if (!mounted) return;
       setState(() => _loading = false);
-      if (role != null) {
-        context.go('/auth/complete-profile', extra: role);
-      } else {
+      if (role == null) {
         // Erreur PIN — message déjà dans authState.error
         final err = ref.read(authProvider).error;
         setState(() => _error = err ?? 'Erreur lors de la création du PIN.');
         _ctrl.clear();
       }
+      // Pas de context.go : setPin met pendingPin:false dans l'AuthState,
+      // le redirect GoRouter envoie vers /auth/complete-profile ou dashboard.
     } else {
-      // Connexion par PIN
+      // ── Mode 'login' : saisie simple ───────────────────────────────────
       setState(() => _loading = true);
-      final ok = await ref.read(authProvider.notifier).verifyPin(widget.phone ?? '', pin);
+      // Phone depuis l'AuthState en priorité, fallback prop pour rétro-compat.
+      final phone = ref.read(authProvider).user?.phone ?? widget.phone ?? '';
+      final ok = await ref.read(authProvider.notifier).verifyPin(phone, pin);
       if (!mounted) return;
       if (!ok) {
         setState(() { _error = 'Code PIN incorrect.'; _loading = false; });
         _ctrl.clear();
-      } else {
-        // Navigation explicite — ne pas dépendre du redirect GoRouter
-        final role = ref.read(authProvider).role;
-        context.go(_dashboardForRole(role));
       }
+      // Pas de context.go : verifyPin met pendingPin:false, le redirect
+      // envoie vers le dashboard du rôle (ou /auth/pending si non validé).
     }
   }
 

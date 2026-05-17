@@ -17,11 +17,37 @@ import '../constants/app_constants.dart';
 import '../../shared/models/app_user.dart';
 
 // ── État d'authentification ───────────────────────────────────────────────────
+//
+// Machine à états de l'auth flow. Le GoRouter redirect est la SEULE source
+// de vérité pour la navigation post-action — les écrans ne font plus de
+// context.go() après verifyOtp / setPin / completeProfile. Ils muent l'état,
+// le redirect réévalue et pousse l'écran suivant.
+//
+// Cycle de vie typique (nouvel utilisateur) :
+//
+//   /onboarding            { isAuth: false, pendingPin: false, hasProfile: false }
+//   /auth/phone            idem
+//   /auth/otp              idem
+//   verifyOtp() succès →   { isAuth: TRUE,  pendingPin: TRUE,  hasProfile: false }
+//                          → redirect pousse vers /auth/pin
+//   setPin() succès →      { isAuth: true,  pendingPin: FALSE, hasProfile: false }
+//                          → redirect pousse vers /auth/complete-profile
+//   completeProfile() →    { isAuth: true,  pendingPin: false, hasProfile: TRUE  }
+//                          → redirect pousse vers /home (ou dashboard du rôle)
+// ─────────────────────────────────────────────────────────────────────────────
 class AuthState {
   final AppUser? user;
   final bool isLoading;
   final bool isAuthenticated;
   final bool splashDone;
+  /// True entre `verifyOtp()` réussi et `setPin()`/`verifyPin()` réussi.
+  /// Tant que c'est `true`, le redirect force l'utilisateur sur `/auth/pin`,
+  /// peu importe d'où il essaie de naviguer.
+  final bool pendingPin;
+  /// True si l'utilisateur n'a pas encore de PIN côté backend (`!user.pinHash`).
+  /// Détermine le mode du PinScreen : `'set'` (création) vs `'login'` (saisie).
+  /// Renvoyé par `verifyOtp` comme `isNewUser`.
+  final bool isNewUser;
   final String? error;
 
   const AuthState({
@@ -29,11 +55,17 @@ class AuthState {
     this.isLoading = false,
     this.isAuthenticated = false,
     this.splashDone = false,
+    this.pendingPin = false,
+    this.isNewUser = false,
     this.error,
   });
 
   UserRole? get role => user?.role;
   bool get isPending => user?.status == 'PENDING';
+  /// True si l'utilisateur a complété son identité (prénom renseigné).
+  /// Utilisé par le redirect pour décider entre `/auth/complete-profile`
+  /// et le dashboard.
+  bool get hasProfile => (user?.firstName ?? '').trim().isNotEmpty;
 
   // C2 — clearError permet de remettre error à null explicitement
   AuthState copyWith({
@@ -41,6 +73,8 @@ class AuthState {
     bool? isLoading,
     bool? isAuthenticated,
     bool? splashDone,
+    bool? pendingPin,
+    bool? isNewUser,
     String? error,
     bool clearError = false,
   }) => AuthState(
@@ -48,6 +82,8 @@ class AuthState {
     isLoading: isLoading ?? this.isLoading,
     isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     splashDone: splashDone ?? this.splashDone,
+    pendingPin: pendingPin ?? this.pendingPin,
+    isNewUser: isNewUser ?? this.isNewUser,
     error: clearError ? null : (error ?? this.error),
   );
 }
@@ -135,7 +171,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // Vérifie l'OTP et renvoie true si c'est un nouvel utilisateur
+  // Vérifie l'OTP, persiste la session ET arme `pendingPin:true`.
+  // Le redirect GoRouter (source unique de vérité) pousse ensuite vers /auth/pin.
+  // Renvoie isNewUser pour info — la navigation ne s'appuie PAS dessus.
   Future<bool> verifyOtp({
     required String phone,
     required String code,
@@ -150,9 +188,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'sessionId': sessionId,
         'role': role.apiValue,
       });
-      final data = res['data'];
-      await _persistSession(data);
-      return data['isNewUser'] ?? false;
+      final data = res['data'] as Map<String, dynamic>;
+      final isNew = data['isNewUser'] as bool? ?? false;
+      // _persistSession set isAuthenticated:true et persiste tokens/user.
+      // On lui passe les flags du flow d'auth pour qu'ils soient inclus dans
+      // la même mutation atomique → un seul fire du GoRouterRefreshStream.
+      await _persistSession(data, pendingPin: true, isNewUser: isNew);
+      return isNew;
     } catch (e) {
       state = state.copyWith(isLoading: false,
           error: e.toString().replaceAll('Exception: ', ''));
@@ -161,13 +203,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── PIN ───────────────────────────────────────────────────────────────────
-  // C1 — setPin() retourne UserRole? et gère les erreurs
+  // C1 — setPin() retourne UserRole? et gère les erreurs.
+  // Met `pendingPin: false` → le redirect bascule vers /auth/complete-profile
+  // (si pas de prénom) ou directement le dashboard.
   Future<UserRole?> setPin(String pin) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await _api.post('/auth/pin/set', data: {'pin': pin});
       await _storage.write(key: AppConstants.pinKey, value: 'true');
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, pendingPin: false);
       return state.role;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
@@ -175,11 +219,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // verifyPin (mode login). Idem : fixe `pendingPin:false`, le redirect
+  // gère la navigation suivante (dashboard du rôle si profil complet).
   Future<bool> verifyPin(String phone, String pin) async {
     try {
       final res = await _api.post('/auth/pin/verify',
           data: {'phone': phone, 'pin': pin});
-      await _persistSession(res['data']);
+      await _persistSession(res['data'] as Map<String, dynamic>, pendingPin: false);
       return true;
     } catch (_) { return false; }
   }
@@ -233,7 +279,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   // ── Interne ───────────────────────────────────────────────────────────────
   // C2 — Null guards dans _persistSession()
-  Future<void> _persistSession(Map<String, dynamic> data) async {
+  //
+  // [pendingPin] / [isNewUser] : flags du flow d'auth, transmis ici pour
+  // qu'ils soient appliqués dans la MÊME mutation d'état que isAuthenticated.
+  // Sinon on aurait 2 fires séparés du GoRouterRefreshStream et le redirect
+  // évaluerait un état intermédiaire incohérent.
+  Future<void> _persistSession(
+    Map<String, dynamic> data, {
+    bool? pendingPin,
+    bool? isNewUser,
+  }) async {
     final accessToken  = data['accessToken'] as String?;
     final refreshToken = data['refreshToken'] as String?;
     final userData     = data['user'] as Map<String, dynamic>?;
@@ -246,7 +301,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
     final user = AppUser.fromJson(userData);
     await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
-    state = state.copyWith(user: user, isAuthenticated: true, isLoading: false, clearError: true);
+    state = state.copyWith(
+      user: user,
+      isAuthenticated: true,
+      isLoading: false,
+      pendingPin: pendingPin,
+      isNewUser: isNewUser,
+      clearError: true,
+    );
   }
 }
 

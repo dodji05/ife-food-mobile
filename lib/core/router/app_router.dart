@@ -82,79 +82,77 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authProvider);
       final loc = state.matchedLocation;
 
-      // 1. Splash pas encore terminé
+      // ─── 1. SPLASH ─────────────────────────────────────────────────────
+      // Bloque l'utilisateur sur /splash tant que _bootstrap n'a pas fini.
       if (!authState.splashDone) {
         return loc == '/splash' ? null : '/splash';
       }
-
-      // 2. Splash terminé → quitter /splash obligatoirement
+      // Splash terminé → on calcule la destination en fonction de l'état
+      // d'auth (la suite du redirect gère tous les cas).
       if (loc == '/splash') {
-        return authState.isAuthenticated
-            ? _homeForRole(authState.role)
-            : '/onboarding';
+        if (!authState.isAuthenticated) return '/onboarding';
+        if (authState.pendingPin)        return '/auth/pin';
+        if (!authState.hasProfile)       return '/auth/complete-profile';
+        return _homeForRole(authState.role);
       }
 
-      // 3. Non authentifié
-      // Toutes les routes accessibles sans token
-      const publicRoutes = ['/onboarding', '/auth/role',
-          '/auth/phone', '/auth/otp', '/auth/pin', '/auth/complete-profile'];
+      // ─── 2. NON AUTHENTIFIÉ ────────────────────────────────────────────
+      // Routes ouvertes au public (avant verifyOtp réussi).
+      const publicRoutes = ['/onboarding', '/auth/role', '/auth/phone',
+          '/auth/otp', '/legal/'];
       final isPublic = publicRoutes.any((r) => loc.startsWith(r));
 
       if (!authState.isAuthenticated) {
         return isPublic ? null : '/onboarding';
       }
 
-      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes "amont"
-      //     du flow d'auth (avant que l'utilisateur ne soit identifié).
+      // ─── 3. AUTH FLOW EN COURS (source unique de vérité) ───────────────
+      // Le redirect FORCE l'utilisateur sur le bon écran selon les flags
+      // pendingPin et hasProfile. Les écrans OTP / PIN / complete-profile
+      // n'ont PLUS de context.go() après leur action : ils mutent l'état
+      // et c'est ICI que la nav est décidée.
       //
-      //     Routes EXCLUES volontairement (ne déclenchent JAMAIS de redirect
-      //     automatique, même si isAuthenticated devient true pendant qu'on
-      //     y est) :
+      // Avantages vs nav explicite côté widget :
+      //   ✓ Pas de race "widget démonté avant context.go"
+      //   ✓ Le hot-reload conserve l'état → le bon écran se ré-affiche
+      //   ✓ Robuste aux deep links et back button
+      //   ✓ Une seule fonction lit l'état → comportement prévisible
       //
-      //       /auth/otp              → isAuthenticated bascule à true
-      //                                PENDANT la requête verifyOtp, alors
-      //                                que l'écran est encore monté. Sans
-      //                                cette exclusion, le redirect éjecte
-      //                                l'utilisateur vers le dashboard avant
-      //                                que otp_screen.dart puisse appeler
-      //                                context.go('/auth/pin'), et le PIN
-      //                                n'est jamais créé.
-      //
-      //       /auth/pin              → Pendant setPin/verifyPin, l'état
-      //                                change (isLoading, user). La navigation
-      //                                suivante est faite explicitement par
-      //                                pin_screen.dart.
-      //
-      //       /auth/complete-profile → Pareil pour completeProfile : la
-      //                                navigation vers le dashboard est
-      //                                faite explicitement par
-      //                                complete_profile_screen.dart.
-      //
-      //     Règle générale : tout écran qui modifie l'AuthState pendant son
-      //     cycle de vie doit gérer sa propre navigation post-action.
-      const preAuthRoutes = ['/onboarding', '/auth/role', '/auth/phone'];
-      if (preAuthRoutes.any((r) => loc.startsWith(r))) {
+      // a) On a un token mais le PIN n'est pas fait → bloquer sur /auth/pin
+      if (authState.pendingPin) {
+        return loc.startsWith('/auth/pin') ? null : '/auth/pin';
+      }
+      // b) PIN OK mais profil incomplet → bloquer sur /auth/complete-profile
+      if (!authState.hasProfile) {
+        return loc.startsWith('/auth/complete-profile')
+            ? null
+            : '/auth/complete-profile';
+      }
+      // c) Tout est complet : si l'utilisateur traîne encore sur un écran
+      //    d'auth, le pousser vers son dashboard.
+      const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
+          '/auth/otp', '/auth/pin', '/auth/complete-profile'];
+      if (authRoutes.any((r) => loc.startsWith(r))) {
         return _homeForRole(authState.role);
       }
 
-      // 4. Compte admin non supporté sur mobile
+      // ─── 4. ADMIN — non supporté sur mobile ────────────────────────────
       if (authState.role == UserRole.admin) {
         return '/onboarding';
       }
 
-      // 5. Compte en attente de validation (pro / driver)
+      // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
       if (authState.isPending && loc != '/auth/pending') {
         if (authState.role == UserRole.professional ||
             authState.role == UserRole.driver) {
           return '/auth/pending';
         }
       }
-      // 5b. Compte activé sur /auth/pending → rediriger vers le bon tableau de bord
       if (!authState.isPending && loc == '/auth/pending') {
         return _homeForRole(authState.role);
       }
 
-      // 6. Vérification cross-role
+      // ─── 6. VÉRIFICATION CROSS-RÔLE ─────────────────────────────────────
       if (authState.role == UserRole.client && loc.startsWith('/pro')) return '/home';
       if (authState.role == UserRole.client && loc.startsWith('/driver')) return '/home';
       if (authState.role == UserRole.driver && loc.startsWith('/home')) return '/driver/dashboard';
@@ -203,9 +201,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
       }),
       GoRoute(path: '/auth/pin', builder: (_, state) {
+        // Les extras sont OPTIONNELS : PinScreen lit `mode`/`phone` depuis
+        // l'AuthState (isNewUser / user.phone). Les extras servent uniquement
+        // de rétro-compat si l'écran est ouvert par navigation manuelle.
         final extras = _Extras.asMap(state.extra);
         return PinScreen(
-          mode:  _Extras.read<String>(extras, 'mode', fallback: 'set')!,
+          mode:  _Extras.read<String>(extras, 'mode'),
           phone: _Extras.read<String>(extras, 'phone'),
         );
       }),
@@ -387,7 +388,9 @@ class GoRouterRefreshStream extends ChangeNotifier {
     return prev.isAuthenticated != next.isAuthenticated
         || prev.splashDone      != next.splashDone
         || prev.role            != next.role
-        || prev.isPending       != next.isPending;
+        || prev.isPending       != next.isPending
+        || prev.pendingPin      != next.pendingPin
+        || prev.hasProfile      != next.hasProfile;
   }
 
   @override

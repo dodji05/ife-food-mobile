@@ -76,8 +76,7 @@ dependencies:
 # Override win32 — la 5.2.0 (transitive) casse avec Dart 3.5+
 # (UnmodifiableUint8ListView supprimé). Forcé en 5.5.4+.
 dependency_overrides:
-  win32: ^5.13.0
-  ffi: ^2.1.3
+  win32: ^5.5.4
 
 dev_dependencies:
   flutter_test:

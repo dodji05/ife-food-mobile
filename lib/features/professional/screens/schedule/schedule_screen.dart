@@ -18,13 +18,24 @@ class _State extends ConsumerState<ScheduleScreen> {
   void initState() {
     super.initState();
     final pro = ref.read(proProvider).professional;
-    final hours = pro?.openingHours as Map<String, dynamic>? ?? {};
+
+    // 1er lancement (jamais configuré) → pré-remplir avec 08:00-22:00 partout
+    // pour offrir un point de départ raisonnable au pro.
+    // Sinon → respecter l'état serveur (jour manquant ou {open:null,close:null}
+    // = jour FERMÉ, pas un défaut 8-22). Bug fix : avant, un jour fermé
+    // sauvegardé ré-apparaissait ouvert au reload, le pro ne pouvait jamais
+    // fermer un jour de manière persistante.
+    final hasAnyConfig = pro?.hasOpeningHours ?? false;
     for (final key in _dayKeys) {
-      final day = hours[key] as Map<String, dynamic>? ?? {'open': '08:00', 'close': '22:00'};
-      _hours[key] = {'open': day['open']?.toString(), 'close': day['close']?.toString()};
-    }
-    if (_hours.isEmpty) {
-      for (final key in _dayKeys) { _hours[key] = {'open': '08:00', 'close': '22:00'}; }
+      if (!hasAnyConfig) {
+        _hours[key] = {'open': '08:00', 'close': '22:00'};
+        continue;
+      }
+      final day = pro!.hoursFor(key);
+      _hours[key] = {
+        'open':  day?['open']?.toString(),
+        'close': day?['close']?.toString(),
+      };
     }
   }
 

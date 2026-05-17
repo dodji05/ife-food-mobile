@@ -60,7 +60,7 @@ class ProOrderDetailScreen extends ConsumerWidget {
             _Row('Livraison', '${o.deliveryFee.toStringAsFixed(0)} F'),
             _Row('Commission plateforme', '-${o.commissionAmount.toStringAsFixed(0)} F', danger: true),
             const Divider(color: AppColors.darkBorder, height: 20),
-            _Row('Vos revenus nets', '${(o.subtotal - o.commissionAmount).toStringAsFixed(0)} F', bold: true, green: true),
+            _Row('Vos revenus nets', '${o.netRevenue.toStringAsFixed(0)} F', bold: true, green: true),
           ])),
           const SizedBox(height: 10),
           // Delivery

@@ -9,6 +9,15 @@ class OrderItem {
   final int    quantity;
   final double unitPrice;
   final String? note;
+  /// Objet product complet retourné par l'API quand `include: { product: true }`.
+  /// Contient `imageUrl`, `name` (Map multilingue), `category`, etc.
+  /// Utile pour afficher la photo du produit dans la carte commande sans
+  /// faire un appel séparé. `null` si l'API n'a pas inclus la relation.
+  final Map<String, dynamic>? product;
+  /// Total ligne (unitPrice × quantity) tel que persisté par le backend.
+  /// On garde le calcul `subtotal` en getter pour cohérence client si jamais
+  /// la valeur serveur diffère (ex: arrondi monétaire).
+  final double totalPrice;
 
   const OrderItem({
     required this.productId,
@@ -16,11 +25,11 @@ class OrderItem {
     required this.quantity,
     required this.unitPrice,
     this.note,
-  });
+    this.product,
+    double? totalPrice,
+  }) : totalPrice = totalPrice ?? (unitPrice * quantity);
 
-  double get subtotal  => unitPrice * quantity;
-  double get totalPrice => subtotal;
-  Map<String, dynamic>? get product => null; // enrichi par l'API si besoin
+  double get subtotal => unitPrice * quantity;
 
   factory OrderItem.fromJson(Map<String, dynamic> j) {
     // Backend Prisma : pas de productName à plat. Si l'item inclut le product,
@@ -38,9 +47,11 @@ class OrderItem {
     return OrderItem(
       productId:   j['productId']   as String? ?? '',
       productName: resolvedName,
-      quantity:    j['quantity']    as int? ?? 1,
+      quantity:    j['quantity']    as int?    ?? 1,
       unitPrice:   (j['unitPrice']  as num?)?.toDouble() ?? 0.0,
       note:        j['note']        as String?,
+      product:     productMap,
+      totalPrice:  (j['totalPrice'] as num?)?.toDouble(),
     );
   }
 }

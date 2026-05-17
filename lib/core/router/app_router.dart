@@ -104,11 +104,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isPublic ? null : '/onboarding';
       }
 
-      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes de pré-connexion.
-      //     /auth/pin et /auth/complete-profile ne déclenchent PAS de redirect :
-      //     l'utilisateur est en train de finir son inscription, il faut le laisser
-      //     passer sans l'éjecter vers le dashboard.
-      const preAuthRoutes = ['/onboarding', '/auth/role', '/auth/phone', '/auth/otp'];
+      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes purement
+      //     pré-connexion. /auth/otp est EXCLU : l'utilisateur reçoit
+      //     `isAuthenticated:true` PENDANT qu'il est sur cet écran (réponse
+      //     verifyOtp), et le redirect le sortirait avant que otp_screen ait
+      //     le temps de faire context.go('/auth/pin'). La navigation après
+      //     OTP est gérée explicitement par otp_screen.dart.
+      const preAuthRoutes = ['/onboarding', '/auth/role', '/auth/phone'];
       if (preAuthRoutes.any((r) => loc.startsWith(r))) {
         return _homeForRole(authState.role);
       }

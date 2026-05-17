@@ -73,9 +73,22 @@ class _PinScreenState extends ConsumerState<PinScreen> {
       // (setPin met needsPinSetup:false → bascule vers /auth/complete-profile).
     } else {
       // ── Mode 'login' : saisie simple ───────────────────────────────────
-      setState(() => _loading = true);
       // Phone depuis l'AuthState en priorité, fallback prop pour rétro-compat.
       final phone = ref.read(authProvider).user?.phone ?? widget.phone ?? '';
+
+      // Guard : sans téléphone, verifyPin partirait avec une chaîne vide et
+      // le backend répondrait "PIN invalide" (trompeur). Cas possible : deep
+      // link direct sur /auth/pin, session corrompue, ou état désynchronisé.
+      // On force le retour au flow OTP plutôt que d'afficher une erreur fausse.
+      if (phone.isEmpty) {
+        setState(() => _error = 'Session perdue. Veuillez vous reconnecter.');
+        _ctrl.clear();
+        await ref.read(authProvider.notifier).logout();
+        // Le redirect GoRouter renverra automatiquement vers /onboarding.
+        return;
+      }
+
+      setState(() => _loading = true);
       final ok = await ref.read(authProvider.notifier).verifyPin(phone, pin);
       if (!mounted) return;
       if (!ok) {

@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'core/api/api_client.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
@@ -58,6 +59,10 @@ class IfeFoodApp extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+
+      // Messenger global — permet d'afficher des snackbars depuis n'importe
+      // quelle couche (ex: AuthEvents session expirée) sans BuildContext.
+      scaffoldMessengerKey: AppMessenger.scaffoldMessengerKey,
 
       // Thèmes
       theme:     AppTheme.light,

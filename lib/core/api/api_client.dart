@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
 
@@ -13,6 +14,33 @@ class AuthEvents {
   static final _ctrl = StreamController<void>.broadcast();
   static Stream<void> get onSessionExpired => _ctrl.stream;
   static void notifySessionExpired() => _ctrl.add(null);
+}
+
+/// Messenger global pour afficher des snackbars depuis n'importe quelle
+/// couche (Notifiers Riverpod, intercepteurs réseau, etc.) sans avoir
+/// besoin d'un BuildContext.
+///
+/// Branché sur MaterialApp.router via `scaffoldMessengerKey`.
+class AppMessenger {
+  static final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  static void show(String message,
+      {bool isError = false, Duration duration = const Duration(seconds: 4)}) {
+    final messenger = scaffoldMessengerKey.currentState;
+    if (messenger == null) {
+      debugPrint('[AppMessenger] ScaffoldMessenger pas monté : $message');
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message,
+            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600)),
+        backgroundColor: isError ? Colors.red.shade700 : null,
+        behavior: SnackBarBehavior.floating,
+        duration: duration,
+      ));
+  }
 }
 
 class ApiClient {
@@ -81,10 +109,16 @@ class ApiClient {
             handler.resolve(retry);
             return;
           }
-          // Refresh échoué → session morte. On purge et on notifie le router.
+          // Refresh échoué → session morte. On purge, notifie le router
+          // (qui redirige vers /onboarding) et alerte l'utilisateur via snackbar
+          // pour éviter un changement d'écran sec sans explication.
           await clearAuth();
           await _storage.deleteAll();
           AuthEvents.notifySessionExpired();
+          AppMessenger.show(
+            'Votre session a expiré. Veuillez vous reconnecter.',
+            isError: true,
+          );
         }
         handler.next(error);
       },

@@ -76,7 +76,9 @@ dependencies:
 # Override win32 — la 5.2.0 (transitive) casse avec Dart 3.5+
 # (UnmodifiableUint8ListView supprimé). Forcé en 5.5.4+.
 dependency_overrides:
-  win32: ^5.5.4
+  # Pin EXACT — ^5.5.4 laissait pub choisir 5.13.x qui casse avec
+  # l'analyseur strict @Array. 5.5.4 compile sur Dart 3.5/3.6.
+  win32: 5.5.4
 
 dev_dependencies:
   flutter_test:

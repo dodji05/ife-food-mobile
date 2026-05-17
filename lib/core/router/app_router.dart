@@ -131,10 +131,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       // c) Tout est complet : si l'utilisateur traîne encore sur un écran
       //    d'auth, le pousser vers son dashboard.
+      //
+      //    EXCEPTION : "Modifier mon PIN" depuis le profil pousse vers
+      //    /auth/pin avec PinRouteParams(mode: 'set'). On laisse passer
+      //    pour permettre le changement de PIN sans créer une route dédiée.
       const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
           '/auth/otp', '/auth/pin', '/auth/complete-profile'];
       if (authRoutes.any((r) => loc.startsWith(r))) {
-        return _homeForRole(authState.role);
+        final extra = state.extra;
+        final isChangePin = loc.startsWith('/auth/pin')
+            && extra is PinRouteParams
+            && extra.mode == 'set';
+        if (!isChangePin) return _homeForRole(authState.role);
       }
 
       // ─── 4. ADMIN — non supporté sur mobile ────────────────────────────
@@ -385,7 +393,11 @@ class GoRouterRefreshStream extends ChangeNotifier {
         || prev.role            != next.role
         || prev.isPending       != next.isPending
         || prev.needsPinSetup   != next.needsPinSetup
-        || prev.hasProfile      != next.hasProfile;
+        || prev.hasProfile      != next.hasProfile
+        // user.status peut changer via refreshProfile() depuis /auth/pending
+        // (admin valide un compte PENDING → ACTIVE). Comparaison directe car
+        // isPending est un getter dérivé qui ne se mémorise pas.
+        ;
   }
 
   @override

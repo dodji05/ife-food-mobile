@@ -153,8 +153,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Restaure la session depuis le stockage local sans appel réseau.
     // Le premier appel API expiration 401 se chargera de déconnecter si besoin.
     final user = AppUser.fromJson(json.decode(userRaw));
-    state = state.copyWith(user: user, isAuthenticated: true, isLoading: false);
-    debugPrint('[Auth] Session locale restaurée');
+
+    // CRITIQUE — needsPinSetup doit être dérivé de la persistence pour
+    // éviter qu'un crash entre verifyOtp() et setPin() laisse l'utilisateur
+    // avec un token valide mais sans PIN backend. pinKey est mis à 'true'
+    // par setPin() une fois l'API serveur appelée avec succès.
+    final pinSet = await _storage.read(key: AppConstants.pinKey);
+    final needsPin = pinSet != 'true';
+
+    state = state.copyWith(
+      user: user,
+      isAuthenticated: true,
+      isLoading: false,
+      needsPinSetup: needsPin,
+    );
+    debugPrint('[Auth] Session locale restaurée (needsPinSetup=$needsPin)');
   }
 
   // ── OTP ───────────────────────────────────────────────────────────────────

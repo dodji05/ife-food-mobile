@@ -57,9 +57,20 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         final err = ref.read(authProvider).error;
         setState(() => _error = err ?? 'Erreur lors de la création du PIN.');
         _ctrl.clear();
+        return;
       }
-      // Pas de context.go : setPin met needsPinSetup:false dans l'AuthState,
-      // le redirect GoRouter envoie vers /auth/complete-profile ou dashboard.
+      // Cas "Modifier mon PIN" depuis le profil : l'utilisateur est déjà
+      // complet (hasProfile + PIN antérieur), aucun champ routing ne change
+      // → on doit pop manuellement, sinon écran figé.
+      final auth = ref.read(authProvider);
+      if (auth.isAuthenticated && auth.hasProfile && context.canPop()) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('PIN mis à jour ✓'), duration: Duration(seconds: 2)));
+        context.pop();
+        return;
+      }
+      // Cas inscription initiale : pas de pop, le redirect prend la suite
+      // (setPin met needsPinSetup:false → bascule vers /auth/complete-profile).
     } else {
       // ── Mode 'login' : saisie simple ───────────────────────────────────
       setState(() => _loading = true);
@@ -116,7 +127,14 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               fontFamily: 'Nunito', fontSize: 13))],
         const Spacer(),
         if (!_isSetting) TextButton(
-          onPressed: () => context.go('/auth/phone', extra: ref.read(authProvider).role),
+          onPressed: () async {
+            // Bug fix : sans logout préalable, le redirect renvoie immédiatement
+            // sur /auth/pin (needsPinSetup:true). On purge la session pour
+            // rebasculer en flow non-authentifié.
+            final role = ref.read(authProvider).role;
+            await ref.read(authProvider.notifier).logout();
+            if (context.mounted) context.go('/auth/phone', extra: role);
+          },
           child: const Text('Me connecter avec OTP', style: TextStyle(
               fontFamily: 'Nunito', fontWeight: FontWeight.w600, color: AppColors.lightSubtext))),
         if (_loading) const CircularProgressIndicator(color: AppColors.primary),

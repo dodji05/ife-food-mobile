@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/pro_provider.dart';
 import '../../../../shared/models/order.dart';
@@ -98,16 +100,60 @@ class _OrderCard extends ConsumerWidget {
                 _StatusBadge(order.status),
               ]),
               const SizedBox(height: 8),
+              // Avatar + nom client + bouton appel (si tel dispo) + montant total
               Row(children: [
-                const Icon(Icons.person_rounded, size: 14, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Text(order.clientName, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
-                const Spacer(),
-                Text('${order.totalAmount.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                _ClientAvatar(name: order.clientName, url: order.clientAvatarUrl, size: 28),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  order.clientName,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText),
+                )),
+                if (order.clientPhone != null && order.clientPhone!.isNotEmpty)
+                  _CallButton(phone: order.clientPhone!),
+                const SizedBox(width: 4),
+                Text(
+                  order.formattedTotal,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primary),
+                ),
               ]),
               const SizedBox(height: 6),
-              Text('${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.createdAt.hour}h${order.createdAt.minute.toString().padLeft(2,'0')}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+              Row(children: [
+                Text(
+                  '${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.createdAt.hour.toString().padLeft(2,'0')}h${order.createdAt.minute.toString().padLeft(2,'0')}',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+                ),
+                if (order.estimatedDeliveryMin != null) ...[
+                  const SizedBox(width: 8),
+                  _MiniChip(icon: Icons.timer_outlined, text: '${order.estimatedDeliveryMin} min', color: AppColors.info),
+                ],
+                if (order.promoCode != null) ...[
+                  const SizedBox(width: 6),
+                  _MiniChip(icon: Icons.local_offer_rounded, text: order.promoCode!, color: AppColors.accent),
+                ],
+              ]),
+              // Bandeau livreur si assigné (DRIVER_ASSIGNED, IN_DELIVERY…)
+              if (order.driver != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.two_wheeler_rounded, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(
+                      'Livreur : ${order.driverName ?? '—'}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                    )),
+                    if (order.driverPhone != null && order.driverPhone!.isNotEmpty)
+                      _CallButton(phone: order.driverPhone!, color: AppColors.primary, compact: true),
+                  ]),
+                ),
+              ],
               if (order.specialInstructions != null && order.specialInstructions!.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Row(children: [
@@ -165,6 +211,115 @@ class _OrderCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+// ── Avatar client : photo si dispo, sinon cercle avec initiales ─────────────
+class _ClientAvatar extends StatelessWidget {
+  final String name;
+  final String? url;
+  final double size;
+  const _ClientAvatar({required this.name, this.url, this.size = 32});
+
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first[0] + parts.last[0]).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = url != null && url!.isNotEmpty;
+    return ClipOval(
+      child: SizedBox(
+        width: size, height: size,
+        child: hasUrl
+            ? CachedNetworkImage(
+                imageUrl: url!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => _initialsFallback(),
+                errorWidget: (_, __, ___) => _initialsFallback(),
+              )
+            : _initialsFallback(),
+      ),
+    );
+  }
+
+  Widget _initialsFallback() => Container(
+    color: AppColors.primary.withOpacity(0.18),
+    alignment: Alignment.center,
+    child: Text(
+      _initials,
+      style: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: size * 0.42,
+        fontWeight: FontWeight.w800,
+        color: AppColors.primary,
+      ),
+    ),
+  );
+}
+
+// ── Bouton "Appeler" — url_launcher tel: ────────────────────────────────────
+class _CallButton extends StatelessWidget {
+  final String phone;
+  final Color color;
+  final bool compact;
+  const _CallButton({required this.phone, this.color = AppColors.success, this.compact = false});
+
+  Future<void> _call(BuildContext context) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Impossible d\'ouvrir le composeur pour $phone'),
+        backgroundColor: AppColors.danger,
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 28.0 : 32.0;
+    return SizedBox(
+      width: size, height: size,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        tooltip: 'Appeler $phone',
+        onPressed: () => _call(context),
+        icon: Container(
+          decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+          padding: EdgeInsets.all(compact ? 5 : 6),
+          child: Icon(Icons.call_rounded, size: compact ? 14 : 16, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mini chip (timer, promo, …) ──────────────────────────────────────────────
+class _MiniChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+  const _MiniChip({required this.icon, required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.14),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 10, color: color),
+      const SizedBox(width: 3),
+      Text(text, style: TextStyle(
+        fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w800, color: color,
+      )),
+    ]),
+  );
 }
 
 class _StatusBadge extends StatelessWidget {

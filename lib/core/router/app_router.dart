@@ -91,7 +91,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // d'auth (la suite du redirect gère tous les cas).
       if (loc == '/splash') {
         if (!authState.isAuthenticated) return '/onboarding';
-        if (authState.pendingPin)        return '/auth/pin';
+        if (authState.needsPinSetup)        return '/auth/pin';
         if (!authState.hasProfile)       return '/auth/complete-profile';
         return _homeForRole(authState.role);
       }
@@ -108,7 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // ─── 3. AUTH FLOW EN COURS (source unique de vérité) ───────────────
       // Le redirect FORCE l'utilisateur sur le bon écran selon les flags
-      // pendingPin et hasProfile. Les écrans OTP / PIN / complete-profile
+      // needsPinSetup et hasProfile. Les écrans OTP / PIN / complete-profile
       // n'ont PLUS de context.go() après leur action : ils mutent l'état
       // et c'est ICI que la nav est décidée.
       //
@@ -119,7 +119,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       //   ✓ Une seule fonction lit l'état → comportement prévisible
       //
       // a) On a un token mais le PIN n'est pas fait → bloquer sur /auth/pin
-      if (authState.pendingPin) {
+      if (authState.needsPinSetup) {
         return loc.startsWith('/auth/pin') ? null : '/auth/pin';
       }
       // b) PIN OK mais profil incomplet → bloquer sur /auth/complete-profile
@@ -389,7 +389,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
         || prev.splashDone      != next.splashDone
         || prev.role            != next.role
         || prev.isPending       != next.isPending
-        || prev.pendingPin      != next.pendingPin
+        || prev.needsPinSetup      != next.needsPinSetup
         || prev.hasProfile      != next.hasProfile;
   }
 

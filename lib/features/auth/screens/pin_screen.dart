@@ -58,7 +58,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         setState(() => _error = err ?? 'Erreur lors de la création du PIN.');
         _ctrl.clear();
       }
-      // Pas de context.go : setPin met pendingPin:false dans l'AuthState,
+      // Pas de context.go : setPin met needsPinSetup:false dans l'AuthState,
       // le redirect GoRouter envoie vers /auth/complete-profile ou dashboard.
     } else {
       // ── Mode 'login' : saisie simple ───────────────────────────────────
@@ -71,7 +71,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         setState(() { _error = 'Code PIN incorrect.'; _loading = false; });
         _ctrl.clear();
       }
-      // Pas de context.go : verifyPin met pendingPin:false, le redirect
+      // Pas de context.go : verifyPin met needsPinSetup:false, le redirect
       // envoie vers le dashboard du rôle (ou /auth/pending si non validé).
     }
   }

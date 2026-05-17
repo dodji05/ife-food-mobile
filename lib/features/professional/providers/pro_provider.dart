@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/order.dart';
@@ -315,6 +317,62 @@ class ProNotifier extends StateNotifier<ProState> {
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  // ── Catalogue mutations ────────────────────────────────────────────────────
+  //
+  // Stratégie : on n'invalide pas `productsProvider` ici — c'est aux écrans
+  // appelants (catalogue, add_product) de le faire après une mutation pour
+  // garder un contrôle fin du moment du refresh (animations, snackbars, etc).
+  // Toutes ces méthodes lèvent une `Exception` en cas d'erreur réseau pour
+  // que le screen affiche un message clair.
+
+  /// Crée un produit côté backend.
+  /// `data` doit contenir `name` (Map multilingue), `price`, `currency`,
+  /// `isAvailable`, optionnellement `description` (Map) et `stock`.
+  /// Retourne l'id du produit créé (utile pour enchaîner avec un upload image).
+  Future<String> createProduct(Map<String, dynamic> data) async {
+    final res = await ApiClient.instance.post('/products', data: data);
+    final created = res['data'] as Map<String, dynamic>?;
+    return created?['id'] as String? ?? '';
+  }
+
+  /// Met à jour un produit existant. `data` partiel (PATCH).
+  Future<void> updateProduct(String productId, Map<String, dynamic> data) async {
+    await ApiClient.instance.patch('/products/$productId', data: data);
+  }
+
+  /// Supprime un produit. Le backend doit gérer la soft-delete ou cascade.
+  Future<void> deleteProduct(String productId) async {
+    await ApiClient.instance.delete('/products/$productId');
+  }
+
+  /// Toggle rapide de disponibilité sans repasser par le formulaire complet.
+  /// Endpoint dédié `/products/:id/toggle` — fallback PATCH si non supporté.
+  Future<bool> toggleProductAvailability(String productId, bool current) async {
+    final next = !current;
+    try {
+      await ApiClient.instance.patch('/products/$productId/toggle');
+    } on Exception {
+      // Fallback : si l'endpoint dédié n'existe pas côté backend, on tombe
+      // sur le PATCH générique. Évite de casser l'UX si l'API évolue.
+      await ApiClient.instance.patch('/products/$productId',
+          data: {'isAvailable': next});
+    }
+    return next;
+  }
+
+  /// Upload une image pour un produit existant.
+  /// Backend : `POST /products/:id/image` avec champ multipart `image`.
+  /// Retourne l'URL de l'image hébergée.
+  Future<String?> uploadProductImage(String productId, File imageFile) async {
+    final fileName = imageFile.path.split(Platform.pathSeparator).last;
+    final form = FormData.fromMap({
+      'image': await MultipartFile.fromFile(imageFile.path, filename: fileName),
+    });
+    final res = await ApiClient.instance.postForm('/products/$productId/image', form);
+    final data = res['data'] as Map<String, dynamic>?;
+    return data?['imageUrl'] as String? ?? data?['url'] as String?;
   }
 }
 

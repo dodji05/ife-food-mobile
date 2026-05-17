@@ -1,103 +1,240 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ifè FOOD — Modèle Product
 // Correspond à la réponse de GET /products et GET /professionals/:id/products
+//
+// ⚠️ Modèle UNIFIÉ : merge des champs historiques (name/description String
+// pré-extraits en français + categoryId getter) avec les champs multilingues
+// natifs de l'API standalone (nameMap, descriptionMap, stock, currency,
+// vraie catégorie nullable). Tous les nouveaux champs sont rétrocompatibles
+// (defaults sensibles) — zéro régression côté consumers existants.
 // ─────────────────────────────────────────────────────────────────────────────
 
 class Product {
-  final String id;
-  final String name;
+  // ── Identité ──────────────────────────────────────────────────────────────
+  final String  id;
+  final String  professionalId;
+  final String? categoryId;      // ID de catégorie (peut être null si flat)
+
+  // ── Multilingue ───────────────────────────────────────────────────────────
+  /// Nom pré-extrait en français (ou langue fallback). Conservé pour
+  /// rétro-compatibilité avec les écrans qui font `product.name` directement.
+  final String  name;
+
+  /// Description pré-extraite en français. Idem rétro-compat.
   final String? description;
-  final double price;
+
+  /// Map multilingue brute `{fr: ..., en: ..., es: ...}` retournée par l'API.
+  /// Utilisée par `localizedName(locale)` pour le vrai i18n runtime.
+  final Map<String, String> nameMap;
+
+  /// Map multilingue brute pour la description. `null` si pas de description.
+  final Map<String, String>? descriptionMap;
+
+  // ── Catalogue ─────────────────────────────────────────────────────────────
+  final double  price;
+  /// Devise. Défaut `XOF` (Franc CFA Bénin). Override possible par produit.
+  final String  currency;
   final String? imageUrl;
-  final String category;
-  final bool isAvailable;
-  final String professionalId;
-  final int? preparationTimeMin;
+  final bool    isAvailable;
+  /// Stock disponible. `null` = stock illimité / non géré pour ce produit.
+  final int?    stock;
+  final int?    preparationTimeMin;
 
   const Product({
     required this.id,
+    required this.professionalId,
+    this.categoryId,
     required this.name,
     this.description,
+    Map<String, String>? nameMap,
+    this.descriptionMap,
     required this.price,
+    this.currency = 'XOF',
     this.imageUrl,
-    required this.category,
-    required this.isAvailable,
-    required this.professionalId,
+    this.isAvailable = true,
+    this.stock,
     this.preparationTimeMin,
-  });
+  }) : nameMap = nameMap ?? const {};
 
   factory Product.fromJson(Map<String, dynamic> j) {
     // Backend Prisma : name et description sont Json multilingue {fr, en}.
-    // On extrait fr en priorité, sinon en, sinon string brute (rétrocompat).
-    String _str(dynamic raw) {
-      if (raw == null) return '';
-      if (raw is String) return raw;
-      if (raw is Map) return (raw['fr'] ?? raw['en'] ?? raw.values.first ?? '').toString();
-      return raw.toString();
+    // On garde le pré-extrait pour rétro-compat ET on conserve la Map brute
+    // pour le vrai i18n via localizedName(locale).
+    Map<String, String> _toMap(dynamic raw) {
+      if (raw is Map) {
+        return raw.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
+      }
+      if (raw is String && raw.isNotEmpty) {
+        // Rétro-compat : l'ancien backend pouvait renvoyer juste une String.
+        return {'fr': raw};
+      }
+      return const {};
     }
-    // Catégorie : peut être un id string, ou une relation incluse {id, name, ...}.
-    String _category() {
+    String _firstFr(Map<String, String> m, [String fallback = '']) =>
+        m['fr'] ?? m['en'] ?? (m.isNotEmpty ? m.values.first : fallback);
+
+    // Catégorie : peut être un id string, ou une relation incluse {id, name, …},
+    // ou un champ `categoryId` séparé. On extrait l'id de tous les cas.
+    String? _categoryId() {
       final raw = j['category'];
-      if (raw is String) return raw;
-      if (raw is Map) return (raw['id'] as String?) ?? '';
-      return (j['categoryId'] as String?) ?? '';
+      if (raw is String) return raw.isEmpty ? null : raw;
+      if (raw is Map)    return (raw['id'] as String?);
+      final cid = j['categoryId'] as String?;
+      return (cid != null && cid.isEmpty) ? null : cid;
     }
+
+    final nameMap        = _toMap(j['name']);
+    final descMap        = j['description'] == null ? null : _toMap(j['description']);
+
     return Product(
-      id:                  j['id'] as String? ?? '',
-      name:                _str(j['name']),
-      description:         j['description'] == null ? null : _str(j['description']),
-      price:               (j['price'] as num?)?.toDouble() ?? 0.0,
-      imageUrl:            j['imageUrl'] as String?,
-      category:            _category(),
-      isAvailable:         j['isAvailable'] as bool? ?? true,
+      id:                  j['id']             as String? ?? '',
       professionalId:      j['professionalId'] as String? ?? '',
+      categoryId:          _categoryId(),
+      name:                _firstFr(nameMap),
+      description:         descMap == null ? null : _firstFr(descMap, ''),
+      nameMap:             nameMap,
+      descriptionMap:      (descMap != null && descMap.isNotEmpty) ? descMap : null,
+      price:               (j['price']        as num?)?.toDouble() ?? 0.0,
+      currency:            j['currency']      as String? ?? 'XOF',
+      imageUrl:            j['imageUrl']      as String?,
+      isAvailable:         j['isAvailable']   as bool?   ?? true,
+      stock:               (j['stock']         as num?)?.toInt(),
       preparationTimeMin:  (j['preparationTimeMin'] as num?)?.toInt(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'price': price,
-    'imageUrl': imageUrl,
-    'category': category,
-    'isAvailable': isAvailable,
-    'professionalId': professionalId,
+    'id':                 id,
+    'professionalId':     professionalId,
+    'categoryId':         categoryId,
+    // On envoie la Map multilingue complète si présente, sinon repli sur
+    // la String pré-extraite (utile pour les cas d'édition rapide).
+    'name':               nameMap.isNotEmpty ? nameMap : {'fr': name},
+    'description':        descriptionMap ?? (description != null ? {'fr': description} : null),
+    'price':              price,
+    'currency':           currency,
+    'imageUrl':           imageUrl,
+    'isAvailable':        isAvailable,
+    'stock':              stock,
     'preparationTimeMin': preparationTimeMin,
   };
 
-  String get formattedPrice => '${price.toStringAsFixed(0)} F';
+  // ── Helpers d'affichage ───────────────────────────────────────────────────
+  String get formattedPrice {
+    final p = price.toStringAsFixed(0);
+    return currency == 'XOF' ? '$p F' : '$p $currency';
+  }
 
-  // Alias pour compatibilité avec les écrans
-  String get categoryId => category;
+  /// Alias historique : certains écrans utilisent `product.categoryId` quand
+  /// d'autres utilisent `product.category`. On expose les deux.
+  String get category => categoryId ?? '';
 
-  // Support i18n basique : `name` et `description` peuvent être des Maps JSON
-  String localizedName(String locale) => name;
-  String? localizedDescription(String locale) => description;
+  /// `true` si le stock est géré ET ≤ 0. Utile pour griser un produit côté UI.
+  bool get isOutOfStock => stock != null && stock! <= 0;
 
-  // FIX: Object? sentinel pour les champs nullable effaçables
+  // ── i18n ──────────────────────────────────────────────────────────────────
+  /// Récupère le nom dans la locale demandée, avec fallback intelligent :
+  /// `locale → fr → en → première valeur dispo → String pré-extraite`.
+  String localizedName(String locale) =>
+      nameMap[locale]
+      ?? nameMap['fr']
+      ?? nameMap['en']
+      ?? (nameMap.isNotEmpty ? nameMap.values.first : name);
+
+  /// Idem pour la description. Retourne `null` si vraiment rien n'est dispo.
+  String? localizedDescription(String locale) {
+    if (descriptionMap != null) {
+      return descriptionMap![locale]
+          ?? descriptionMap!['fr']
+          ?? descriptionMap!['en']
+          ?? (descriptionMap!.isNotEmpty ? descriptionMap!.values.first : description);
+    }
+    return description;
+  }
+
+  // ── copyWith — sentinel pour fields nullable effaçables ───────────────────
   static const _keep = Object();
 
   Product copyWith({
     String? name,
-    Object? description     = _keep,
+    Object? description           = _keep,
+    Map<String, String>? nameMap,
+    Object? descriptionMap        = _keep,
     double? price,
-    Object? imageUrl        = _keep,
-    String? category,
-    bool? isAvailable,
-    Object? preparationTimeMin = _keep,
+    String? currency,
+    Object? imageUrl              = _keep,
+    Object? categoryId            = _keep,
+    bool?   isAvailable,
+    Object? stock                 = _keep,
+    Object? preparationTimeMin    = _keep,
   }) => Product(
-    id: id,
+    id:                 id,
+    professionalId:     professionalId,
+    categoryId:         categoryId      == _keep ? this.categoryId      : categoryId      as String?,
     name:               name            ?? this.name,
     description:        description     == _keep ? this.description     : description     as String?,
+    nameMap:            nameMap         ?? this.nameMap,
+    descriptionMap:     descriptionMap  == _keep ? this.descriptionMap  : descriptionMap  as Map<String, String>?,
     price:              price           ?? this.price,
+    currency:           currency        ?? this.currency,
     imageUrl:           imageUrl        == _keep ? this.imageUrl        : imageUrl        as String?,
-    category:           category        ?? this.category,
     isAvailable:        isAvailable     ?? this.isAvailable,
-    professionalId:     professionalId,
+    stock:              stock           == _keep ? this.stock           : stock           as int?,
     preparationTimeMin: preparationTimeMin == _keep
         ? this.preparationTimeMin
         : preparationTimeMin as int?,
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductCategory — Catégorie de produits propre à un pro
+// Correspond à GET /products/categories/:professionalId
+// ─────────────────────────────────────────────────────────────────────────────
+class ProductCategory {
+  final String  id;
+  final String  professionalId;
+  /// Nom multilingue `{fr: 'Entrées', en: 'Starters', …}`.
+  final Map<String, String> name;
+  /// Emoji ou identifiant d'icône (ex: `🥗`, `salad`).
+  final String? icon;
+  /// Ordre d'affichage (croissant). Défaut 0.
+  final int     sortOrder;
+
+  const ProductCategory({
+    required this.id,
+    required this.professionalId,
+    required this.name,
+    this.icon,
+    this.sortOrder = 0,
+  });
+
+  factory ProductCategory.fromJson(Map<String, dynamic> j) {
+    Map<String, String> _toMap(dynamic raw) {
+      if (raw is Map) {
+        return raw.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
+      }
+      if (raw is String && raw.isNotEmpty) return {'fr': raw};
+      return const {};
+    }
+    return ProductCategory(
+      id:             j['id']             as String? ?? '',
+      professionalId: j['professionalId'] as String? ?? '',
+      name:           _toMap(j['name']),
+      icon:           j['icon']           as String?,
+      sortOrder:      (j['sortOrder']      as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id':             id,
+    'professionalId': professionalId,
+    'name':           name,
+    'icon':           icon,
+    'sortOrder':      sortOrder,
+  };
+
+  /// Nom localisé avec fallback fr → en → première valeur → `'Catégorie'`.
+  String localizedName(String locale) =>
+      name[locale] ?? name['fr'] ?? name['en']
+      ?? (name.isNotEmpty ? name.values.first : 'Catégorie');
 }

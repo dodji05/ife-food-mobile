@@ -56,7 +56,7 @@ class ProOrderDetailScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             _Card('Livreur', _PersonRow(
               name:      o.driverName ?? '—',
-              avatarUrl: o.driver?['avatarUrl'] as String?,
+              avatarUrl: o.driverAvatarUrl,
               phone:     o.driverPhone,
               roleIcon:  Icons.two_wheeler_rounded,
               accentColor: AppColors.primary,

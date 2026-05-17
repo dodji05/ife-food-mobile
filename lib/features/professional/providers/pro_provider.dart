@@ -141,11 +141,24 @@ class ProOrder {
   String? get clientPhone => client?['phone'] as String?;
 
   // ── Helpers driver ────────────────────────────────────────────────────────
+  // Le backend Prisma renvoie `driver.user.{name, firstName, phone, avatarUrl}`
+  // (relation Driver -> User). On lit d'abord depuis driver.user, puis fallback
+  // sur driver.* pour les éventuels endpoints qui aplatissent la réponse.
+  Map<String, dynamic>? get _driverUser =>
+      driver?['user'] as Map<String, dynamic>?;
+
   String? get driverName {
-    final n = driver?['name'] ?? driver?['firstName'];
+    final n = _driverUser?['name']
+           ?? _driverUser?['firstName']
+           ?? driver?['name']
+           ?? driver?['firstName'];
     return n is String ? n : null;
   }
-  String? get driverPhone => driver?['phone'] as String?;
+  String? get driverPhone =>
+      (_driverUser?['phone'] ?? driver?['phone']) as String?;
+
+  String? get driverAvatarUrl =>
+      (_driverUser?['avatarUrl'] ?? driver?['avatarUrl']) as String?;
 
   // ── Helpers statut ────────────────────────────────────────────────────────
   /// Commande venant d'être payée, en attente d'acceptation par le pro.

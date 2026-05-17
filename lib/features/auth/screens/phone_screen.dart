@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:country_picker/country_picker.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/router/route_params.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -28,13 +29,13 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final result = await ref.read(authProvider.notifier).sendOtp(phone, _country.countryCode);
-      if (mounted) context.push('/auth/otp', extra: {
-        'phone': phone,
-        'sessionId': result.sessionId,
-        'role': widget.role,
-        'countryCode': _country.countryCode,
-        'prefillOtp': result.otp,
-      });
+      if (mounted) context.push('/auth/otp', extra: OtpRouteParams(
+        phone: phone,
+        sessionId: result.sessionId,
+        role: widget.role,
+        countryCode: _country.countryCode,
+        prefillOtp: result.otp,
+      ));
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally { if (mounted) setState(() => _loading = false); }

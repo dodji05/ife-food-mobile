@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../constants/app_constants.dart';
 import '../splash/splash_config.dart';
+import 'route_params.dart';
 
 // Auth screens (partagés)
 import '../../features/auth/screens/onboarding_screen.dart';
@@ -181,34 +182,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         return PhoneScreen(role: role);
       }),
       GoRoute(path: '/auth/otp', builder: (_, state) {
-        final extras = _Extras.asMap(state.extra);
-        final phone     = _Extras.read<String>(extras, 'phone');
-        final sessionId = _Extras.read<String>(extras, 'sessionId');
-        // Champs obligatoires manquants → écran d'erreur explicite (au lieu
-        // d'un crash sur un cast null!.)
-        if (phone == null || sessionId == null) {
-          return _Extras.missingParams('/auth/otp', [
-            if (phone == null)     'phone',
-            if (sessionId == null) 'sessionId',
-          ]);
+        // Type strict : OtpRouteParams. Si l'extra est manquant ou du mauvais
+        // type (deep link, hot reload), on affiche un écran d'erreur clair
+        // plutôt qu'un crash.
+        final p = state.extra;
+        if (p is! OtpRouteParams) {
+          return _Extras.missingParams('/auth/otp', const ['OtpRouteParams']);
         }
         return OtpScreen(
-          phone:       phone,
-          sessionId:   sessionId,
-          countryCode: _Extras.read<String>(extras, 'countryCode', fallback: 'BJ')!,
-          role:        _Extras.read<UserRole>(extras, 'role', fallback: UserRole.client)!,
-          prefillOtp:  _Extras.read<String>(extras, 'prefillOtp'),
+          phone:       p.phone,
+          sessionId:   p.sessionId,
+          countryCode: p.countryCode,
+          role:        p.role,
+          prefillOtp:  p.prefillOtp,
         );
       }),
       GoRoute(path: '/auth/pin', builder: (_, state) {
-        // Les extras sont OPTIONNELS : PinScreen lit `mode`/`phone` depuis
-        // l'AuthState (isNewUser / user.phone). Les extras servent uniquement
-        // de rétro-compat si l'écran est ouvert par navigation manuelle.
-        final extras = _Extras.asMap(state.extra);
-        return PinScreen(
-          mode:  _Extras.read<String>(extras, 'mode'),
-          phone: _Extras.read<String>(extras, 'phone'),
-        );
+        // Extras OPTIONNELS : PinScreen lit `mode`/`phone` depuis l'AuthState
+        // (isNewUser / user.phone). PinRouteParams sert au "Modifier mon PIN"
+        // depuis le profil ou à un deep link.
+        final p = state.extra is PinRouteParams
+            ? state.extra as PinRouteParams
+            : const PinRouteParams();
+        return PinScreen(mode: p.mode, phone: p.phone);
       }),
       GoRoute(path: '/auth/complete-profile', builder: (_, state) {
         final role = (state.extra is UserRole) ? state.extra as UserRole : UserRole.client;
@@ -258,18 +254,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
-      // Navigation GPS externe (lat/lng/label passés en extra)
+      // Navigation GPS externe — NavigateRouteParams obligatoire
       GoRoute(path: '/navigate', builder: (_, state) {
-        final extras = _Extras.asMap(state.extra);
-        final lat   = _Extras.read<double>(extras, 'lat',   fallback: 0.0)!;
-        final lng   = _Extras.read<double>(extras, 'lng',   fallback: 0.0)!;
-        final label = _Extras.read<String>(extras, 'label', fallback: 'Destination')!;
-        // Lance la navigation externe (Google Maps / Waze)
-        // Pour l'instant : écran de fallback avec les coordonnées
+        final p = state.extra;
+        if (p is! NavigateRouteParams) {
+          return _Extras.missingParams('/navigate', const ['NavigateRouteParams']);
+        }
+        // Lance la navigation externe (Google Maps / Waze) — pour l'instant
+        // écran de fallback avec les coordonnées.
         return Scaffold(
-          appBar: AppBar(title: Text(label)),
+          appBar: AppBar(title: Text(p.label)),
           body: Center(child: Text(
-            'Navigation vers $label\n($lat, $lng)',
+            'Navigation vers ${p.label}\n(${p.lat}, ${p.lng})',
             textAlign: TextAlign.center,
             style: const TextStyle(fontFamily: 'Nunito', fontSize: 16),
           )),

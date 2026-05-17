@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../providers/driver_provider.dart';
+import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/models/mission.dart';
 
@@ -227,7 +228,8 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
             )),
             Positioned(bottom: 12, right: 12, child: ElevatedButton.icon(
               onPressed: () => context.push('/navigate',
-                  extra: {'lat': targetLat, 'lng': targetLng, 'label': targetLabel}),
+                  extra: NavigateRouteParams(
+                      lat: targetLat, lng: targetLng, label: targetLabel)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.info, foregroundColor: Colors.white,
                 minimumSize: const Size(0, 40),

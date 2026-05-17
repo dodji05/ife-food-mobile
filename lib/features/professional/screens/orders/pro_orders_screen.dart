@@ -169,10 +169,7 @@ class _OrderCard extends ConsumerWidget {
             decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.darkBorder))),
             child: Row(children: [
               Expanded(child: TextButton.icon(
-                onPressed: () async {
-                  await ref.read(proProvider.notifier).rejectOrder(order.id, 'Stock insuffisant');
-                  ref.invalidate(liveOrdersProvider('PAID'));
-                },
+                onPressed: () => _showRejectDialog(context, ref, order),
                 icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.danger),
                 label: const Text('Refuser', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.danger)),
               )),
@@ -211,6 +208,153 @@ class _OrderCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+// ── Reject dialog : raisons préset + détails optionnels ─────────────────────
+//
+// Ouvert depuis le bouton "Refuser" d'une carte commande PAID.
+// L'utilisateur choisit un motif rapide OU sélectionne "Autre" et rédige
+// un message libre (rendu obligatoire dans ce cas). Le motif final envoyé
+// au backend (`cancelledReason`) combine preset + détails si les deux.
+Future<void> _showRejectDialog(BuildContext context, WidgetRef ref, ProOrder order) async {
+  final reason = await showDialog<String>(
+    context: context,
+    builder: (_) => _RejectDialog(orderId: order.id, clientName: order.clientName),
+  );
+  if (reason == null || reason.isEmpty) return; // annulé
+  try {
+    await ref.read(proProvider.notifier).rejectOrder(order.id, reason);
+    ref.invalidate(liveOrdersProvider('PAID'));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Commande refusée'),
+        backgroundColor: AppColors.warning,
+      ));
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')),
+        backgroundColor: AppColors.danger,
+      ));
+    }
+  }
+}
+
+class _RejectDialog extends StatefulWidget {
+  final String orderId;
+  final String clientName;
+  const _RejectDialog({required this.orderId, required this.clientName});
+  @override
+  State<_RejectDialog> createState() => _RejectDialogState();
+}
+
+class _RejectDialogState extends State<_RejectDialog> {
+  // Presets ordonnés par fréquence d'usage attendue.
+  static const _presets = [
+    'Rupture de stock',
+    'Trop de commandes en cours',
+    'Établissement fermé',
+    'Commande hors zone',
+    'Autre',
+  ];
+  String _selected = _presets.first;
+  final _detailsCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _detailsCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _isOther => _selected == 'Autre';
+  bool get _canSubmit {
+    // 'Autre' impose un détail non vide. Les autres presets sont auto-suffisants.
+    if (_isOther) return _detailsCtrl.text.trim().isNotEmpty;
+    return true;
+  }
+
+  /// Construit la raison finale envoyée au backend.
+  /// - preset standard : `"<preset>"` ou `"<preset> — <détails>"` si l'utilisateur a précisé.
+  /// - 'Autre' : `<détails>` brut (le mot 'Autre' n'apporte rien au client final).
+  String _composeReason() {
+    final details = _detailsCtrl.text.trim();
+    if (_isOther) return details;
+    return details.isEmpty ? _selected : '$_selected — $details';
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: AppColors.darkCard,
+    title: const Text(
+      'Refuser la commande ?',
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.darkText),
+    ),
+    contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+    content: SingleChildScrollView(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text(
+          'Le client ${widget.clientName} recevra le motif. '
+          'Sélectionnez la raison la plus précise pour qu\'il comprenne.',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.4),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 6, runSpacing: 6,
+          children: _presets.map((p) {
+            final selected = p == _selected;
+            return ChoiceChip(
+              label: Text(p, style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.darkText,
+              )),
+              selected: selected,
+              onSelected: (_) => setState(() => _selected = p),
+              backgroundColor: AppColors.darkBg,
+              selectedColor: AppColors.danger,
+              side: BorderSide(color: selected ? AppColors.danger : AppColors.darkBorder),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _detailsCtrl,
+          maxLines: 3,
+          minLines: 2,
+          maxLength: 200,
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) => setState(() {}), // refresh _canSubmit
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+          decoration: InputDecoration(
+            hintText: _isOther
+                ? 'Précisez la raison (obligatoire)…'
+                : 'Précisions (optionnel)…',
+            counterStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 10, color: AppColors.darkMuted),
+          ),
+        ),
+      ]),
+    ),
+    actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Annuler',
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkSubtext)),
+      ),
+      ElevatedButton.icon(
+        onPressed: _canSubmit ? () => Navigator.pop(context, _composeReason()) : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.danger,
+          disabledBackgroundColor: AppColors.danger.withOpacity(0.4),
+        ),
+        icon: const Icon(Icons.close_rounded, size: 16),
+        label: const Text('Refuser',
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+      ),
+    ],
+  );
 }
 
 // ── Avatar client : photo si dispo, sinon cercle avec initiales ─────────────

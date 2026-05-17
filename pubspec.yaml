@@ -73,6 +73,11 @@ dependencies:
   local_auth: ^2.1.8
   csv: ^6.0.0
 
+# Override win32 — la 5.2.0 (transitive) casse avec Dart 3.5+
+# (UnmodifiableUint8ListView supprimé). Forcé en 5.5.4+.
+dependency_overrides:
+  win32: ^5.5.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

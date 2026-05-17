@@ -66,20 +66,38 @@ class ProOrder {
 // ── Providers ─────────────────────────────────────────────────────────────────
 final liveOrdersProvider = FutureProvider.autoDispose
     .family<List<ProOrder>, String>((ref, status) async {
-  final res = await ApiClient.instance.get('/orders', params: {'status': status});
+  // Backend : GET /orders/professional (le filtre status n'est pas géré par
+  // l'endpoint, on filtre côté client en attendant un query param dédié).
+  final res = await ApiClient.instance.get('/orders/professional');
   final list = res['data'] as List? ?? [];
-  return list.whereType<Map<String, dynamic>>().map(ProOrder.fromJson).toList();
+  return list
+      .whereType<Map<String, dynamic>>()
+      .where((e) => e['status'] == status)
+      .map(ProOrder.fromJson)
+      .toList();
 });
 
 final productsProvider = FutureProvider.autoDispose<List<Product>>((ref) async {
-  final res = await ApiClient.instance.get('/professionals/me/products');
+  // /professionals/me/products n'existe pas. On passe par /professionals/me
+  // pour récupérer l'id puis on appelle /products/professional/:id (public).
+  final me = await ApiClient.instance.get('/professionals/me');
+  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
+  if (proId == null) return [];
+  final res = await ApiClient.instance.get('/products/professional/$proId');
   final list = res['data'] as List? ?? [];
   return list.whereType<Map<String, dynamic>>().map(Product.fromJson).toList();
 });
 
 final reviewsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final res = await ApiClient.instance.get('/professionals/me/reviews');
-  return res['data'] as Map<String, dynamic>? ?? {};
+  // /professionals/me/reviews n'existe pas. On passe par /reviews/professional/:id.
+  final me = await ApiClient.instance.get('/professionals/me');
+  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
+  if (proId == null) return {};
+  final res = await ApiClient.instance.get('/reviews/professional/$proId');
+  // Le contrôleur renvoie une liste — on l'enveloppe pour conserver la signature.
+  final data = res['data'];
+  if (data is List) return {'reviews': data};
+  return (data as Map<String, dynamic>?) ?? {};
 });
 
 final dashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
@@ -119,9 +137,27 @@ class ProNotifier extends StateNotifier<ProState> {
     }
   }
 
+  Future<void> toggleOpen() async {
+    final current = state.professional?.isOpen ?? false;
+    // Optimistic update
+    state = state.copyWith(
+      professional: state.professional?.copyWith(isOpen: !current),
+    );
+    try {
+      await ApiClient.instance.patch('/professionals/me/toggle-open');
+    } catch (e) {
+      // Rollback on error
+      state = state.copyWith(
+        professional: state.professional?.copyWith(isOpen: current),
+        error: e.toString(),
+      );
+    }
+  }
+
   Future<void> updateOpeningHours(Map<String, dynamic> hours) async {
     try {
-      await ApiClient.instance.patch('/professionals/me', data: {'openingHours': hours});
+      // Endpoint dédié — PATCH /professionals/me ne whiteliste pas openingHours.
+      await ApiClient.instance.patch('/professionals/me/opening-hours', data: {'openingHours': hours});
       await _load();
     } catch (e) {
       state = state.copyWith(error: e.toString());
@@ -138,7 +174,9 @@ class ProNotifier extends StateNotifier<ProState> {
 
   Future<void> rejectOrder(String id, String reason) async {
     try {
-      await ApiClient.instance.patch('/orders/$id/status', data: {'status': 'CANCELLED', 'reason': reason});
+      // Le DTO backend attend `cancelledReason`, pas `reason` (forbidNonWhitelisted).
+      await ApiClient.instance.patch('/orders/$id/status',
+          data: {'status': 'CANCELLED', 'cancelledReason': reason});
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }

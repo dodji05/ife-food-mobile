@@ -26,17 +26,34 @@ class Product {
     this.preparationTimeMin,
   });
 
-  factory Product.fromJson(Map<String, dynamic> j) => Product(
-    id:                  j['id'] as String? ?? '',
-    name:                j['name'] as String? ?? '',
-    description:         j['description'] as String?,
-    price:               (j['price'] as num?)?.toDouble() ?? 0.0,
-    imageUrl:            j['imageUrl'] as String?,
-    category:            j['category'] as String? ?? '',
-    isAvailable:         j['isAvailable'] as bool? ?? true,
-    professionalId:      j['professionalId'] as String? ?? '',
-    preparationTimeMin:  (j['preparationTimeMin'] as num?)?.toInt(),
-  );
+  factory Product.fromJson(Map<String, dynamic> j) {
+    // Backend Prisma : name et description sont Json multilingue {fr, en}.
+    // On extrait fr en priorité, sinon en, sinon string brute (rétrocompat).
+    String _str(dynamic raw) {
+      if (raw == null) return '';
+      if (raw is String) return raw;
+      if (raw is Map) return (raw['fr'] ?? raw['en'] ?? raw.values.first ?? '').toString();
+      return raw.toString();
+    }
+    // Catégorie : peut être un id string, ou une relation incluse {id, name, ...}.
+    String _category() {
+      final raw = j['category'];
+      if (raw is String) return raw;
+      if (raw is Map) return (raw['id'] as String?) ?? '';
+      return (j['categoryId'] as String?) ?? '';
+    }
+    return Product(
+      id:                  j['id'] as String? ?? '',
+      name:                _str(j['name']),
+      description:         j['description'] == null ? null : _str(j['description']),
+      price:               (j['price'] as num?)?.toDouble() ?? 0.0,
+      imageUrl:            j['imageUrl'] as String?,
+      category:            _category(),
+      isAvailable:         j['isAvailable'] as bool? ?? true,
+      professionalId:      j['professionalId'] as String? ?? '',
+      preparationTimeMin:  (j['preparationTimeMin'] as num?)?.toInt(),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,

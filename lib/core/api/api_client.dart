@@ -1,10 +1,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ifè FOOD — Client HTTP centralisé (singleton)
 // ─────────────────────────────────────────────────────────────────────────────
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
+
+/// Stream global notifié quand le refresh token a échoué.
+/// Le router écoute pour pousser l'utilisateur vers /onboarding.
+class AuthEvents {
+  static final _ctrl = StreamController<void>.broadcast();
+  static Stream<void> get onSessionExpired => _ctrl.stream;
+  static void notifySessionExpired() => _ctrl.add(null);
+}
 
 class ApiClient {
   static ApiClient? _instance;
@@ -28,15 +37,28 @@ class ApiClient {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
     ));
 
-    // Logging en mode debug uniquement
+    // Logging en mode debug uniquement.
+    // Les bodies des endpoints sensibles (auth) sont MASQUÉS pour éviter de
+    // logger PIN/OTP en clair.
     if (kDebugMode) {
-      _dio.interceptors.add(LogInterceptor(
-        requestHeader: false,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-        logPrint: (obj) => debugPrint('[API] $obj'),
+      _dio.interceptors.add(InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final isSensitive = options.path.startsWith('/auth/');
+          debugPrint('[API] → ${options.method} ${options.path}'
+              '${isSensitive ? "  (body masqué)" : "  body=${options.data}"}');
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          final isSensitive = response.requestOptions.path.startsWith('/auth/');
+          debugPrint('[API] ← ${response.statusCode} ${response.requestOptions.path}'
+              '${isSensitive ? "  (réponse masquée)" : ""}');
+          handler.next(response);
+        },
+        onError: (e, handler) {
+          debugPrint('[API] ✗ ${e.requestOptions.method} ${e.requestOptions.path} → '
+              '${e.response?.statusCode ?? e.type}');
+          handler.next(e);
+        },
       ));
     }
 
@@ -59,6 +81,10 @@ class ApiClient {
             handler.resolve(retry);
             return;
           }
+          // Refresh échoué → session morte. On purge et on notifie le router.
+          await clearAuth();
+          await _storage.deleteAll();
+          AuthEvents.notifySessionExpired();
         }
         handler.next(error);
       },

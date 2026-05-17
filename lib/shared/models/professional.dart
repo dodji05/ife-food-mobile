@@ -50,7 +50,8 @@ class Professional {
     businessName:    j['businessName'] as String? ?? '',
     description:     j['description']  as String?,
     logoUrl:         j['logoUrl']      as String?,
-    coverUrl:        j['coverUrl']     as String?,
+    // Backend Prisma → coverImageUrl. Fallback sur coverUrl si jamais ré-aplati.
+    coverUrl:        (j['coverImageUrl'] as String?) ?? (j['coverUrl'] as String?),
     category:        j['category']     as String? ?? 'RESTAURANT',
     status:          j['status']       as String? ?? 'PENDING',
     lat:             (j['lat']         as num?)?.toDouble(),
@@ -59,8 +60,15 @@ class Professional {
     city:            j['city']         as String?,
     country:         j['country']      as String?,
     avgRating:       (j['avgRating']   as num?)?.toDouble(),
-    reviewCount:     j['reviewCount']  as int? ?? 0,
+    // reviewCount n'est pas exposé par getPublicProfile. Si _count est inclus,
+    // on lit reviews._count, sinon on tombe sur reviewCount ou 0.
+    reviewCount:     (j['reviewCount'] as int?)
+                     ?? ((j['_count'] as Map<String, dynamic>?)?['reviews'] as int?)
+                     ?? 0,
     isOpen:          j['isOpen']       as bool? ?? true,
+    // deliveryTimeMin / deliveryFee ne sont pas dans le schéma Pro — ils
+    // peuvent être calculés ailleurs (config plateforme ou Order) et passés
+    // ad-hoc. Garder le parse défensif.
     deliveryTimeMin: (j['deliveryTimeMin'] as num?)?.toInt(),
     deliveryFee:     (j['deliveryFee'] as num?)?.toDouble(),
   );
@@ -92,6 +100,16 @@ class Professional {
   double? get distance            => null; // calculé côté API si besoin
   String? get phone               => null; // le téléphone est sur le modèle User
   Map<String, dynamic>? get openingHours => null; // retourné par l'API si besoin
+
+  Professional copyWith({bool? isOpen}) => Professional(
+    id: id, userId: userId, businessName: businessName,
+    description: description, logoUrl: logoUrl, coverUrl: coverUrl,
+    category: category, status: status, lat: lat, lng: lng,
+    address: address, city: city, country: country,
+    avgRating: avgRating, reviewCount: reviewCount,
+    isOpen: isOpen ?? this.isOpen,
+    deliveryTimeMin: deliveryTimeMin, deliveryFee: deliveryFee,
+  );
 
   bool get isValidated => status == 'VALIDATED';
   bool get isPending   => status == 'PENDING';

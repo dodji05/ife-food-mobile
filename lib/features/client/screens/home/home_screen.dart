@@ -76,16 +76,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ]),
                 const SizedBox(height: 16),
-                // Search bar
-                Container(
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))]),
-                  child: Row(children: [
-                    const Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.search, color: AppColors.grey, size: 22)),
-                    Expanded(child: TextField(
-                      controller: _searchCtrl,
-                      decoration: const InputDecoration(hintText: 'Plat, restaurant, produit…', border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16), hintStyle: TextStyle(color: AppColors.grey, fontFamily: 'Nunito', fontSize: 15)),
-                    )),
-                  ]),
+                // Search bar — tap ouvre l'écran /search
+                GestureDetector(
+                  onTap: () => context.push('/search'),
+                  child: Container(
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))]),
+                    child: const Row(children: [
+                      Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.search, color: AppColors.grey, size: 22)),
+                      Expanded(child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        child: Text('Plat, restaurant, produit…',
+                          style: TextStyle(color: AppColors.grey, fontFamily: 'Nunito', fontSize: 15)),
+                      )),
+                    ]),
+                  ),
                 ),
               ]),
             )),

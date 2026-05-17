@@ -104,12 +104,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isPublic ? null : '/onboarding';
       }
 
-      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes purement
-      //     pré-connexion. /auth/otp est EXCLU : l'utilisateur reçoit
-      //     `isAuthenticated:true` PENDANT qu'il est sur cet écran (réponse
-      //     verifyOtp), et le redirect le sortirait avant que otp_screen ait
-      //     le temps de faire context.go('/auth/pin'). La navigation après
-      //     OTP est gérée explicitement par otp_screen.dart.
+      // 3b. Authentifié — rediriger UNIQUEMENT depuis les routes "amont"
+      //     du flow d'auth (avant que l'utilisateur ne soit identifié).
+      //
+      //     Routes EXCLUES volontairement (ne déclenchent JAMAIS de redirect
+      //     automatique, même si isAuthenticated devient true pendant qu'on
+      //     y est) :
+      //
+      //       /auth/otp              → isAuthenticated bascule à true
+      //                                PENDANT la requête verifyOtp, alors
+      //                                que l'écran est encore monté. Sans
+      //                                cette exclusion, le redirect éjecte
+      //                                l'utilisateur vers le dashboard avant
+      //                                que otp_screen.dart puisse appeler
+      //                                context.go('/auth/pin'), et le PIN
+      //                                n'est jamais créé.
+      //
+      //       /auth/pin              → Pendant setPin/verifyPin, l'état
+      //                                change (isLoading, user). La navigation
+      //                                suivante est faite explicitement par
+      //                                pin_screen.dart.
+      //
+      //       /auth/complete-profile → Pareil pour completeProfile : la
+      //                                navigation vers le dashboard est
+      //                                faite explicitement par
+      //                                complete_profile_screen.dart.
+      //
+      //     Règle générale : tout écran qui modifie l'AuthState pendant son
+      //     cycle de vie doit gérer sa propre navigation post-action.
       const preAuthRoutes = ['/onboarding', '/auth/role', '/auth/phone'];
       if (preAuthRoutes.any((r) => loc.startsWith(r))) {
         return _homeForRole(authState.role);
@@ -156,30 +178,39 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: '/auth/role',  builder: (_, __) => const RoleSelectionScreen()),
       GoRoute(path: '/auth/phone', builder: (_, state) {
-        final role = state.extra as UserRole? ?? UserRole.client;
+        // extra direct = UserRole (passé par role_selection_screen)
+        final role = (state.extra is UserRole) ? state.extra as UserRole : UserRole.client;
         return PhoneScreen(role: role);
       }),
       GoRoute(path: '/auth/otp', builder: (_, state) {
-        // H5: cast sécurisé — évite crash sur deep link sans extra
-        final extra = state.extra as Map<String, dynamic>?;
-        if (extra == null) {
-          return const Scaffold(body: Center(
-            child: Text('Paramètres de navigation manquants',
-                style: TextStyle(fontFamily: 'Nunito'))));
+        final extras = _Extras.asMap(state.extra);
+        final phone     = _Extras.read<String>(extras, 'phone');
+        final sessionId = _Extras.read<String>(extras, 'sessionId');
+        // Champs obligatoires manquants → écran d'erreur explicite (au lieu
+        // d'un crash sur un cast null!.)
+        if (phone == null || sessionId == null) {
+          return _Extras.missingParams('/auth/otp', [
+            if (phone == null)     'phone',
+            if (sessionId == null) 'sessionId',
+          ]);
         }
         return OtpScreen(
-            phone: extra['phone'] as String,
-            sessionId: extra['sessionId'] as String,
-            countryCode: extra['countryCode'] as String? ?? 'BJ',
-            role: extra['role'] as UserRole? ?? UserRole.client,
-            prefillOtp: extra['prefillOtp'] as String?);
+          phone:       phone,
+          sessionId:   sessionId,
+          countryCode: _Extras.read<String>(extras, 'countryCode', fallback: 'BJ')!,
+          role:        _Extras.read<UserRole>(extras, 'role', fallback: UserRole.client)!,
+          prefillOtp:  _Extras.read<String>(extras, 'prefillOtp'),
+        );
       }),
       GoRoute(path: '/auth/pin', builder: (_, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        return PinScreen(mode: extra['mode'] ?? 'set', phone: extra['phone']);
+        final extras = _Extras.asMap(state.extra);
+        return PinScreen(
+          mode:  _Extras.read<String>(extras, 'mode', fallback: 'set')!,
+          phone: _Extras.read<String>(extras, 'phone'),
+        );
       }),
       GoRoute(path: '/auth/complete-profile', builder: (_, state) {
-        final role = state.extra as UserRole? ?? UserRole.client;
+        final role = (state.extra is UserRole) ? state.extra as UserRole : UserRole.client;
         return CompleteProfileScreen(role: role);
       }),
       GoRoute(path: '/auth/pending', builder: (_, __) => const PendingScreen()),
@@ -228,10 +259,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
       // Navigation GPS externe (lat/lng/label passés en extra)
       GoRoute(path: '/navigate', builder: (_, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        final lat   = extra['lat']   as double? ?? 0.0;
-        final lng   = extra['lng']   as double? ?? 0.0;
-        final label = extra['label'] as String? ?? 'Destination';
+        final extras = _Extras.asMap(state.extra);
+        final lat   = _Extras.read<double>(extras, 'lat',   fallback: 0.0)!;
+        final lng   = _Extras.read<double>(extras, 'lng',   fallback: 0.0)!;
+        final label = _Extras.read<String>(extras, 'label', fallback: 'Destination')!;
         // Lance la navigation externe (Google Maps / Waze)
         // Pour l'instant : écran de fallback avec les coordonnées
         return Scaffold(
@@ -260,7 +291,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pro/order/:id', builder: (_, state) =>
           ProOrderDetailScreen(orderId: state.pathParameters['id']!)),
       GoRoute(path: '/pro/add-product', builder: (_, state) =>
-          AddProductScreen(product: state.extra as Map<String, dynamic>?)),
+          AddProductScreen(product: _Extras.asMap(state.extra))),
       GoRoute(path: '/pro/schedule', builder: (_, __) => const ScheduleScreen()),
       GoRoute(path: '/pro/reviews',  builder: (_, __) => const ReviewsScreen()),
     ],
@@ -274,12 +305,89 @@ String _homeForRole(UserRole? role) => switch (role) {
   _                     => '/home',
 };
 
-// ── Helper : rend GoRouter réactif aux changements d'AuthState ────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// _Extras — helpers pour extraire les paramètres passés via context.go(extra:)
+//
+// Pourquoi : `state.extra` est typé `Object?`. Sans helper, chaque builder
+// duplique les casts (et oublie souvent les null guards). Ces fonctions
+// centralisent l'extraction et fournissent un Scaffold d'erreur clair quand
+// un paramètre obligatoire manque (au lieu d'un crash silencieux).
+// ─────────────────────────────────────────────────────────────────────────────
+class _Extras {
+  /// Lit `extra` comme une Map. Renvoie null si absent ou mal typé.
+  static Map<String, dynamic>? asMap(Object? extra) =>
+      extra is Map<String, dynamic> ? extra : null;
+
+  /// Lit une valeur typée depuis la map des extras. Renvoie [fallback] si
+  /// absent ou du mauvais type.
+  static T? read<T>(Map<String, dynamic>? extras, String key, {T? fallback}) {
+    final v = extras?[key];
+    return v is T ? v : fallback;
+  }
+
+  /// Écran d'erreur affiché quand un paramètre obligatoire manque.
+  /// On dit clairement ce qui manque pour faciliter le debug.
+  static Widget missingParams(String routeName, List<String> missing) =>
+      Scaffold(
+        appBar: AppBar(title: Text('Erreur — $routeName')),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 48)),
+                const SizedBox(height: 12),
+                const Text(
+                  'Paramètres de navigation manquants',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Route : $routeName\nManquant : ${missing.join(", ")}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GoRouterRefreshStream — pont Riverpod ↔ GoRouter
+//
+// Rôle : GoRouter ne sait pas écouter un provider Riverpod nativement. On lui
+// donne un ChangeNotifier qu'il sait écouter (via `refreshListenable`), et on
+// le nourrit en relayant les changements de l'AuthNotifier.
+//
+// Optimisation clé : on ne notifie que si les champs ROUTING-RELEVANTS ont
+// changé (isAuthenticated, splashDone, role, isPending). Les toggles
+// `isLoading` pendant une requête API ne déclenchent PAS de re-évaluation
+// du redirect — sans ça, chaque appel `sendOtp/verifyOtp/setPin` ferait
+// tourner le redirect 2 fois inutilement et augmenterait la probabilité de
+// races (cf. commentaire OTP dans la fonction redirect).
+// ─────────────────────────────────────────────────────────────────────────────
 class GoRouterRefreshStream extends ChangeNotifier {
   late final ProviderSubscription _sub;
 
-  GoRouterRefreshStream(Ref ref, StateNotifierProvider<AuthNotifier, AuthState> provider) {
-    _sub = ref.listen(provider, (_, __) => notifyListeners());
+  GoRouterRefreshStream(
+      Ref ref, StateNotifierProvider<AuthNotifier, AuthState> provider) {
+    _sub = ref.listen<AuthState>(provider, (prev, next) {
+      if (_routingFieldsChanged(prev, next)) notifyListeners();
+    }, fireImmediately: false);
+  }
+
+  /// True ssi un champ qui INFLUE sur le redirect a changé.
+  /// Liste à garder synchrone avec les conditions de la fonction redirect.
+  static bool _routingFieldsChanged(AuthState? prev, AuthState next) {
+    if (prev == null) return true;
+    return prev.isAuthenticated != next.isAuthenticated
+        || prev.splashDone      != next.splashDone
+        || prev.role            != next.role
+        || prev.isPending       != next.isPending;
   }
 
   @override

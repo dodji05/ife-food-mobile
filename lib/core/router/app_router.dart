@@ -364,12 +364,11 @@ class _Extras {
 // donne un ChangeNotifier qu'il sait écouter (via `refreshListenable`), et on
 // le nourrit en relayant les changements de l'AuthNotifier.
 //
-// Optimisation clé : on ne notifie que si les champs ROUTING-RELEVANTS ont
-// changé (isAuthenticated, splashDone, role, isPending). Les toggles
-// `isLoading` pendant une requête API ne déclenchent PAS de re-évaluation
-// du redirect — sans ça, chaque appel `sendOtp/verifyOtp/setPin` ferait
-// tourner le redirect 2 fois inutilement et augmenterait la probabilité de
-// races (cf. commentaire OTP dans la fonction redirect).
+// Optimisation clé : on ne notifie que si un champ ROUTING-RELEVANT change
+// (cf. _routingFieldsChanged). Les toggles `isLoading` pendant une requête
+// API ne déclenchent PAS de re-évaluation du redirect — ça évite des
+// rebuilds inutiles et garantit que le redirect ne s'exécute que quand
+// la décision de routage peut réellement changer.
 // ─────────────────────────────────────────────────────────────────────────────
 class GoRouterRefreshStream extends ChangeNotifier {
   late final ProviderSubscription _sub;
@@ -389,7 +388,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
         || prev.splashDone      != next.splashDone
         || prev.role            != next.role
         || prev.isPending       != next.isPending
-        || prev.needsPinSetup      != next.needsPinSetup
+        || prev.needsPinSetup   != next.needsPinSetup
         || prev.hasProfile      != next.hasProfile;
   }
 

@@ -103,21 +103,27 @@ class Product {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id':                 id,
-    'professionalId':     professionalId,
-    'categoryId':         categoryId,
-    // On envoie la Map multilingue complète si présente, sinon repli sur
-    // la String pré-extraite (utile pour les cas d'édition rapide).
-    'name':               nameMap.isNotEmpty ? nameMap : {'fr': name},
-    'description':        descriptionMap ?? (description != null ? {'fr': description} : null),
-    'price':              price,
-    'currency':           currency,
-    'imageUrl':           imageUrl,
-    'isAvailable':        isAvailable,
-    'stock':              stock,
-    'preparationTimeMin': preparationTimeMin,
-  };
+  Map<String, dynamic> toJson() {
+    // Local pour contourner la règle Dart 3 de non-promotion des public fields :
+    // `description` étant un final public, le compilateur refuse la promotion
+    // de `String?` -> `String` même après un null-check dans une expression.
+    final desc = description;
+    return {
+      'id':                 id,
+      'professionalId':     professionalId,
+      'categoryId':         categoryId,
+      // On envoie la Map multilingue complète si présente, sinon repli sur
+      // la String pré-extraite (utile pour les cas d'édition rapide).
+      'name':               nameMap.isNotEmpty ? nameMap : {'fr': name},
+      'description':        descriptionMap ?? (desc != null ? {'fr': desc} : null),
+      'price':              price,
+      'currency':           currency,
+      'imageUrl':           imageUrl,
+      'isAvailable':        isAvailable,
+      'stock':              stock,
+      'preparationTimeMin': preparationTimeMin,
+    };
+  }
 
   // ── Helpers d'affichage ───────────────────────────────────────────────────
   String get formattedPrice {

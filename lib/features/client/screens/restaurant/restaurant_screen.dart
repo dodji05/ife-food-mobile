@@ -153,6 +153,55 @@ class _ProductItem extends ConsumerWidget {
   final Product product; final String professionalId; final String proName;
   const _ProductItem({required this.product, required this.professionalId, required this.proName});
 
+  /// Ajoute l'item au panier en gérant le cas multi-pro :
+  /// - Si le panier contient déjà des items d'un AUTRE pro -> dialog confirm
+  ///   'Vider le panier et passer commande chez X ?'
+  /// - Si confirmé : clearCart() puis addItem()
+  /// - Sinon (panier vide ou même pro) : addItem() direct
+  /// Avant ce fix : addItem() refusait silencieusement (cart_provider:25-29)
+  /// -> l'utilisateur ne comprenait pas pourquoi le bouton 'rien faisait'.
+  Future<void> _addWithMultiProGuard(BuildContext context, WidgetRef ref) async {
+    final cart = ref.read(cartProvider);
+    final notifier = ref.read(cartProvider.notifier);
+
+    if (cart.canAddFrom(professionalId)) {
+      notifier.addItem(product, professionalId);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Changer de restaurant ?'),
+        content: Text(
+          'Votre panier contient des articles d\'un autre établissement. '
+          'Voulez-vous le vider pour commander chez "$proName" ?',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Vider et continuer',
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    notifier.clearCart();
+    // Après clearCart, professionalId est null -> addItem accepte
+    notifier.addItem(product, professionalId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Panier vidé. ${product.localizedName('fr')} ajouté.'),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
@@ -187,7 +236,7 @@ class _ProductItem extends ConsumerWidget {
               const Spacer(),
               if (qty == 0)
                 GestureDetector(
-                  onTap: () => ref.read(cartProvider.notifier).addItem(product, professionalId),
+                  onTap: () => _addWithMultiProGuard(context, ref),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
@@ -201,7 +250,7 @@ class _ProductItem extends ConsumerWidget {
                       child: const Icon(Icons.remove_rounded, size: 16, color: AppColors.nearBlack))),
                   Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text('$qty', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15))),
-                  GestureDetector(onTap: () => ref.read(cartProvider.notifier).addItem(product, professionalId),
+                  GestureDetector(onTap: () => _addWithMultiProGuard(context, ref),
                     child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(6)),
                       child: const Icon(Icons.add_rounded, size: 16, color: Colors.white))),
                 ]),

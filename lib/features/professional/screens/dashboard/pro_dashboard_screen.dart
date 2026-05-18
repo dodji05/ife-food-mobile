@@ -27,6 +27,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/notifications_provider.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/pro_provider.dart';
 
@@ -68,6 +69,9 @@ class ProDashboardScreen extends ConsumerWidget {
                       style: const TextStyle(fontFamily: 'Nunito', fontSize: 20,
                           fontWeight: FontWeight.w900, color: AppColors.darkText)),
                   ])),
+                  // Cloche notifs avec badge non-lus
+                  _NotifBell(unread: ref.watch(unreadCountProvider)),
+                  const SizedBox(width: 10),
                   GestureDetector(
                     onTap: () => ref.read(proProvider.notifier).toggleOpen(),
                     child: AnimatedContainer(
@@ -535,6 +539,50 @@ class _QuickAction extends StatelessWidget {
       ]),
     ),
   );
+}
+
+// ── Bell icon avec badge non-lus → /pro/notifications ──────────────────────
+class _NotifBell extends StatelessWidget {
+  final int unread;
+  const _NotifBell({required this.unread});
+  @override
+  Widget build(BuildContext context) => Stack(clipBehavior: Clip.none, children: [
+    Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () => GoRouter.of(context).push('/pro/notifications'),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            unread > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+            color: unread > 0 ? AppColors.accent : AppColors.darkSubtext,
+            size: 26,
+          ),
+        ),
+      ),
+    ),
+    if (unread > 0) Positioned(
+      right: 2, top: 2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
+        decoration: BoxDecoration(
+          color: AppColors.danger,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.darkSurface, width: 1.5),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          unread > 99 ? '99+' : '$unread',
+          style: const TextStyle(
+            fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white,
+          ),
+        ),
+      ),
+    ),
+  ]);
 }
 
 // ── Shimmer placeholder (loading state) ─────────────────────────────────────

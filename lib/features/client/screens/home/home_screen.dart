@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/notifications_provider.dart';
 
 final nearbyProfessionalsProvider = FutureProvider.autoDispose<List<Professional>>((ref) async {
   final res = await ApiClient.instance.get('/geo/nearby', params: {
@@ -66,12 +67,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
                     ]),
                   ])),
+                  // Bell variante claire (header primary) -> /notifications
+                  _ClientHomeBell(unread: ref.watch(unreadCountProvider)),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => context.go('/profile'),
                     child: CircleAvatar(
                       radius: 20, backgroundColor: Colors.white.withOpacity(0.2),
-                      child: Text(user?.displayName.substring(0, 1).toUpperCase() ?? '?',
-                        style: const TextStyle(fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                      backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(user.avatarUrl!) : null,
+                      child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
+                          ? Text(user?.displayName.substring(0, 1).toUpperCase() ?? '?',
+                              style: const TextStyle(fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))
+                          : null,
                     ),
                   ),
                 ]),
@@ -335,6 +343,44 @@ class _InfoChip extends StatelessWidget {
       Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkGrey, fontWeight: FontWeight.w600)),
     ]),
   );
+}
+
+// ── Bell variante claire (sur header primary) ──────────────────────────────
+class _ClientHomeBell extends StatelessWidget {
+  final int unread;
+  const _ClientHomeBell({required this.unread});
+  @override
+  Widget build(BuildContext context) => Stack(clipBehavior: Clip.none, children: [
+    Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () => context.push('/notifications'),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            unread > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
+            color: Colors.white, size: 24,
+          ),
+        ),
+      ),
+    ),
+    if (unread > 0) Positioned(
+      right: 2, top: 2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
+        decoration: BoxDecoration(
+          color: AppColors.danger, borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primary, width: 1.5),
+        ),
+        alignment: Alignment.center,
+        child: Text(unread > 99 ? '99+' : '$unread',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white)),
+      ),
+    ),
+  ]);
 }
 
 class _ShimmerCard extends StatelessWidget {

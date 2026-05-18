@@ -40,7 +40,8 @@ import '../../features/client/screens/tracking/tracking_screen.dart';
 import '../../features/client/screens/profile/profile_screen.dart';
 import '../../features/client/screens/profile/addresses_screen.dart';
 import '../../features/client/screens/search/search_screen.dart';
-import '../../features/client/screens/notifications/notifications_screen.dart';
+// NotificationsScreen (ancien) remplacé par ClientNotificationsScreen
+// qui réutilise le widget shared NotificationsListWidget + le provider core.
 import '../../features/client/screens/legal/legal_screen.dart';
 
 // DRIVER screens
@@ -63,6 +64,8 @@ import '../../features/professional/screens/catalogue/add_product_screen.dart';
 import '../../features/professional/screens/catalogue/manage_categories_screen.dart';
 import '../../features/professional/screens/notifications/pro_notifications_screen.dart';
 import '../../features/admin/screens/admin_pending_screen.dart';
+import '../../features/client/screens/notifications/client_notifications_screen.dart';
+import '../../features/driver/screens/notifications/driver_notifications_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -254,7 +257,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
           TrackingScreen(orderId: state.pathParameters['orderId']!)),
       GoRoute(path: '/addresses',     builder: (_, __) => const AddressesScreen()),
-      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: '/notifications', builder: (_, __) => const ClientNotificationsScreen()),
 
       // ════════════════════════════════════════════════════════════════════════
       // DRIVER routes (préfixe /driver)
@@ -269,6 +272,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
+      GoRoute(path: '/driver/notifications', builder: (_, __) => const DriverNotificationsScreen()),
       // Navigation GPS externe — NavigateRouteParams obligatoire
       GoRoute(path: '/navigate', builder: (_, state) {
         final p = state.extra;

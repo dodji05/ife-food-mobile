@@ -9,6 +9,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -274,6 +276,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
           key: AppConstants.userKey, value: json.encode(user.toJson()));
       state = state.copyWith(user: user);
     } catch (_) {}
+  }
+
+  /// Upload + assigne un nouvel avatar pour l'utilisateur courant.
+  /// Flow en 2 temps :
+  ///   1. POST /uploads/avatar (multipart 'file') -> URL Cloudinary
+  ///   2. PATCH /users/me {avatarUrl} -> persistance + refresh state
+  /// Le mobile cible : client + driver + pro (chacun depuis son profil).
+  Future<void> uploadAvatar(File imageFile) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      // 1) Upload
+      final fileName = imageFile.path.split(Platform.pathSeparator).last;
+      final form = FormData.fromMap({
+        'file': await MultipartFile.fromFile(imageFile.path, filename: fileName),
+      });
+      final upload = await _api.postForm('/uploads/avatar', form);
+      final data = upload['data'];
+      String? url;
+      if (data is String) url = data;
+      if (data is Map<String, dynamic>) {
+        url = (data['url'] ?? data['imageUrl']) as String?;
+      }
+      if (url == null || url.isEmpty) {
+        throw Exception('Upload échoué : URL vide');
+      }
+      // 2) Patch user + refresh state (réutilise completeProfile générique)
+      await completeProfile({'avatarUrl': url});
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      rethrow;
+    }
   }
 
   /// Enregistre le token FCM côté backend.

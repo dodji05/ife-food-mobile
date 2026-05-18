@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/editable_avatar.dart';
 
 class ClientProfileScreen extends ConsumerWidget {
   const ClientProfileScreen({super.key});
@@ -24,9 +25,13 @@ class ClientProfileScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(children: [
-            CircleAvatar(radius: 30, backgroundColor: Colors.white.withOpacity(0.25),
-              child: Text(user?.displayName.substring(0, 1).toUpperCase() ?? '?',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white))),
+            EditableAvatar(
+              currentUrl: user?.avatarUrl,
+              fallbackText: user?.displayName ?? '?',
+              radius: 30,
+              backgroundColor: Colors.white.withOpacity(0.25),
+              textColor: Colors.white,
+            ),
             const SizedBox(width: 14),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(user?.displayName ?? 'Utilisateur', style: const TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),

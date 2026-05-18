@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../shared/widgets/notifications_list_widget.dart';
 import '../../providers/driver_provider.dart';
 
 class DriverDashboardScreen extends ConsumerWidget {
@@ -49,10 +50,8 @@ class DriverDashboardScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w600)),
                 ]),
               ])),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.notifications_rounded, color: AppColors.darkSubtext),
-              ),
+              // Bell badge avec compteur non-lus -> /driver/notifications
+              const NotifBellBadge(pushRoute: '/driver/notifications'),
             ]),
           )),
         )),

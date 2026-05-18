@@ -263,7 +263,9 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       const SizedBox(height: 40),
     ]),
   );
-}
+  } // ← ferme la méthode build()
+} // ← ferme la classe _State (manquait, faisait que _CoverWithLogo était
+  //   parsé comme une classe nested dans _State -> erreurs en cascade)
 
 // ── Photo de couverture + logo overlay (tap pour upload) ────────────────────
 class _CoverWithLogo extends StatelessWidget {

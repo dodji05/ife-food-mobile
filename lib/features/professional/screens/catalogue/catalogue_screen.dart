@@ -19,7 +19,8 @@ class CatalogueScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(productsProvider);
+    final productsAsync   = ref.watch(productsProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -27,7 +28,10 @@ class CatalogueScreen extends ConsumerWidget {
         title: const Text('Mon catalogue'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(productsProvider),
+            onPressed: () {
+              ref.invalidate(productsProvider);
+              ref.invalidate(categoriesProvider);
+            },
             icon: const Icon(Icons.refresh_rounded, color: AppColors.darkText),
             tooltip: 'Actualiser',
           ),
@@ -45,18 +49,132 @@ class CatalogueScreen extends ConsumerWidget {
         error: (e, _) => _ErrorState(message: e.toString(), onRetry: () => ref.invalidate(productsProvider)),
         data: (products) {
           if (products.isEmpty) return _EmptyState();
+          // Si les catégories n'ont pas chargé, on retombe sur une liste plate
+          // pour ne pas bloquer l'affichage des produits.
+          final categories = categoriesAsync.maybeWhen(
+            data: (list) => list,
+            orElse: () => const <ProductCategory>[],
+          );
           return RefreshIndicator(
             color: AppColors.primary,
-            onRefresh: () async => ref.invalidate(productsProvider),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: products.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _ProductCard(product: products[i]),
-            ),
+            onRefresh: () async {
+              ref.invalidate(productsProvider);
+              ref.invalidate(categoriesProvider);
+            },
+            child: _GroupedCatalogue(products: products, categories: categories),
           );
         },
       ),
+    );
+  }
+}
+
+// ── Liste groupée par catégorie (sections expandables) ─────────────────────
+class _GroupedCatalogue extends StatefulWidget {
+  final List<Product> products;
+  final List<ProductCategory> categories;
+  const _GroupedCatalogue({required this.products, required this.categories});
+
+  @override
+  State<_GroupedCatalogue> createState() => _GroupedCatalogueState();
+}
+
+class _GroupedCatalogueState extends State<_GroupedCatalogue> {
+  /// Catégories repliées par l'utilisateur. Par défaut, tout est déplié
+  /// pour que le pro voie immédiatement l'inventaire.
+  final Set<String> _collapsed = {};
+
+  @override
+  Widget build(BuildContext context) {
+    // Map id catégorie -> [produits]
+    final byCategory = <String, List<Product>>{};
+    for (final p in widget.products) {
+      final key = p.categoryId ?? '__none__';
+      byCategory.putIfAbsent(key, () => []).add(p);
+    }
+
+    // Ordre d'affichage : catégories existantes (sortOrder), puis 'Sans catégorie'.
+    final orderedKeys = <String>[];
+    for (final c in widget.categories) {
+      if (byCategory.containsKey(c.id)) orderedKeys.add(c.id);
+    }
+    // Catégories référencées par des produits mais inconnues (orphan).
+    for (final k in byCategory.keys) {
+      if (k != '__none__' && !orderedKeys.contains(k)) orderedKeys.add(k);
+    }
+    if (byCategory.containsKey('__none__')) orderedKeys.add('__none__');
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      itemCount: orderedKeys.length,
+      itemBuilder: (_, i) {
+        final key  = orderedKeys[i];
+        final list = byCategory[key]!;
+        final cat  = key == '__none__'
+            ? null
+            : widget.categories.firstWhere(
+                (c) => c.id == key,
+                orElse: () => ProductCategory(
+                  id: key, professionalId: '', name: {'fr': 'Catégorie inconnue'},
+                ),
+              );
+        final label = cat?.localizedName('fr') ?? 'Sans catégorie';
+        final isCollapsed = _collapsed.contains(key);
+
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Header de section : nom + nombre + collapse toggle
+          GestureDetector(
+            onTap: () => setState(() {
+              if (isCollapsed) {
+                _collapsed.remove(key);
+              } else {
+                _collapsed.add(key);
+              }
+            }),
+            child: Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : 18, bottom: 10),
+              child: Row(children: [
+                if (cat?.icon != null && cat!.icon!.isNotEmpty) ...[
+                  Text(cat.icon!, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900,
+                    color: AppColors.darkText, letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${list.length}',
+                    style: const TextStyle(
+                      fontFamily: 'Nunito', fontSize: 11,
+                      fontWeight: FontWeight.w800, color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  isCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
+                  color: AppColors.darkSubtext, size: 22,
+                ),
+              ]),
+            ),
+          ),
+          if (!isCollapsed)
+            ...list.map((p) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _ProductCard(product: p),
+            )),
+        ]);
+      },
     );
   }
 }

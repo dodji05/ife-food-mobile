@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/models/product.dart';
 import '../../providers/pro_provider.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,9 @@ class _State extends ConsumerState<AddProductScreen> {
   /// URL existante (mode édition) — affichée tant que l'utilisateur n'a pas
   /// choisi une nouvelle photo.
   String? _existingImageUrl;
+  /// Catégorie sélectionnée (id). `null` = sans catégorie (groupe par défaut
+  /// dans le catalogue côté pro).
+  String? _categoryId;
 
   bool get _isEdit => widget.product != null;
   bool get _canSave =>
@@ -77,6 +81,13 @@ class _State extends ConsumerState<AddProductScreen> {
       _stock.text  = p['stock'] != null ? '${p['stock']}' : '';
       _available   = p['isAvailable'] as bool? ?? true;
       _existingImageUrl = p['imageUrl'] as String?;
+      // categoryId peut venir aplati OU dans la relation 'category' jointe.
+      final rawCat = p['category'];
+      if (rawCat is Map) {
+        _categoryId = rawCat['id'] as String?;
+      } else {
+        _categoryId = p['categoryId'] as String?;
+      }
     }
   }
 
@@ -150,6 +161,7 @@ class _State extends ConsumerState<AddProductScreen> {
       'currency':   'XOF',
       'isAvailable': _available,
       if (stockVal != null) 'stock': stockVal,
+      if (_categoryId != null) 'categoryId': _categoryId,
     };
 
     try {
@@ -179,6 +191,9 @@ class _State extends ConsumerState<AddProductScreen> {
       }
 
       ref.invalidate(productsProvider);
+      // Invalidate aussi le provider catégories : si une catégorie a été
+      // créée à la volée, la liste catalogue groupée doit la refléter.
+      ref.invalidate(categoriesProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(_isEdit ? 'Produit modifié ✓' : 'Produit ajouté ✓'),
@@ -234,6 +249,14 @@ class _State extends ConsumerState<AddProductScreen> {
         _Label('Description (optionnelle)'),
         const SizedBox(height: 8),
         _TF(_descFr, 'Décrivez votre produit…', maxLines: 3),
+        const SizedBox(height: 16),
+
+        _Label('Catégorie (optionnelle)'),
+        const SizedBox(height: 8),
+        _CategoryPicker(
+          selectedId: _categoryId,
+          onChanged: (id) => setState(() => _categoryId = id),
+        ),
         const SizedBox(height: 16),
 
         Row(children: [
@@ -351,4 +374,158 @@ class _State extends ConsumerState<AddProductScreen> {
     style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.darkText),
     decoration: InputDecoration(hintText: hint),
   );
+}
+
+// ── Sélecteur de catégorie (dropdown + bouton 'Nouvelle catégorie') ────────
+class _CategoryPicker extends ConsumerWidget {
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+  const _CategoryPicker({required this.selectedId, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncCats = ref.watch(categoriesProvider);
+    return asyncCats.when(
+      loading: () => Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.darkBorder),
+        ),
+        alignment: Alignment.center,
+        child: const SizedBox(width: 18, height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+      ),
+      error: (_, __) => _newOnlyButton(context, ref),
+      data: (cats) => Row(children: [
+        Expanded(child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.darkBorder),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: cats.any((c) => c.id == selectedId) ? selectedId : null,
+              isExpanded: true,
+              hint: const Text('Sans catégorie',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
+              dropdownColor: AppColors.darkCard,
+              icon: const Icon(Icons.expand_more_rounded, color: AppColors.darkSubtext),
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w600, color: AppColors.darkText),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Sans catégorie',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
+                ),
+                ...cats.map((c) => DropdownMenuItem<String?>(
+                  value: c.id,
+                  child: Row(children: [
+                    if (c.icon != null && c.icon!.isNotEmpty) ...[
+                      Text(c.icon!, style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                    ],
+                    Expanded(child: Text(c.localizedName('fr'),
+                      maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ]),
+                )),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        )),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: 'Nouvelle catégorie',
+          onPressed: () => _showCreateCategoryDialog(context, ref),
+          icon: Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            padding: const EdgeInsets.all(8),
+            child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _newOnlyButton(BuildContext context, WidgetRef ref) => OutlinedButton.icon(
+    onPressed: () => _showCreateCategoryDialog(context, ref),
+    icon: const Icon(Icons.add_rounded, size: 16),
+    label: const Text('Nouvelle catégorie'),
+  );
+
+  Future<void> _showCreateCategoryDialog(BuildContext context, WidgetRef ref) async {
+    final nameCtrl = TextEditingController();
+    final iconCtrl = TextEditingController();
+    final created = await showDialog<String?>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setState) {
+          bool busy = false;
+          return AlertDialog(
+            backgroundColor: AppColors.darkCard,
+            title: const Text('Nouvelle catégorie',
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: AppColors.darkText, fontSize: 16)),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(hintText: 'Ex: Entrées, Boissons…'),
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: iconCtrl,
+                maxLength: 4,
+                decoration: const InputDecoration(
+                  hintText: 'Emoji (optionnel) — ex: 🥗',
+                  counterText: '',
+                ),
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+              ),
+            ]),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.pop(ctx),
+                child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+              ),
+              ElevatedButton(
+                onPressed: busy ? null : () async {
+                  final n = nameCtrl.text.trim();
+                  if (n.isEmpty) return;
+                  setState(() => busy = true);
+                  try {
+                    final id = await ref.read(proProvider.notifier).createCategory(
+                      {'fr': n, 'en': n},
+                      icon: iconCtrl.text.trim().isEmpty ? null : iconCtrl.text.trim(),
+                    );
+                    ref.invalidate(categoriesProvider);
+                    if (ctx.mounted) Navigator.pop(ctx, id);
+                  } catch (e) {
+                    setState(() => busy = false);
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                        content: Text(e.toString().replaceAll('Exception: ', '')),
+                        backgroundColor: AppColors.danger,
+                      ));
+                    }
+                  }
+                },
+                child: busy
+                    ? const SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Créer'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (created != null && created.isNotEmpty) onChanged(created);
+  }
 }

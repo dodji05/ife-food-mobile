@@ -211,6 +211,22 @@ final liveOrdersProvider = FutureProvider.autoDispose
       .toList();
 });
 
+/// Liste des catégories du pro courant, triées par sortOrder croissant.
+/// Le backend GET /products/categories/:proId inclut les products mais on
+/// les ignore ici — la liste produits vient du `productsProvider`.
+final categoriesProvider = FutureProvider.autoDispose<List<ProductCategory>>((ref) async {
+  final me = await ApiClient.instance.get('/professionals/me');
+  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
+  if (proId == null) return [];
+  final res = await ApiClient.instance.get('/products/categories/$proId');
+  final list = res['data'] as List? ?? [];
+  return list
+      .whereType<Map<String, dynamic>>()
+      .map(ProductCategory.fromJson)
+      .toList()
+    ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+});
+
 final productsProvider = FutureProvider.autoDispose<List<Product>>((ref) async {
   // /professionals/me/products n'existe pas. On passe par /professionals/me
   // pour récupérer l'id puis on appelle /products/professional/:id (public).
@@ -353,6 +369,18 @@ class ProNotifier extends StateNotifier<ProState> {
   // garder un contrôle fin du moment du refresh (animations, snackbars, etc).
   // Toutes ces méthodes lèvent une `Exception` en cas d'erreur réseau pour
   // que le screen affiche un message clair.
+
+  /// Crée une catégorie de produits. `name` est un Map multilingue
+  /// `{fr: '...', en: '...'}`. Retourne l'id de la catégorie créée.
+  /// Le mobile fournit en général juste {fr: nom} -> le backend complète.
+  Future<String> createCategory(Map<String, dynamic> name, {String? icon}) async {
+    final res = await ApiClient.instance.post('/products/categories', data: {
+      'name': name,
+      if (icon != null && icon.isNotEmpty) 'icon': icon,
+    });
+    final created = res['data'] as Map<String, dynamic>?;
+    return created?['id'] as String? ?? '';
+  }
 
   /// Crée un produit côté backend.
   /// `data` doit contenir `name` (Map multilingue), `price`, `currency`,

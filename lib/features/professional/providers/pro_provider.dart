@@ -437,6 +437,41 @@ class ProNotifier extends StateNotifier<ProState> {
     return next;
   }
 
+  /// Upload une image générique vers /uploads/avatar et retourne l'URL
+  /// hébergée (Cloudinary). Utilisé par les pickers logo + cover.
+  Future<String> _uploadGenericImage(File imageFile) async {
+    final fileName = imageFile.path.split(Platform.pathSeparator).last;
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(imageFile.path, filename: fileName),
+    });
+    final res = await ApiClient.instance.postForm('/uploads/avatar', form);
+    // Le backend renvoie soit la string URL directement, soit un objet
+    // {url} selon la version. On gère les deux.
+    final data = res['data'];
+    if (data is String) return data;
+    if (data is Map<String, dynamic>) {
+      return (data['url'] ?? data['imageUrl'] ?? '') as String;
+    }
+    return '';
+  }
+
+  /// Upload + assigne l'URL au logo du pro (PATCH /professionals/me).
+  /// Refresh le state pour que dashboard/profil reflète immédiatement.
+  Future<void> uploadAndSetLogo(File imageFile) async {
+    final url = await _uploadGenericImage(imageFile);
+    if (url.isEmpty) throw Exception('Upload échoué : URL vide');
+    await ApiClient.instance.patch('/professionals/me', data: {'logoUrl': url});
+    await _load();
+  }
+
+  /// Upload + assigne l'URL à la photo de couverture du pro.
+  Future<void> uploadAndSetCover(File imageFile) async {
+    final url = await _uploadGenericImage(imageFile);
+    if (url.isEmpty) throw Exception('Upload échoué : URL vide');
+    await ApiClient.instance.patch('/professionals/me', data: {'coverImageUrl': url});
+    await _load();
+  }
+
   /// Upload une image pour un produit existant.
   /// Backend : `POST /products/:id/image` avec champ multipart `image`.
   /// Retourne l'URL de l'image hébergée.

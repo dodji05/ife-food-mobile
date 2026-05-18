@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/router/route_params.dart';
 import '../../providers/pro_provider.dart';
 
 class ProProfileScreen extends ConsumerWidget {
@@ -80,16 +81,38 @@ class ProProfileScreen extends ConsumerWidget {
         ),
 
         _Section('Établissement', [
-          _Item(Icons.store_rounded,      'Modifier mes informations', () {}),
-          _Item(Icons.delivery_dining_rounded, 'Zone de livraison', () {}),
-          _Item(Icons.schedule_rounded,   'Horaires d\'ouverture', () => context.push('/pro/schedule')),
+          _Item(Icons.store_rounded, 'Modifier mes informations',
+              () => context.push('/pro/edit-info')),
+          // Zone de livraison = même écran (deliveryRadiusKm) → on évite
+          // un écran dédié, l'utilisateur trouve dans 'Modifier mes infos'.
+          _Item(Icons.schedule_rounded, 'Horaires d\'ouverture',
+              () => context.push('/pro/schedule')),
         ]),
         const SizedBox(height: 12),
 
         _Section('Compte', [
-          _Item(Icons.lock_rounded,       'Modifier le PIN', () {}),
-          _Item(Icons.language_rounded,   'Langue', () {}),
-          _Item(Icons.badge_rounded,      'Mes documents', () {}),
+          _Item(Icons.lock_rounded, 'Modifier le PIN', () {
+            final phone = user?.phone;
+            if (phone == null || phone.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Téléphone manquant — reconnectez-vous.'),
+                backgroundColor: AppColors.danger,
+              ));
+              return;
+            }
+            // mode='set' force la double saisie (création + confirm).
+            // Le redirect GoRouter respecte ce mode (cf. app_router.dart:143).
+            context.push('/auth/pin',
+                extra: PinRouteParams(mode: 'set', phone: phone));
+          }),
+          _Item(Icons.language_rounded, 'Langue',
+              () => _showLanguagePicker(context, ref, user?.lang ?? 'fr')),
+          _Item(Icons.badge_rounded, 'Mes documents', () {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Gestion documents — bientôt disponible'),
+              backgroundColor: AppColors.darkSubtext,
+            ));
+          }),
         ]),
         const SizedBox(height: 12),
 
@@ -113,6 +136,80 @@ class ProProfileScreen extends ConsumerWidget {
         const SizedBox(height: 20),
       ]),
     );
+  }
+}
+
+// ── Language picker : bottom sheet + PATCH /users/me ────────────────────────
+const _supportedLanguages = <Map<String, String>>[
+  {'code': 'fr', 'label': 'Français',  'flag': '🇫🇷'},
+  {'code': 'en', 'label': 'English',   'flag': '🇬🇧'},
+  {'code': 'es', 'label': 'Español',   'flag': '🇪🇸'},
+  {'code': 'de', 'label': 'Deutsch',   'flag': '🇩🇪'},
+  {'code': 'ru', 'label': 'Русский',   'flag': '🇷🇺'},
+  {'code': 'ar', 'label': 'العربية',   'flag': '🇸🇦'},
+  {'code': 'zh', 'label': '中文',       'flag': '🇨🇳'},
+];
+
+Future<void> _showLanguagePicker(BuildContext context, WidgetRef ref, String current) async {
+  final picked = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: AppColors.darkCard,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2)),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Align(alignment: Alignment.centerLeft, child: Text(
+            'Choisir une langue',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText),
+          )),
+        ),
+        ..._supportedLanguages.map((l) {
+          final isCurrent = l['code'] == current;
+          return ListTile(
+            leading: Text(l['flag']!, style: const TextStyle(fontSize: 22)),
+            title: Text(
+              l['label']!,
+              style: TextStyle(
+                fontFamily: 'Nunito', fontSize: 15,
+                fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w600,
+                color: isCurrent ? AppColors.primary : AppColors.darkText,
+              ),
+            ),
+            trailing: isCurrent
+                ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                : null,
+            onTap: () => Navigator.pop(context, l['code']),
+          );
+        }),
+        const SizedBox(height: 8),
+      ]),
+    ),
+  );
+  if (picked == null || picked == current) return;
+
+  try {
+    // PATCH /users/me {lang: 'xx'} via completeProfile (générique).
+    // Le notifier auth refresh le state -> les écrans qui watch authProvider
+    // verront la nouvelle valeur user.lang.
+    await ref.read(authProvider.notifier).completeProfile({'lang': picked});
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Langue mise à jour : ${_supportedLanguages.firstWhere((l) => l['code'] == picked)['label']}'),
+      backgroundColor: AppColors.success,
+    ));
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(e.toString().replaceAll('Exception: ', '')),
+      backgroundColor: AppColors.danger,
+    ));
   }
 }
 

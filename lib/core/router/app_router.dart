@@ -64,6 +64,7 @@ import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
 import '../../features/professional/screens/profile/pro_profile_screen.dart';
+import '../../features/professional/screens/profile/edit_business_info_screen.dart';
 
 // H2: keepAlive évite la recréation du GoRouter à chaque changement d'AuthState
 final routerProvider = Provider<GoRouter>((ref) {
@@ -299,6 +300,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           AddProductScreen(product: _Extras.asMap(state.extra))),
       GoRoute(path: '/pro/schedule', builder: (_, __) => const ScheduleScreen()),
       GoRoute(path: '/pro/reviews',  builder: (_, __) => const ReviewsScreen()),
+      GoRoute(path: '/pro/edit-info', builder: (_, __) => const EditBusinessInfoScreen()),
     ],
   );
 });

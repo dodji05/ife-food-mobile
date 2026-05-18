@@ -288,6 +288,20 @@ class ProNotifier extends StateNotifier<ProState> {
     }
   }
 
+  /// Met à jour les infos métier du pro (businessName, description, address,
+  /// city, phone, email, deliveryRadiusKm…). PATCH /professionals/me.
+  /// Refresh le state après succès pour que les écrans abonnés (dashboard,
+  /// profile, header) reflètent les nouvelles valeurs immédiatement.
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    try {
+      await ApiClient.instance.patch('/professionals/me', data: data);
+      await _load();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
   Future<void> updateOpeningHours(Map<String, dynamic> hours) async {
     try {
       // Endpoint dédié — PATCH /professionals/me ne whiteliste pas openingHours.

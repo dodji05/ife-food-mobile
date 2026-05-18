@@ -72,19 +72,8 @@ class CartScreen extends ConsumerWidget {
 
               const SizedBox(height: 16),
 
-              // Promo code
-              Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
-                child: Row(children: [
-                  const SizedBox(width: 16),
-                  const Icon(Icons.local_offer_rounded, color: AppColors.primary, size: 20),
-                  Expanded(child: TextField(
-                    decoration: const InputDecoration(hintText: 'Code promo', border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 14),
-                  )),
-                  TextButton(onPressed: () {}, child: const Text('Appliquer')),
-                ]),
-              ),
+              // Promo code (widget stateful pour gérer controller + loading)
+              const _PromoCodeRow(),
 
               const SizedBox(height: 16),
 
@@ -96,12 +85,20 @@ class CartScreen extends ConsumerWidget {
                   _SummaryRow(label: 'Sous-total', value: '${cart.subtotal.toStringAsFixed(0)} F'),
                   const SizedBox(height: 8),
                   _SummaryRow(label: 'Livraison', value: '• • •'),
-                  if (cart.promoDiscount > 0) ...[
+                  if (cart.hasPromo) ...[
                     const SizedBox(height: 8),
-                    _SummaryRow(label: 'Réduction', value: '-${cart.promoDiscount.toStringAsFixed(0)} F', valueColor: AppColors.success),
+                    _SummaryRow(
+                      label: 'Code promo (${cart.promoCode})',
+                      value: '-${cart.promoDiscount.toStringAsFixed(0)} F',
+                      valueColor: AppColors.success,
+                    ),
                   ],
                   const Divider(height: 20),
-                  _SummaryRow(label: 'Total estimé', value: '${cart.subtotal.toStringAsFixed(0)} F +', isBold: true),
+                  _SummaryRow(
+                    label: 'Total estimé',
+                    value: '${cart.totalAfterPromo.toStringAsFixed(0)} F +',
+                    isBold: true,
+                  ),
                 ]),
               ),
             ])),
@@ -117,11 +114,115 @@ class CartScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                    child: Text('${cart.subtotal.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
+                    child: Text('${cart.totalAfterPromo.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
                 ]),
               )),
             ),
           ]),
+    );
+  }
+}
+
+// ── Ligne code promo (stateful pour gérer controller + loading) ────────────
+class _PromoCodeRow extends ConsumerStatefulWidget {
+  const _PromoCodeRow();
+  @override
+  ConsumerState<_PromoCodeRow> createState() => _PromoCodeRowState();
+}
+
+class _PromoCodeRowState extends ConsumerState<_PromoCodeRow> {
+  final _ctrl = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  Future<void> _apply() async {
+    if (_ctrl.text.trim().isEmpty || _loading) return;
+    setState(() => _loading = true);
+    try {
+      await ref.read(cartProvider.notifier).applyPromoCode(_ctrl.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Code promo appliqué ✓'),
+        backgroundColor: AppColors.success,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')),
+        backgroundColor: AppColors.error,
+      ));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cart = ref.watch(cartProvider);
+
+    // Si une promo est déjà appliquée -> affichage "chip" avec bouton retirer.
+    if (cart.hasPromo) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+        decoration: BoxDecoration(
+          color: AppColors.success.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.success.withOpacity(0.4)),
+        ),
+        child: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(cart.promoCode!,
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                  fontWeight: FontWeight.w900, color: AppColors.success)),
+            Text('-${cart.promoDiscount.toStringAsFixed(0)} F sur votre commande',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkGrey)),
+          ])),
+          IconButton(
+            onPressed: () {
+              ref.read(cartProvider.notifier).clearPromo();
+              _ctrl.clear();
+            },
+            icon: const Icon(Icons.close_rounded, color: AppColors.grey, size: 18),
+            tooltip: 'Retirer le code',
+          ),
+        ]),
+      );
+    }
+
+    // Sinon : input + bouton Appliquer.
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+      ),
+      child: Row(children: [
+        const SizedBox(width: 16),
+        const Icon(Icons.local_offer_rounded, color: AppColors.primary, size: 20),
+        Expanded(child: TextField(
+          controller: _ctrl,
+          textCapitalization: TextCapitalization.characters,
+          enabled: !_loading,
+          decoration: const InputDecoration(
+            hintText: 'Code promo', border: InputBorder.none,
+            enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          ),
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700),
+          onSubmitted: (_) => _apply(),
+        )),
+        TextButton(
+          onPressed: _loading ? null : _apply,
+          child: _loading
+              ? const SizedBox(width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+              : const Text('Appliquer'),
+        ),
+      ]),
     );
   }
 }

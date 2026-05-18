@@ -62,6 +62,7 @@ import '../../features/professional/screens/catalogue/catalogue_screen.dart';
 import '../../features/professional/screens/catalogue/add_product_screen.dart';
 import '../../features/professional/screens/catalogue/manage_categories_screen.dart';
 import '../../features/professional/screens/notifications/pro_notifications_screen.dart';
+import '../../features/admin/screens/admin_pending_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -148,9 +149,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!isChangePin) return _homeForRole(authState.role);
       }
 
-      // ─── 4. ADMIN — non supporté sur mobile ────────────────────────────
+      // ─── 4. ADMIN — accès limité aux écrans /admin/* ───────────────────
+      // L'admin peut maintenant valider/refuser pros et drivers depuis
+      // /admin/pending. Tout autre chemin redirige vers cette home admin.
       if (authState.role == UserRole.admin) {
-        return '/onboarding';
+        if (!loc.startsWith('/admin')) return '/admin/pending';
+        return null; // déjà sur une route admin, OK
       }
 
       // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
@@ -305,12 +309,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pro/edit-info',  builder: (_, __) => const EditBusinessInfoScreen()),
       GoRoute(path: '/pro/categories',    builder: (_, __) => const ManageCategoriesScreen()),
       GoRoute(path: '/pro/notifications', builder: (_, __) => const ProNotificationsScreen()),
+
+      // ════════════════════════════════════════════════════════════════════════
+      // 🛡️ ADMIN — un seul écran pour l'instant (validation pros/drivers).
+      //    Gated par le redirect (cf. ligne 152 : non-/admin/* -> /admin/pending).
+      // ════════════════════════════════════════════════════════════════════════
+      GoRoute(path: '/admin/pending', builder: (_, __) => const AdminPendingScreen()),
     ],
   );
 });
 
 // Destination home selon le rôle
 String _homeForRole(UserRole? role) => switch (role) {
+  UserRole.admin        => '/admin/pending',
   UserRole.driver       => '/driver/dashboard',
   UserRole.professional => '/pro/dashboard',
   _                     => '/home',

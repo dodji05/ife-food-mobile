@@ -191,12 +191,27 @@ class ApiClient {
     } on DioException catch (e) { throw _mapError(e); }
   }
 
-  // H7 — robuste quelle que soit la forme de data (Map, String, null, autre)
+  // H7 — robuste quelle que soit la forme de data (Map, String, null, autre).
+  // BUG FIX : NestJS class-validator retourne `message` sous forme de
+  // List<String> en cas de validation rejection (ex: ["price must be a
+  // number", "name should not be empty"]). Le cast brut as String?
+  // crashait avec "type 'List<dynamic>' is not a subtype of String?",
+  // masquant la vraie erreur backend pour l'utilisateur.
   Exception _mapError(DioException e) {
     final data = e.response?.data;
     String msg;
     if (data is Map) {
-      msg = (data['message'] as String?) ?? 'Erreur réseau';
+      final raw = data['message'];
+      if (raw is String) {
+        msg = raw;
+      } else if (raw is List) {
+        // Concat les messages de validation pour les afficher tous.
+        // Limite à 3 lignes pour ne pas exploser une snackbar.
+        final lines = raw.map((e) => e.toString()).take(3).join(' • ');
+        msg = lines.isEmpty ? 'Erreur de validation' : lines;
+      } else {
+        msg = (data['error'] as String?) ?? 'Erreur réseau';
+      }
     } else if (data is String && data.isNotEmpty) {
       msg = data;
     } else {

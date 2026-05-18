@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/country_currency_picker.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
 
@@ -58,7 +59,8 @@ class ClientProfileScreen extends ConsumerWidget {
             icon: Icons.currency_exchange_rounded,
             label: 'Pays / Devise',
             sub: '${user?.countryCode ?? 'BJ'} • ${user?.currency ?? 'XOF'}',
-            onTap: () {}, // wired dans le commit suivant (country_picker)
+            onTap: () => showCountryCurrencyPicker(context, ref,
+                currentCountryCode: user?.countryCode ?? 'BJ', darkTheme: false),
           ),
         ]),
         const SizedBox(height: 12),

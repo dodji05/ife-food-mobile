@@ -59,3 +59,4 @@ ios/Flutter/app.zip
 .env*
 google-services.json
 GoogleService-Info.plist
+android/build/

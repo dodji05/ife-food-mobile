@@ -418,9 +418,11 @@ class _RevenueChart extends StatelessWidget {
   }
 
   /// Compacte 12500 → "12.5k", 1500000 → "1.5M".
+  /// (Les digit separators 1_000_000 requièrent un flag expérimental Dart 3.6
+  /// donc on garde l'écriture classique.)
   String _shortAmount(double v) {
-    if (v >= 1_000_000) return '${(v / 1_000_000).toStringAsFixed(1)}M';
-    if (v >= 1_000)     return '${(v / 1_000).toStringAsFixed(v >= 10_000 ? 0 : 1)}k';
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000)    return '${(v / 1000).toStringAsFixed(v >= 10000 ? 0 : 1)}k';
     return v.toStringAsFixed(0);
   }
 

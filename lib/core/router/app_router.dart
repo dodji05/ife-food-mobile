@@ -60,6 +60,7 @@ import '../../features/professional/screens/orders/pro_orders_screen.dart';
 import '../../features/professional/screens/orders/pro_order_detail_screen.dart';
 import '../../features/professional/screens/catalogue/catalogue_screen.dart';
 import '../../features/professional/screens/catalogue/add_product_screen.dart';
+import '../../features/professional/screens/catalogue/manage_categories_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -300,7 +301,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           AddProductScreen(product: _Extras.asMap(state.extra))),
       GoRoute(path: '/pro/schedule', builder: (_, __) => const ScheduleScreen()),
       GoRoute(path: '/pro/reviews',  builder: (_, __) => const ReviewsScreen()),
-      GoRoute(path: '/pro/edit-info', builder: (_, __) => const EditBusinessInfoScreen()),
+      GoRoute(path: '/pro/edit-info',  builder: (_, __) => const EditBusinessInfoScreen()),
+      GoRoute(path: '/pro/categories', builder: (_, __) => const ManageCategoriesScreen()),
     ],
   );
 });

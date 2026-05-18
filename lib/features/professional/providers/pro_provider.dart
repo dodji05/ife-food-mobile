@@ -382,6 +382,26 @@ class ProNotifier extends StateNotifier<ProState> {
     return created?['id'] as String? ?? '';
   }
 
+  /// Met à jour une catégorie (nom multilingue, icon, sortOrder).
+  /// `data` partiel — seuls les champs présents sont envoyés.
+  Future<void> updateCategory(String categoryId, Map<String, dynamic> data) async {
+    await ApiClient.instance.patch('/products/categories/$categoryId', data: data);
+  }
+
+  /// Supprime une catégorie. Les produits qui la référencent sont
+  /// 'décatégorisés' côté backend (categoryId -> null), pas supprimés.
+  Future<void> deleteCategory(String categoryId) async {
+    await ApiClient.instance.delete('/products/categories/$categoryId');
+  }
+
+  /// Réordonne en lot les catégories. `items` = liste de
+  /// `{id: '...', sortOrder: 0|1|2…}` dans l'ordre voulu d'affichage.
+  Future<void> reorderCategories(List<Map<String, dynamic>> items) async {
+    await ApiClient.instance.patch('/products/categories/reorder', data: {
+      'items': items,
+    });
+  }
+
   /// Crée un produit côté backend.
   /// `data` doit contenir `name` (Map multilingue), `price`, `currency`,
   /// `isAvailable`, optionnellement `description` (Map) et `stock`.

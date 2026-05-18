@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/addresses_provider.dart';
+import '../../widgets/address_selector_modal.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../shared/models/user_address.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -13,9 +16,11 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String _selectedPayment = 'KKIAPAY';
-  final _addressCtrl = TextEditingController(text: 'Cotonou, Bénin');
   final _noteCtrl = TextEditingController();
   bool _loading = false;
+  /// Adresse sélectionnée manuellement par l'utilisateur. Si null, on
+  /// retombe sur defaultAddressProvider (cf. effectiveAddress dans build).
+  UserAddress? _manuallySelectedAddress;
 
   final _paymentMethods = [
     {'id': 'KKIAPAY', 'label': 'Mobile Money', 'sub': 'MTN, Moov, Orange, Wave', 'icon': '📱'},
@@ -24,9 +29,24 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     {'id': 'FEDAPAY', 'label': 'FedaPay', 'sub': 'Paiement local', 'icon': '🏦'},
   ];
 
+  /// Calcule l'adresse effective : sélection manuelle si user a tapé "Changer",
+  /// sinon adresse par défaut du provider. `null` si user n'a aucune adresse.
+  UserAddress? _effectiveAddress() {
+    return _manuallySelectedAddress ?? ref.read(defaultAddressProvider);
+  }
+
   Future<void> _placeOrder() async {
     final cart = ref.read(cartProvider);
     if (cart.isEmpty || cart.professionalId == null) return;
+
+    final addr = _effectiveAddress();
+    if (addr == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Veuillez choisir une adresse de livraison'),
+        backgroundColor: AppColors.danger,
+      ));
+      return;
+    }
 
     setState(() => _loading = true);
     try {
@@ -34,14 +54,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final res = await ApiClient.instance.post('/orders', data: {
         'professionalId': cart.professionalId,
         'items': orderItems,
-        'deliveryAddress': _addressCtrl.text,
-        'deliveryLat': AppConstants.defaultLat,
-        'deliveryLng': AppConstants.defaultLng,
-        'deliveryCity': 'Cotonou',
-        'deliveryCountry': 'BJ',
+        'deliveryAddress': addr.address,
+        // Fallback sur defaults si l'adresse n'a pas de coords (rare).
+        'deliveryLat': addr.lat ?? AppConstants.defaultLat,
+        'deliveryLng': addr.lng ?? AppConstants.defaultLng,
+        'deliveryCity': addr.city,
+        'deliveryCountry': addr.country,
         'currency': 'XOF',
         'paymentMethod': _selectedPayment,
-        'specialInstructions': _noteCtrl.text.isEmpty ? null : _noteCtrl.text,
+        // Combine instructions de l'adresse + note de la commande si les deux
+        // sont présentes (utile pour le livreur : "Code 1234. Sans oignons.").
+        'specialInstructions': _composeInstructions(addr.instructions, _noteCtrl.text),
         if (cart.promoCode != null) 'promoCode': cart.promoCode,
       });
 
@@ -59,20 +82,41 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
+  /// Combine instructions adresse + note checkout en un seul champ
+  /// `specialInstructions` côté commande. Évite que le livreur loupe l'une
+  /// des deux. Sépare par ' — ' si les deux présentes.
+  String? _composeInstructions(String? addrInstr, String checkoutNote) {
+    final a = addrInstr?.trim() ?? '';
+    final c = checkoutNote.trim();
+    if (a.isEmpty && c.isEmpty) return null;
+    if (a.isEmpty) return c;
+    if (c.isEmpty) return a;
+    return '$a — $c';
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final defaultAddr = ref.watch(defaultAddressProvider);
+    final effectiveAddr = _manuallySelectedAddress ?? defaultAddr;
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
       appBar: AppBar(title: const Text('Confirmer la commande'), leading: const BackButton()),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        // Delivery address
-        _Section(title: '📍 Adresse de livraison', child: TextField(
-          controller: _addressCtrl,
-          decoration: const InputDecoration(hintText: 'Entrez votre adresse'),
-          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-        )),
+        // ── Adresse de livraison (sélecteur tappable) ──────────────────────
+        _Section(
+          title: '📍 Adresse de livraison',
+          child: _AddressTile(
+            address: effectiveAddr,
+            onTap: () async {
+              final picked = await showAddressSelector(context);
+              if (picked != null) {
+                setState(() => _manuallySelectedAddress = picked);
+              }
+            },
+          ),
+        ),
         const SizedBox(height: 16),
 
         // Order summary
@@ -139,6 +183,69 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ]),
     );
   }
+}
+
+// ── Tile sélecteur d'adresse (utilisée dans la section adresse) ────────────
+class _AddressTile extends StatelessWidget {
+  final UserAddress? address;
+  final VoidCallback onTap;
+  const _AddressTile({required this.address, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.offWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.lightGrey),
+      ),
+      child: Row(children: [
+        if (address == null) ...[
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.danger.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.add_location_alt_rounded, color: AppColors.danger, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Aucune adresse',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                  fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            Text('Toucher pour ajouter une adresse de livraison',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+          ])),
+        ] else ...[
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text(address!.labelEmoji, style: const TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(address!.label,
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                  fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            const SizedBox(height: 2),
+            Text('${address!.address}, ${address!.city}',
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+          ])),
+        ],
+        const Icon(Icons.chevron_right_rounded, color: AppColors.lightSubtext),
+      ]),
+    ),
+  );
 }
 
 class _Section extends StatelessWidget {

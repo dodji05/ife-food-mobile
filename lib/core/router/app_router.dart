@@ -39,6 +39,7 @@ import '../../features/client/screens/order/review_screen.dart';
 import '../../features/client/screens/tracking/tracking_screen.dart';
 import '../../features/client/screens/profile/profile_screen.dart';
 import '../../features/client/screens/profile/addresses_screen.dart';
+import '../../features/client/screens/profile/address_form_screen.dart';
 import '../../features/client/screens/search/search_screen.dart';
 // NotificationsScreen (ancien) remplacé par ClientNotificationsScreen
 // qui réutilise le widget shared NotificationsListWidget + le provider core.
@@ -256,7 +257,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           ReviewScreen(orderId: state.pathParameters['id']!)),
       GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
           TrackingScreen(orderId: state.pathParameters['orderId']!)),
-      GoRoute(path: '/addresses',     builder: (_, __) => const AddressesScreen()),
+      GoRoute(path: '/addresses',         builder: (_, __) => const AddressesScreen()),
+      // Form add/edit. /addresses/new = create (initial=null), /addresses/edit/:id
+      // = edit (extra=Map<String,dynamic> de l'adresse à pré-remplir).
+      GoRoute(path: '/addresses/new',     builder: (_, __) => const AddressFormScreen()),
+      GoRoute(
+        path: '/addresses/edit/:id',
+        builder: (_, state) => AddressFormScreen(
+          addressId: state.pathParameters['id'],
+          initial:   _Extras.asMap(state.extra),
+        ),
+      ),
       GoRoute(path: '/notifications', builder: (_, __) => const ClientNotificationsScreen()),
 
       // ════════════════════════════════════════════════════════════════════════

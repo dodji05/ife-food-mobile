@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
@@ -28,6 +30,19 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
   void initState() { super.initState(); _tabController = TabController(length: 2, vsync: this); }
   @override
   void dispose() { _tabController.dispose(); super.dispose(); }
+
+  /// Partage social du restaurant via la share sheet native (iOS/Android).
+  /// Génère un texte avec nom + catégorie + lien deep link de l'app
+  /// (le lien web sert de fallback si l'app n'est pas installée chez le
+  /// destinataire — à câbler quand on aura les universal/app links).
+  Future<void> _sharePro(Professional pro) async {
+    final deepLink = '${AppConstants.websiteUrl}/restaurant/${pro.id}';
+    final msg = '🍽️ Découvre "${pro.businessName}" sur ifè FOOD !\n'
+                '${pro.categoryEmoji} ${pro.category}'
+                '${pro.city != null ? ' • ${pro.city}' : ''}\n\n'
+                '$deepLink';
+    await Share.share(msg, subject: pro.businessName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +77,11 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen> with Single
                     child: const Icon(Icons.arrow_back_rounded, color: AppColors.nearBlack))),
                 actions: [
                   Container(margin: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: IconButton(icon: const Icon(Icons.share_rounded, color: AppColors.nearBlack), onPressed: () {})),
+                    child: IconButton(
+                      icon: const Icon(Icons.share_rounded, color: AppColors.nearBlack),
+                      onPressed: () => _sharePro(pro),
+                      tooltip: 'Partager',
+                    )),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   stretchModes: const [StretchMode.zoomBackground],

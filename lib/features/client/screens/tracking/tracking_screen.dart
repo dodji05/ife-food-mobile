@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../order/order_detail_screen.dart' show orderDetailProvider;
 
 class TrackingScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -71,6 +73,28 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
 
   @override
   void dispose() { _socket?.disconnect(); _mapController?.dispose(); super.dispose(); }
+
+  // ── Bouton 'Appeler le livreur' (url_launcher tel:) ───────────────────────
+  Future<void> _callDriver(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Impossible d\'ouvrir le composeur pour $phone'),
+        backgroundColor: AppColors.error,
+      ));
+    }
+  }
+
+  /// Chat livreur — pas encore implémenté (module messages/* backend existe
+  /// mais aucune UI client. TIER 3 / 5j+ dans CLIENT_TODO.md).
+  void _showChatComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Messagerie livreur — bientôt disponible'),
+      backgroundColor: AppColors.grey,
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,22 +164,70 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
 
                 const SizedBox(height: 20),
 
-                // Driver info
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(14)),
-                  child: Row(children: [
-                    CircleAvatar(radius: 22, backgroundColor: AppColors.primary.withOpacity(0.2),
-                      child: const Text('🛵', style: TextStyle(fontSize: 20))),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Votre livreur', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
-                      const Text('Koffi Mensah', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
-                    ])),
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.phone_rounded, color: AppColors.primary)),
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary)),
-                  ]),
-                ),
+                // Driver info — utilise les vraies données de l'order si livreur assigné
+                Consumer(builder: (context, ref, _) {
+                  final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
+                  return orderAsync.maybeWhen(
+                    data: (order) {
+                      // Pas encore de livreur assigné -> message d'attente
+                      if (!order.hasDriver) {
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(14)),
+                          child: Row(children: [
+                            CircleAvatar(radius: 22, backgroundColor: AppColors.warning.withOpacity(0.15),
+                              child: const Text('⏳', style: TextStyle(fontSize: 18))),
+                            const SizedBox(width: 12),
+                            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('Recherche d\'un livreur…',
+                                style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                                    fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                              Text('Vous serez notifié dès qu\'un livreur prend votre commande',
+                                style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                            ])),
+                          ]),
+                        );
+                      }
+                      // Livreur assigné -> infos réelles + bouton appel
+                      final name  = order.driverName ?? 'Livreur';
+                      final phone = order.driverPhone;
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(14)),
+                        child: Row(children: [
+                          CircleAvatar(radius: 22, backgroundColor: AppColors.primary.withOpacity(0.2),
+                            backgroundImage: (order.driverAvatarUrl != null && order.driverAvatarUrl!.isNotEmpty)
+                                ? NetworkImage(order.driverAvatarUrl!) : null,
+                            child: (order.driverAvatarUrl == null || order.driverAvatarUrl!.isEmpty)
+                                ? const Text('🛵', style: TextStyle(fontSize: 20))
+                                : null),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            const Text('Votre livreur',
+                              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+                            Text(name,
+                              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                                  fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                          ])),
+                          IconButton(
+                            onPressed: phone != null && phone.isNotEmpty
+                                ? () => _callDriver(phone)
+                                : null,
+                            tooltip: phone != null ? 'Appeler $name' : 'Téléphone indisponible',
+                            icon: Icon(Icons.phone_rounded,
+                                color: phone != null ? AppColors.primary : AppColors.grey),
+                          ),
+                          IconButton(
+                            onPressed: _showChatComingSoon,
+                            tooltip: 'Messagerie livreur',
+                            icon: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
+                          ),
+                        ]),
+                      );
+                    },
+                    orElse: () => const SizedBox.shrink(),
+                  );
+                }),
               ]),
             )),
           ),

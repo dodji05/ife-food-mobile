@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -40,7 +42,10 @@ class ClientProfileScreen extends ConsumerWidget {
               const SizedBox(height: 2),
               Text(user?.phone ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
             ])),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.edit_rounded, color: Colors.white)),
+            // IconButton 'edit' redondant supprimé : l'édition d'avatar se fait
+            // déjà par tap direct sur EditableAvatar (cf. shared/widgets/editable_avatar.dart).
+            // Pour l'édition des autres champs profil (name, email), passer
+            // par /auth/complete-profile ou créer un /profile/edit dédié.
           ]),
         ),
         const SizedBox(height: 20),
@@ -66,7 +71,11 @@ class ClientProfileScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         _MenuSection(title: 'Aide & Légal', items: [
-          _MenuItem(icon: Icons.support_agent_rounded, label: 'Contacter le support', onTap: () {}),
+          _MenuItem(
+            icon: Icons.support_agent_rounded,
+            label: 'Contacter le support',
+            onTap: () => _contactSupport(context),
+          ),
           _MenuItem(icon: Icons.description_rounded, label: "Conditions d'utilisation", onTap: () => context.push('/legal/CGU')),
           _MenuItem(icon: Icons.privacy_tip_rounded, label: 'Politique de confidentialité', onTap: () => context.push('/legal/PRIVACY')),
           _MenuItem(icon: Icons.info_rounded, label: 'À propos', onTap: () => context.push('/legal/ABOUT')),
@@ -89,6 +98,94 @@ class ClientProfileScreen extends ConsumerWidget {
         const SizedBox(height: 20),
       ]),
     );
+  }
+}
+
+// ── Contact support : bottom sheet WhatsApp / Email / Téléphone ────────────
+Future<void> _contactSupport(BuildContext context) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Align(alignment: Alignment.centerLeft, child: Text(
+            'Contacter le support',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.nearBlack),
+          )),
+        ),
+        ListTile(
+          leading: Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: const Color(0xFF25D366).withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
+          ),
+          title: const Text('WhatsApp', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+          subtitle: const Text('Réponse rapide en journée',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+          onTap: () async {
+            Navigator.pop(sheetCtx);
+            await _openWhatsApp(context);
+          },
+        ),
+        ListTile(
+          leading: Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.email_rounded, color: AppColors.primary, size: 20),
+          ),
+          title: const Text('Email', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+          subtitle: Text(AppConstants.supportEmail,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+          onTap: () async {
+            Navigator.pop(sheetCtx);
+            await _openEmail(context);
+          },
+        ),
+        const SizedBox(height: 12),
+      ]),
+    ),
+  );
+}
+
+Future<void> _openWhatsApp(BuildContext context) async {
+  // wa.me ouvre WhatsApp si installé, sinon redirige vers la page web.
+  final uri = Uri.parse('https://wa.me/${AppConstants.supportWhatsapp}'
+      '?text=${Uri.encodeComponent("Bonjour, j'ai besoin d'aide concernant l'app ifè FOOD.")}');
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Impossible d\'ouvrir WhatsApp'),
+      backgroundColor: AppColors.error,
+    ));
+  }
+}
+
+Future<void> _openEmail(BuildContext context) async {
+  final uri = Uri(
+    scheme: 'mailto',
+    path: AppConstants.supportEmail,
+    queryParameters: {
+      'subject': 'Support ifè FOOD',
+      'body': 'Bonjour,\n\nJe vous contacte concernant :\n\n',
+    },
+  );
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Aucune app email configurée. Écrivez-nous à ${AppConstants.supportEmail}'),
+      backgroundColor: AppColors.grey,
+    ));
   }
 }
 

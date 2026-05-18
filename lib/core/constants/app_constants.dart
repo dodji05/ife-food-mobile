@@ -41,6 +41,9 @@ class AppConstants {
   static const String appName         = 'ifè FOOD';
   static const String appVersion      = '1.0.0';
   static const String supportEmail    = 'gildas31@gmail.com';
+  // Format E.164 sans le '+' (utilisé pour wa.me/<phone>).
+  // Pour appel direct ou SMS, préfixer '+' au runtime.
+  static const String supportWhatsapp = '22990000000'; // TODO: vrai numéro WhatsApp support
   static const String websiteUrl      = 'https://www.ifefood.bj';
 
   // Nuit auto-theme : 19h → 6h

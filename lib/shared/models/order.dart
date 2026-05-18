@@ -71,6 +71,9 @@ class Order {
   final double? deliveryLat;
   final double? deliveryLng;
   final String? driverId;
+  /// Relation driver jointe par le backend (driver.user.{name,phone,avatarUrl}).
+  /// Null tant que pas assigné. Symétrique de ProOrder.driver.
+  final Map<String, dynamic>? driver;
   final String? promoCode;
   final double discount;
   final DateTime createdAt;
@@ -91,6 +94,7 @@ class Order {
     this.deliveryLat,
     this.deliveryLng,
     this.driverId,
+    this.driver,
     this.promoCode,
     this.discount     = 0.0,
     required this.createdAt,
@@ -122,6 +126,7 @@ class Order {
       deliveryLat:     (j['deliveryLat']     as num?)?.toDouble(),
       deliveryLng:     (j['deliveryLng']     as num?)?.toDouble(),
       driverId:         j['driverId']         as String?,
+      driver:           j['driver']           as Map<String, dynamic>?,
       promoCode:        j['promoCode']        as String?,
       // Backend Prisma → promoDiscount. Fallback sur discount.
       discount:        ((j['promoDiscount']  as num?) ?? (j['discount'] as num?))?.toDouble() ?? 0.0,
@@ -138,6 +143,32 @@ class Order {
   double get promoDiscount      => discount;
   int?   get estimatedDeliveryMin => null;
   Map<String, dynamic>? get professional => null;
+
+  // ── Helpers driver (relation Prisma nested driver.user.*) ────────────────
+  /// L'API renvoie driver.user.{name, firstName, phone, avatarUrl} car le
+  /// modèle Driver wrappe un User. Les getters ci-dessous gèrent cette
+  /// imbrication + un fallback sur driver.* plat au cas où l'API change.
+  Map<String, dynamic>? get _driverUser =>
+      driver?['user'] as Map<String, dynamic>?;
+
+  /// Nom à afficher pour le livreur ou null si pas assigné.
+  String? get driverName {
+    final n = _driverUser?['name']
+           ?? _driverUser?['firstName']
+           ?? driver?['name']
+           ?? driver?['firstName'];
+    return n is String ? n : null;
+  }
+
+  /// Téléphone du livreur — utilisé par bouton 'Appeler' du tracking.
+  String? get driverPhone =>
+      (_driverUser?['phone'] ?? driver?['phone']) as String?;
+
+  String? get driverAvatarUrl =>
+      (_driverUser?['avatarUrl'] ?? driver?['avatarUrl']) as String?;
+
+  /// True si un livreur est assigné à cette commande (driver != null).
+  bool get hasDriver => driver != null;
 
   bool get isPaid       => paymentStatus == 'SUCCESS';
   bool get isActive     => ['PAID', 'PREPARING', 'READY', 'IN_DELIVERY'].contains(status);

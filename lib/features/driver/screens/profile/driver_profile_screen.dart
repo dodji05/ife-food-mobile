@@ -11,6 +11,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
+import '../../../../shared/widgets/language_picker.dart';
 
 class DriverProfileScreen extends ConsumerWidget {
   const DriverProfileScreen({super.key});
@@ -68,12 +69,9 @@ class DriverProfileScreen extends ConsumerWidget {
           }),
           _Item(Icons.notifications_rounded, 'Mes notifications',
               () => context.push('/driver/notifications')),
-          _Item(Icons.language_rounded, 'Langue', () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Bientôt disponible'),
-              backgroundColor: AppColors.darkSubtext,
-            ));
-          }),
+          _Item(Icons.language_rounded, 'Langue',
+              () => showLanguagePicker(context, ref,
+                  currentLang: user?.lang ?? 'fr', darkTheme: true)),
         ]),
         const SizedBox(height: 12),
 

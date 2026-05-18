@@ -5,6 +5,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
+import '../../../../shared/widgets/language_picker.dart';
 
 class ClientProfileScreen extends ConsumerWidget {
   const ClientProfileScreen({super.key});
@@ -46,8 +47,19 @@ class ClientProfileScreen extends ConsumerWidget {
         _MenuSection(title: 'Compte', items: [
           _MenuItem(icon: Icons.location_on_rounded, label: 'Mes adresses', onTap: () => context.push('/addresses')),
           _MenuItem(icon: Icons.lock_rounded, label: 'Modifier mon PIN', onTap: () => context.push('/auth/pin', extra: const PinRouteParams(mode: 'set'))),
-          _MenuItem(icon: Icons.language_rounded, label: 'Langue', sub: 'Français', onTap: () {}),
-          _MenuItem(icon: Icons.currency_exchange_rounded, label: 'Pays / Devise', sub: '${user?.countryCode ?? 'BJ'} • ${user?.currency ?? 'XOF'}', onTap: () {}),
+          _MenuItem(
+            icon: Icons.language_rounded,
+            label: 'Langue',
+            sub: languageLabel(user?.lang ?? 'fr'),
+            onTap: () => showLanguagePicker(context, ref,
+                currentLang: user?.lang ?? 'fr', darkTheme: false),
+          ),
+          _MenuItem(
+            icon: Icons.currency_exchange_rounded,
+            label: 'Pays / Devise',
+            sub: '${user?.countryCode ?? 'BJ'} • ${user?.currency ?? 'XOF'}',
+            onTap: () {}, // wired dans le commit suivant (country_picker)
+          ),
         ]),
         const SizedBox(height: 12),
 

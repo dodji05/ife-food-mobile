@@ -164,7 +164,8 @@ class _ProductItem extends ConsumerWidget {
     final cart = ref.read(cartProvider);
     final notifier = ref.read(cartProvider.notifier);
 
-    if (cart.canAddFrom(professionalId)) {
+    // canAddFrom est sur le Notifier (pas sur le State) -> appel via notifier.
+    if (notifier.canAddFrom(professionalId)) {
       notifier.addItem(product, professionalId);
       return;
     }

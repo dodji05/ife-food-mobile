@@ -219,6 +219,37 @@ class _State extends ConsumerState<AddProductScreen> {
         title: Text(_isEdit ? 'Modifier le produit' : 'Nouveau produit'),
         leading: const BackButton(),
       ),
+      // ── Bouton save FIXÉ en bas (toujours visible peu importe le scroll
+      //    ou le clavier). Avant : dans le ListView → invisible si formulaire
+      //    long ou clavier ouvert (rapport utilisateur).
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _canSave ? _save : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: AppColors.primary.withOpacity(0.35),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _loading
+                  ? const SizedBox(
+                      width: 22, height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  : Text(
+                      _isEdit ? 'Enregistrer les modifications' : 'Ajouter au catalogue',
+                      style: const TextStyle(
+                        fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
       body: ListView(padding: const EdgeInsets.all(24), children: [
         // ── Photo ──────────────────────────────────────────────────────────
         GestureDetector(
@@ -300,17 +331,9 @@ class _State extends ConsumerState<AddProductScreen> {
             ),
           ]),
         ),
-        const SizedBox(height: 32),
-
-        ElevatedButton(
-          onPressed: _canSave ? _save : null,
-          child: _loading
-              ? const SizedBox(
-                  width: 20, height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(_isEdit ? 'Enregistrer les modifications' : 'Ajouter au catalogue'),
-        ),
-        const SizedBox(height: 40),
+        // Bouton save retiré d'ici : il est maintenant dans le
+        // bottomNavigationBar du Scaffold (toujours visible).
+        const SizedBox(height: 24),
       ]),
     );
   }

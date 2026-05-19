@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/api/api_client.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -11,6 +14,34 @@ class PendingScreen extends ConsumerStatefulWidget {
 class _PendingScreenState extends ConsumerState<PendingScreen> {
   bool _checking = false;
   String? _message;
+  // null = pas encore vérifié, true = profile driver existe, false = manquant
+  bool? _hasDriverProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    // Si le user est driver, on check si son Driver row existe en DB.
+    // Si manquante (cas user qui a skippé /auth/driver-vehicle ou kill app),
+    // on propose un CTA pour compléter le profil véhicule.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkDriverProfile());
+  }
+
+  Future<void> _checkDriverProfile() async {
+    final user = ref.read(authProvider).user;
+    if (user?.role != UserRole.driver) {
+      // Pour les pros : on suppose que le Professional row existe (créée
+      // lors de l'OTP / completeProfile pour role=pro). Pas de check ici.
+      setState(() => _hasDriverProfile = true);
+      return;
+    }
+    try {
+      await ApiClient.instance.get('/drivers/me');
+      if (mounted) setState(() => _hasDriverProfile = true);
+    } catch (e) {
+      // 404 → driver profile inexistant. Le user doit completer son véhicule.
+      if (mounted) setState(() => _hasDriverProfile = false);
+    }
+  }
 
   Future<void> _checkStatus() async {
     setState(() { _checking = true; _message = null; });
@@ -59,7 +90,44 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
             _Step('⏳', 'Vérification documents', active: true),
             _Step('🎉', 'Compte activé'),
           ])),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
+
+        // CTA "Compléter mon profil livreur" : visible UNIQUEMENT si le user
+        // est driver ET que son Driver row n'existe pas en DB. Cas typique :
+        // user qui a fait OTP + complete-profile, puis a kill l'app AVANT
+        // d'avoir validé /auth/driver-vehicle -> il revient sur /auth/pending
+        // mais sans Driver row, son onboarding n'est pas terminé.
+        if (_hasDriverProfile == false) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+            ),
+            child: const Row(children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
+              SizedBox(width: 10),
+              Expanded(child: Text(
+                'Profil incomplet : il manque les infos de votre véhicule.',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+              )),
+            ]),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => context.go('/auth/driver-vehicle'),
+            icon: const Icon(Icons.directions_bike_rounded),
+            label: const Text('Compléter mon profil livreur'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
 
         // Bouton vérifier statut
         ElevatedButton.icon(

@@ -68,6 +68,7 @@ import '../../features/professional/screens/notifications/pro_notifications_scre
 import '../../features/admin/screens/admin_pending_screen.dart';
 import '../../features/client/screens/notifications/client_notifications_screen.dart';
 import '../../features/driver/screens/notifications/driver_notifications_screen.dart';
+import '../../features/driver/screens/map/navigation_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -286,22 +287,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
       GoRoute(path: '/driver/notifications', builder: (_, __) => const DriverNotificationsScreen()),
-      // Navigation GPS externe — NavigateRouteParams obligatoire
+      // Navigation GPS externe — NavigateRouteParams obligatoire.
+      // Affiche une Google Map plein écran avec marker destination + CTA
+      // pour ouvrir Google Maps en mode navigation native (deep link).
       GoRoute(path: '/navigate', builder: (_, state) {
         final p = state.extra;
         if (p is! NavigateRouteParams) {
           return _Extras.missingParams('/navigate', const ['NavigateRouteParams']);
         }
-        // Lance la navigation externe (Google Maps / Waze) — pour l'instant
-        // écran de fallback avec les coordonnées.
-        return Scaffold(
-          appBar: AppBar(title: Text(p.label)),
-          body: Center(child: Text(
-            'Navigation vers ${p.label}\n(${p.lat}, ${p.lng})',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 16),
-          )),
-        );
+        return DriverNavigationScreen(lat: p.lat, lng: p.lng, label: p.label);
       }),
 
       // ════════════════════════════════════════════════════════════════════════

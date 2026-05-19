@@ -38,6 +38,7 @@ import '../../features/client/screens/order/order_detail_screen.dart';
 import '../../features/client/screens/order/review_screen.dart';
 import '../../features/client/screens/tracking/tracking_screen.dart';
 import '../../features/client/screens/profile/profile_screen.dart';
+import '../../features/client/screens/profile/edit_profile_screen.dart';
 import '../../features/client/screens/profile/addresses_screen.dart';
 import '../../features/client/screens/profile/address_form_screen.dart';
 import '../../features/client/screens/search/search_screen.dart';
@@ -269,6 +270,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/notifications', builder: (_, __) => const ClientNotificationsScreen()),
+      GoRoute(path: '/profile/edit',  builder: (_, __) => const ClientEditProfileScreen()),
 
       // ════════════════════════════════════════════════════════════════════════
       // DRIVER routes (préfixe /driver)

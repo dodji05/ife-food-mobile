@@ -28,6 +28,14 @@ class HomeScreen extends ConsumerStatefulWidget {
   @override ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// Extrait la 1ère lettre du nom pour l'avatar fallback.
+/// Defensive : .substring(0,1) crashe si la string est vide (RangeError)
+/// AVANT que `?? '?'` puisse réagir → on guarde explicitement.
+String _avatarInitial(String? name) {
+  if (name == null || name.trim().isEmpty) return '?';
+  return name.trim().substring(0, 1).toUpperCase();
+}
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchCtrl = TextEditingController();
   String _selectedCategory = 'all';
@@ -77,7 +85,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
                           ? NetworkImage(user.avatarUrl!) : null,
                       child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
-                          ? Text(user?.displayName.substring(0, 1).toUpperCase() ?? '?',
+                          // Guard contre RangeError : si displayName est vide,
+                          // .substring(0,1) crashe AVANT que `?? '?'` puisse réagir.
+                          ? Text(_avatarInitial(user?.displayName),
                               style: const TextStyle(fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))
                           : null,
                     ),
@@ -130,12 +140,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           professionals.when(
             data: (list) {
               final filtered = _selectedCategory == 'all' ? list : list.where((p) => p.category == _selectedCategory).toList();
-              if (filtered.isEmpty) return const SliverToBoxAdapter(child: Padding(
-                padding: EdgeInsets.all(40),
+              if (filtered.isEmpty) return SliverToBoxAdapter(child: Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(child: Column(children: [
-                  Text('😔', style: TextStyle(fontSize: 48)),
-                  SizedBox(height: 12),
-                  Text('Aucun établissement disponible', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.grey)),
+                  const Text('😔', style: TextStyle(fontSize: 56)),
+                  const SizedBox(height: 12),
+                  Text(
+                    list.isEmpty
+                        ? 'Aucun établissement à proximité'
+                        : 'Aucun établissement dans cette catégorie',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.nearBlack),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    list.isEmpty
+                        ? 'Aucun pro validé dans 15 km autour de\nCotonou (${AppConstants.defaultLat.toStringAsFixed(4)}, ${AppConstants.defaultLng.toStringAsFixed(4)}).'
+                        : 'Essayez une autre catégorie.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () => ref.invalidate(nearbyProfessionalsProvider),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Réessayer'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(160, 44),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  ),
                 ])),
               ));
               return SliverPadding(

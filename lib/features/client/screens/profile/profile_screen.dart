@@ -42,15 +42,19 @@ class ClientProfileScreen extends ConsumerWidget {
               const SizedBox(height: 2),
               Text(user?.phone ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
             ])),
-            // IconButton 'edit' redondant supprimé : l'édition d'avatar se fait
-            // déjà par tap direct sur EditableAvatar (cf. shared/widgets/editable_avatar.dart).
-            // Pour l'édition des autres champs profil (name, email), passer
-            // par /auth/complete-profile ou créer un /profile/edit dédié.
+            // Bouton 'edit' → /profile/edit (firstName + name + email).
+            // L'édition d'avatar reste accessible par tap direct sur EditableAvatar.
+            IconButton(
+              onPressed: () => context.push('/profile/edit'),
+              icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 22),
+              tooltip: 'Modifier mes infos',
+            ),
           ]),
         ),
         const SizedBox(height: 20),
 
         _MenuSection(title: 'Compte', items: [
+          _MenuItem(icon: Icons.person_rounded, label: 'Modifier mes infos', onTap: () => context.push('/profile/edit')),
           _MenuItem(icon: Icons.location_on_rounded, label: 'Mes adresses', onTap: () => context.push('/addresses')),
           _MenuItem(icon: Icons.lock_rounded, label: 'Modifier mon PIN', onTap: () => context.push('/auth/pin', extra: const PinRouteParams(mode: 'set'))),
           _MenuItem(

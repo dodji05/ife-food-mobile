@@ -55,10 +55,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final professionals = ref.watch(nearbyProfessionalsProvider);
     final banners = ref.watch(bannersProvider);
 
+    // ─── DIAGNOSTIC TEMPORAIRE : à RETIRER une fois le bug d'écran blanc résolu ─
+    // Si l'utilisateur voit ce banner ROUGE FLUO, l'APK a bien mes changements et
+    // le build de HomeScreen est exécuté → le bug est plus bas dans les slivers.
+    // S'il voit toujours du blanc, l'APK n'est pas à jour.
+    final debugBanner = Container(
+      width: double.infinity,
+      color: const Color(0xFFFF0080), // magenta fluo impossible à louper
+      padding: const EdgeInsets.all(20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('🔥 BUILD OK — HomeScreen rend',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        Text('user.isAuth=${ref.read(authProvider).isAuthenticated} '
+             'role=${user?.role} '
+             'hasName=${(user?.firstName ?? '').isNotEmpty} '
+             'avatar=${user?.avatarUrl != null}',
+          style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
+        Text('pro=${professionals.runtimeType} banners=${banners.runtimeType}',
+          style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
+      ]),
+    );
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
+          SliverToBoxAdapter(child: debugBanner),
           // Header
           SliverToBoxAdapter(child: Container(
             color: AppColors.primary,

@@ -123,7 +123,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // ignore: dead_code
     final professionals = ref.watch(nearbyProfessionalsProvider);
-    final professionals = ref.watch(nearbyProfessionalsProvider);
+    // ignore: dead_code, unused_local_variable
     final banners = ref.watch(bannersProvider);
 
     // ─── DIAGNOSTIC TEMPORAIRE : à RETIRER une fois le bug d'écran blanc résolu ─

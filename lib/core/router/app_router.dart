@@ -69,6 +69,7 @@ import '../../features/admin/screens/admin_pending_screen.dart';
 import '../../features/client/screens/notifications/client_notifications_screen.dart';
 import '../../features/driver/screens/notifications/driver_notifications_screen.dart';
 import '../../features/driver/screens/map/navigation_screen.dart';
+import '../../features/driver/screens/auth/driver_vehicle_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -164,13 +165,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
-      if (authState.isPending && loc != '/auth/pending') {
+      // Exception : /auth/driver-vehicle est une étape d'onboarding driver
+      // qui DOIT s'exécuter avant le redirect /auth/pending (sinon le user
+      // ne peut jamais créer son Driver profile). On laisse passer.
+      if (authState.isPending
+          && loc != '/auth/pending'
+          && loc != '/auth/driver-vehicle') {
         if (authState.role == UserRole.professional ||
             authState.role == UserRole.driver) {
           return '/auth/pending';
         }
       }
       if (!authState.isPending && loc == '/auth/pending') {
+        return _homeForRole(authState.role);
+      }
+      // Si l'utilisateur n'est pas driver mais arrive sur /auth/driver-vehicle
+      // (deep link incorrect), on le redirige vers sa home.
+      if (loc == '/auth/driver-vehicle' && authState.role != UserRole.driver) {
         return _homeForRole(authState.role);
       }
 
@@ -232,6 +243,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return CompleteProfileScreen(role: role);
       }),
       GoRoute(path: '/auth/pending', builder: (_, __) => const PendingScreen()),
+      // Étape véhicule driver (entre complete-profile et pending).
+      // Sprint 4 : appelle POST /drivers/register puis go /auth/pending.
+      GoRoute(path: '/auth/driver-vehicle', builder: (_, __) => const DriverVehicleScreen()),
 
       // ── Legal (partagé) ─────────────────────────────────────────────────────
       GoRoute(path: '/legal/:type', builder: (_, state) =>

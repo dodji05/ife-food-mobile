@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -38,7 +39,17 @@ class _State extends ConsumerState<CompleteProfileScreen> {
           debugPrint('[CGU] Enregistrement acceptation échoué: $e');
         }
       }
-      // Pas de context.go : completeProfile met à jour user.firstName,
+      // Cas DRIVER : étape supplémentaire véhicule avant /auth/pending.
+      // On navigue explicitement vers /auth/driver-vehicle (whitelisté
+      // dans le redirect) plutôt que de laisser le redirect aller direct
+      // à /auth/pending. Cf app_router.dart règle 5.
+      if (widget.role == UserRole.driver && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) GoRouter.of(context).go('/auth/driver-vehicle');
+        });
+        return;
+      }
+      // Sinon (client / pro) : completeProfile met à jour user.firstName,
       // donc hasProfile passe à true et le redirect GoRouter envoie
       // automatiquement vers le dashboard du rôle.
     } catch (e) {

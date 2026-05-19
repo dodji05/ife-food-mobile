@@ -51,37 +51,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ─── DIAGNOSTIC NIVEAU 4 : Scaffold + CustomScrollView minimal ─────────
-    // Si écran VIOLET + texte visible → Scaffold/CustomScrollView OK,
-    // le bug est dans un des slivers complexes ci-dessous (_CatHeader,
-    // banners.when, professionals.when).
-    // Si écran blanc → Scaffold ou CustomScrollView posent un problème
-    // d'intégration avec le Column/Expanded de ClientMainShell.
+    final user = ref.watch(authProvider).user;
+
+    // ─── DIAGNOSTIC NIVEAU 5a : Scaffold + Header user info ────────────────
+    // On ajoute le sliver header complet (user avatar, search bar) au-dessus
+    // d'un sliver violet de contrôle. Si écran blanc → header est le coupable.
+    // Si tout rend → on passe au _CatHeader.
     return Scaffold(
-      backgroundColor: const Color(0xFFFFEB3B),  // jaune fond
+      backgroundColor: const Color(0xFFFFEB3B),
       body: CustomScrollView(
         slivers: [
+          // ── Header original (user info + search bar) ────────────────────
           SliverToBoxAdapter(child: Container(
-            color: const Color(0xFF9C27B0),  // violet
-            padding: const EdgeInsets.all(30),
-            child: const Text(
-              '✅ SCAFFOLD + CUSTOMSCROLLVIEW OK',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-            ),
+            color: AppColors.primary,
+            child: SafeArea(bottom: false, child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Livraison à', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
+                    const Row(children: [
+                      Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
+                      SizedBox(width: 2),
+                      Text('Cotonou, Bénin', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                      Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+                    ]),
+                  ])),
+                  _ClientHomeBell(unread: ref.watch(unreadCountProvider)),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => context.go('/profile'),
+                    child: CircleAvatar(
+                      radius: 20, backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(user.avatarUrl!) : null,
+                      child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
+                          ? Text(_avatarInitial(user?.displayName),
+                              style: const TextStyle(fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))
+                          : null,
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => context.push('/search'),
+                  child: Container(
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                    child: const Row(children: [
+                      Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.search, color: AppColors.grey, size: 22)),
+                      Expanded(child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        child: Text('Plat, restaurant, produit…',
+                          style: TextStyle(color: AppColors.grey, fontFamily: 'Nunito', fontSize: 15)),
+                      )),
+                    ]),
+                  ),
+                ),
+              ]),
+            )),
           )),
+          // ── Marqueur de contrôle ────────────────────────────────────────
           SliverToBoxAdapter(child: Container(
-            color: const Color(0xFF4CAF50),
+            color: const Color(0xFF9C27B0),
             padding: const EdgeInsets.all(20),
-            child: const Text('Sliver #2 rendu',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+            child: const Text('✅ HEADER OK',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
           )),
         ],
       ),
     );
 
     // ignore: dead_code
-    final user = ref.watch(authProvider).user;
+    final professionals = ref.watch(nearbyProfessionalsProvider);
     final professionals = ref.watch(nearbyProfessionalsProvider);
     final banners = ref.watch(bannersProvider);
 

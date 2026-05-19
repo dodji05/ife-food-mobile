@@ -2,15 +2,19 @@
 // ifè FOOD Driver — DriverProvider
 // Emplacement canonique : features/driver/providers/driver_provider.dart
 // ─────────────────────────────────────────────────────────────────────────────
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'dart:async';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/router/app_router.dart';
 import '../../../shared/models/driver.dart';
 import '../../../shared/models/mission.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../widgets/incoming_mission_dialog.dart';
 
 // Sentinel pour copyWith : distingue "ne pas changer" de "mettre à null"
 const _keep = Object();
@@ -91,10 +95,17 @@ class DriverState {
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class DriverNotifier extends StateNotifier<DriverState> {
   final _api = ApiClient.instance;
+  final Ref _ref;
   io.Socket? _socket;
   Timer? _locationTimer;
 
-  DriverNotifier() : super(const DriverState()) {
+  // Garde-fou anti-spam : on n'ouvre pas deux fois le dialog pour la même
+  // mission (le backend peut broadcaster plusieurs fois en cas de reconnect
+  // ou de retry). Et on ignore une mission déjà acceptée.
+  bool _missionDialogOpen = false;
+  final Set<String> _seenMissionIds = <String>{};
+
+  DriverNotifier(this._ref) : super(const DriverState()) {
     _loadProfile();
   }
 
@@ -204,6 +215,57 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
     _socket?.onConnect((_) => joinMissionRooms());
     _socket?.onReconnect((_) => joinMissionRooms());
+
+    // ── Trigger IncomingMissionDialog ────────────────────────────────────
+    // Le backend broadcast `new_mission` à la room `drivers_online` dès qu'une
+    // commande passe au statut PAID. On parse le payload en Mission puis on
+    // affiche le dialog au-dessus de l'écran courant via le navigatorKey du
+    // GoRouter (pas de navigatorKey global nécessaire — GoRouter en crée un).
+    _socket?.on('new_mission', (data) {
+      try {
+        if (data is! Map) return;
+        final json = Map<String, dynamic>.from(data);
+        final orderId = (json['orderId'] ?? json['id'])?.toString();
+        if (orderId == null || orderId.isEmpty) return;
+
+        // Idempotence : ignore un broadcast déjà vu ou une mission déjà active.
+        if (_seenMissionIds.contains(orderId)) return;
+        if (state.activeMissions.any((m) => m.orderId == orderId)) return;
+        _seenMissionIds.add(orderId);
+
+        final mission = Mission.fromOrderJson({...json, 'id': orderId});
+        _showIncomingMissionDialog(mission);
+      } catch (e) {
+        // Best-effort : un payload malformé ne doit pas crasher le socket.
+        debugPrint('[DriverNotifier] new_mission parse failed: $e');
+      }
+    });
+  }
+
+  /// Affiche le dialog mission entrante par-dessus l'écran courant.
+  /// Joue une vibration heavyImpact pour attirer l'attention (le son est
+  /// joué par la notif FCM côté système / channel `ife_orders`).
+  void _showIncomingMissionDialog(Mission mission) {
+    if (_missionDialogOpen) return;
+    final router = _ref.read(routerProvider);
+    final navState = router.routerDelegate.navigatorKey.currentState;
+    if (navState == null) return;
+
+    // Vibration immédiate (le son est délégué au heads-up FCM + son default
+    // local notification — cf. fcm_service.dart channel `ife_orders`).
+    HapticFeedback.heavyImpact();
+    // Boucle douce de vibration pendant le countdown (3 pulses).
+    Timer(const Duration(milliseconds: 600), HapticFeedback.heavyImpact);
+    Timer(const Duration(milliseconds: 1200), HapticFeedback.mediumImpact);
+
+    _missionDialogOpen = true;
+    showDialog(
+      context: navState.context,
+      barrierDismissible: false,
+      builder: (_) => IncomingMissionDialog(mission: mission),
+    ).whenComplete(() {
+      _missionDialogOpen = false;
+    });
   }
 
   Future<void> acceptMission(String orderId) async {
@@ -266,7 +328,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 final driverProvider = StateNotifierProvider<DriverNotifier, DriverState>(
-    (ref) => DriverNotifier());
+    (ref) => DriverNotifier(ref));
 
 final driverDashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final res = await ApiClient.instance.get('/drivers/me/dashboard');

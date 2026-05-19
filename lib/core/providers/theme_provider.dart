@@ -30,17 +30,26 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
   final _storage = const FlutterSecureStorage();
   Timer? _timer;
 
-  ThemeNotifier() : super(ThemeState(override: ThemeOverride.auto, isNight: _isNight())) {
+  // Défaut: LIGHT (pas auto). Les écrans client/pro/admin utilisent des
+  // couleurs hardcodées (AppColors.nearBlack, Colors.white) pensées pour
+  // fond clair uniquement — en dark auto la nuit, le scaffold devient
+  // bleu marine #0A1628 et tous les textes deviennent invisibles
+  // (bug observé 19/05 à 02h : écrans Home/Profil totalement vides).
+  // Le user peut toujours basculer en dark via le picker (setOverride).
+  // À reactiver en 'auto' quand les écrans client seront dark-aware.
+  ThemeNotifier() : super(ThemeState(override: ThemeOverride.light, isNight: _isNight())) {
     _load();
     _startTimer();
   }
 
   Future<void> _load() async {
     final saved = await _storage.read(key: AppConstants.themeKey);
+    // Fallback = light (cohérent avec le défaut du constructor, cf comment).
     final ov = switch (saved) {
       'light' => ThemeOverride.light,
       'dark'  => ThemeOverride.dark,
-      _       => ThemeOverride.auto,
+      'auto'  => ThemeOverride.auto,
+      _       => ThemeOverride.light,
     };
     state = state.copyWith(override: ov, isNight: _isNight());
   }

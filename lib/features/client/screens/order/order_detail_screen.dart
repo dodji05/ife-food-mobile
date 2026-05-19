@@ -35,7 +35,11 @@ class OrderDetailScreen extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(o.statusLabel, style: const TextStyle(fontFamily: 'Nunito', fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
               const SizedBox(height: 4),
-              Text('Commande #${o.id.substring(0, 8).toUpperCase()}', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
+              // Guard length : si l'ID fait moins de 8 chars (edge case),
+              // .substring(0,8) lance RangeError. On affiche l'ID complet
+              // dans ce cas.
+              Text('Commande #${(o.id.length >= 8 ? o.id.substring(0, 8) : o.id).toUpperCase()}',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
               if (o.isActive) ...[
                 const SizedBox(height: 16),
                 ElevatedButton.icon(

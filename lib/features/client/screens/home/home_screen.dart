@@ -52,107 +52,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-
-    // ─── DIAGNOSTIC NIVEAU 5a : Scaffold + Header user info ────────────────
-    // On ajoute le sliver header complet (user avatar, search bar) au-dessus
-    // d'un sliver violet de contrôle. Si écran blanc → header est le coupable.
-    // Si tout rend → on passe au _CatHeader.
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFEB3B),
-      body: CustomScrollView(
-        slivers: [
-          // ── Header original (user info + search bar) ────────────────────
-          SliverToBoxAdapter(child: Container(
-            color: AppColors.primary,
-            child: SafeArea(bottom: false, child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Livraison à', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
-                    const Row(children: [
-                      Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
-                      SizedBox(width: 2),
-                      Text('Cotonou, Bénin', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
-                    ]),
-                  ])),
-                  _ClientHomeBell(unread: ref.watch(unreadCountProvider)),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => context.go('/profile'),
-                    child: CircleAvatar(
-                      radius: 20, backgroundColor: Colors.white.withOpacity(0.2),
-                      backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                          ? NetworkImage(user.avatarUrl!) : null,
-                      child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
-                          ? Text(_avatarInitial(user?.displayName),
-                              style: const TextStyle(fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))
-                          : null,
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => context.push('/search'),
-                  child: Container(
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-                    child: const Row(children: [
-                      Padding(padding: EdgeInsets.only(left: 16), child: Icon(Icons.search, color: AppColors.grey, size: 22)),
-                      Expanded(child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        child: Text('Plat, restaurant, produit…',
-                          style: TextStyle(color: AppColors.grey, fontFamily: 'Nunito', fontSize: 15)),
-                      )),
-                    ]),
-                  ),
-                ),
-              ]),
-            )),
-          )),
-          // ── Marqueur de contrôle ────────────────────────────────────────
-          SliverToBoxAdapter(child: Container(
-            color: const Color(0xFF9C27B0),
-            padding: const EdgeInsets.all(20),
-            child: const Text('✅ HEADER OK',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-          )),
-        ],
-      ),
-    );
-
-    // ignore: dead_code
     final professionals = ref.watch(nearbyProfessionalsProvider);
-    // ignore: dead_code, unused_local_variable
     final banners = ref.watch(bannersProvider);
-
-    // ─── DIAGNOSTIC TEMPORAIRE : à RETIRER une fois le bug d'écran blanc résolu ─
-    // Si l'utilisateur voit ce banner ROUGE FLUO, l'APK a bien mes changements et
-    // le build de HomeScreen est exécuté → le bug est plus bas dans les slivers.
-    // S'il voit toujours du blanc, l'APK n'est pas à jour.
-    final debugBanner = Container(
-      width: double.infinity,
-      color: const Color(0xFFFF0080), // magenta fluo impossible à louper
-      padding: const EdgeInsets.all(20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('🔥 BUILD OK — HomeScreen rend',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 8),
-        Text('user.isAuth=${ref.read(authProvider).isAuthenticated} '
-             'role=${user?.role} '
-             'hasName=${(user?.firstName ?? '').isNotEmpty} '
-             'avatar=${user?.avatarUrl != null}',
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
-        Text('pro=${professionals.runtimeType} banners=${banners.runtimeType}',
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
-      ]),
-    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: debugBanner),
           // Header
           SliverToBoxAdapter(child: Container(
             color: AppColors.primary,

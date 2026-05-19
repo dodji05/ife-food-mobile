@@ -136,6 +136,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             const Spacer(),
             Text('${cart.subtotal.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
           ]),
+          if (cart.hasPromo) ...[
+            const SizedBox(height: 6),
+            Row(children: [
+              Text('Code promo (${cart.promoCode})',
+                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600, color: AppColors.grey)),
+              const Spacer(),
+              Text('-${cart.promoDiscount.toStringAsFixed(0)} F',
+                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.success)),
+            ]),
+          ],
+          const SizedBox(height: 6),
+          const Row(children: [
+            Text('Livraison', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600, color: AppColors.grey)),
+            Spacer(),
+            Text('Calculée à la commande',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+          ]),
+          const Divider(height: 20),
+          Row(children: [
+            const Text('À payer (hors livraison)',
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
+            const Spacer(),
+            Text('${cart.totalAfterPromo.toStringAsFixed(0)} F',
+              style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primary)),
+          ]),
         ])),
         const SizedBox(height: 16),
 
@@ -177,7 +202,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           onPressed: _loading ? null : _placeOrder,
           child: _loading
             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text('Payer ${cart.subtotal.toStringAsFixed(0)} F'),
+            // Affiche le total APRÈS promo (vs subtotal avant) pour cohérence
+            // avec le récap au-dessus. Le frais de livraison est ajouté côté
+            // backend dans /orders et apparait sur la confirmation order.
+            : Text('Payer ${cart.totalAfterPromo.toStringAsFixed(0)} F + livraison'),
         ),
         const SizedBox(height: 40),
       ]),

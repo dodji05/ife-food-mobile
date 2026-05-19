@@ -84,7 +84,10 @@ class CartScreen extends ConsumerWidget {
                 child: Column(children: [
                   _SummaryRow(label: 'Sous-total', value: '${cart.subtotal.toStringAsFixed(0)} F'),
                   const SizedBox(height: 8),
-                  _SummaryRow(label: 'Livraison', value: '• • •'),
+                  // Livraison : montant exact calculé seulement après saisie
+                  // de l'adresse au checkout (besoin coords delivery vs pro).
+                  // On affiche un placeholder + note explicative.
+                  const _SummaryRow(label: 'Livraison', value: 'Calculé à la commande'),
                   if (cart.hasPromo) ...[
                     const SizedBox(height: 8),
                     _SummaryRow(
@@ -94,10 +97,19 @@ class CartScreen extends ConsumerWidget {
                     ),
                   ],
                   const Divider(height: 20),
+                  // Total estimé HORS livraison. Le total final s'affiche au
+                  // checkout (cf checkout_screen.dart) une fois la livraison
+                  // calculée côté backend (POST /orders renvoie deliveryFee).
                   _SummaryRow(
-                    label: 'Total estimé',
-                    value: '${cart.totalAfterPromo.toStringAsFixed(0)} F +',
+                    label: 'Sous-total après promo',
+                    value: '${cart.totalAfterPromo.toStringAsFixed(0)} F',
                     isBold: true,
+                  ),
+                  const SizedBox(height: 4),
+                  const Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('+ frais de livraison',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
                   ),
                 ]),
               ),

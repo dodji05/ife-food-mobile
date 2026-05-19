@@ -51,17 +51,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ─── DIAGNOSTIC NIVEAU 3 : retourne un widget minimal pour isoler ──────
-    // Si l'utilisateur voit l'écran ORANGE + texte → le bug est dans le
-    // CustomScrollView/slivers d'origine, pas dans la structure HomeScreen.
-    // Si toujours blanc → bug fondamental dans HomeScreen ou son setState.
-    return Container(
-      color: const Color(0xFFFF6F00),
-      alignment: Alignment.center,
-      child: const Text(
-        '✅ HOMESCREEN.BUILD\nappelé avec succès',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900),
+    // ─── DIAGNOSTIC NIVEAU 4 : Scaffold + CustomScrollView minimal ─────────
+    // Si écran VIOLET + texte visible → Scaffold/CustomScrollView OK,
+    // le bug est dans un des slivers complexes ci-dessous (_CatHeader,
+    // banners.when, professionals.when).
+    // Si écran blanc → Scaffold ou CustomScrollView posent un problème
+    // d'intégration avec le Column/Expanded de ClientMainShell.
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFEB3B),  // jaune fond
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: Container(
+            color: const Color(0xFF9C27B0),  // violet
+            padding: const EdgeInsets.all(30),
+            child: const Text(
+              '✅ SCAFFOLD + CUSTOMSCROLLVIEW OK',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+          )),
+          SliverToBoxAdapter(child: Container(
+            color: const Color(0xFF4CAF50),
+            padding: const EdgeInsets.all(20),
+            child: const Text('Sliver #2 rendu',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+          )),
+        ],
       ),
     );
 

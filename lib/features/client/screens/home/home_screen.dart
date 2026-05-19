@@ -51,6 +51,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ─── DIAGNOSTIC NIVEAU 3 : retourne un widget minimal pour isoler ──────
+    // Si l'utilisateur voit l'écran ORANGE + texte → le bug est dans le
+    // CustomScrollView/slivers d'origine, pas dans la structure HomeScreen.
+    // Si toujours blanc → bug fondamental dans HomeScreen ou son setState.
+    return Container(
+      color: const Color(0xFFFF6F00),
+      alignment: Alignment.center,
+      child: const Text(
+        '✅ HOMESCREEN.BUILD\nappelé avec succès',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900),
+      ),
+    );
+
+    // ignore: dead_code
     final user = ref.watch(authProvider).user;
     final professionals = ref.watch(nearbyProfessionalsProvider);
     final banners = ref.watch(bannersProvider);

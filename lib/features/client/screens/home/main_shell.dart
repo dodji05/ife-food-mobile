@@ -15,23 +15,7 @@ class ClientMainShell extends ConsumerWidget {
     if (loc == '/profile') idx = 2;
 
     return Scaffold(
-      // ─── DIAGNOSTIC TEMPORAIRE ──────────────────────────────────────────
-      // Banner cyan dans le SHELL → visible quel que soit le child (Home,
-      // Orders, Profile). Si l'utilisateur voit ce banner mais le Home reste
-      // vide → bug spécifique au HomeScreen. S'il ne le voit pas → l'APK
-      // installé ne contient pas ces changements (cache, mauvais artifact).
-      body: Column(children: [
-        Container(
-          width: double.infinity,
-          color: const Color(0xFF00E5FF),
-          padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
-          child: Text(
-            '🔧 SHELL OK • route=$loc',
-            style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w900),
-          ),
-        ),
-        Expanded(child: child),
-      ]),
+      body: child,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,

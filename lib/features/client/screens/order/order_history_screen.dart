@@ -8,8 +8,11 @@ import '../../providers/cart_provider.dart';
 
 final ordersProvider = FutureProvider.autoDispose<List<Order>>((ref) async {
   final res = await ApiClient.instance.get('/orders/my-orders');
-  final list = res['data'] as List? ?? [];
-  return list.map((e) => Order.fromJson(e)).toList();
+  // Backend returns paginated { data: [...], meta: {...} }.
+  // TransformInterceptor wraps to { success, data: { data: [...], meta: {...} } }.
+  final raw = res['data'];
+  final list = raw is List ? raw : (raw is Map ? (raw['data'] as List? ?? []) : []);
+  return list.map((e) => Order.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 /// Filtres possibles sur l'historique commandes. 'all' = aucun filtre.

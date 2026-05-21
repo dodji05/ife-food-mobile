@@ -30,9 +30,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ApiClient.instance.get('/products/search', params: {'q': q}),
       ]);
 
-      final allPros = (prosRes['data'] as List? ?? []).map((e) => Professional.fromJson(e)).toList();
+      // /geo/nearby returns array directly; /products/search returns { data: [...] }
+      List unwrap(Map<String, dynamic> r) {
+        final raw = r['data'];
+        return raw is List ? raw : (raw is Map ? (raw['data'] as List? ?? []) : []);
+      }
+      final allPros = unwrap(prosRes).map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
       final filteredPros = allPros.where((p) => p.businessName.toLowerCase().contains(q.toLowerCase())).toList();
-      final prods = (productsRes['data'] as List? ?? []).map((e) => Product.fromJson(e)).toList();
+      final prods = unwrap(productsRes).map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
 
       setState(() { _pros = filteredPros; _products = prods; _loading = false; });
     } catch (_) { setState(() => _loading = false); }

@@ -130,7 +130,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
             child: Row(children: [
-              const Text('Proches de vous', style: TextStyle(fontFamily: 'Nunito', fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              const Text('Établissements', style: TextStyle(fontFamily: 'Nunito', fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
               const Spacer(),
               const Text('🔥', style: TextStyle(fontSize: 18)),
             ]),
@@ -147,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 12),
                   Text(
                     list.isEmpty
-                        ? 'Aucun établissement à proximité'
+                        ? 'Aucun établissement disponible'
                         : 'Aucun établissement dans cette catégorie',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.nearBlack),
@@ -155,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 6),
                   Text(
                     list.isEmpty
-                        ? 'Aucun pro validé dans 15 km autour de\nCotonou (${AppConstants.defaultLat.toStringAsFixed(4)}, ${AppConstants.defaultLng.toStringAsFixed(4)}).'
+                        ? 'Aucun établissement validé pour le moment.'
                         : 'Essayez une autre catégorie.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey, height: 1.4),

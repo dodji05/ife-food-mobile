@@ -10,12 +10,16 @@ import '../../../../shared/models/professional.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
 
-final nearbyProfessionalsProvider = FutureProvider.autoDispose<List<Professional>>((ref) async {
+// radius == 0  →  « Tout » (200 km en pratique, backend testMode retourne tout)
+final nearbyProfessionalsProvider =
+    FutureProvider.autoDispose.family<List<Professional>, int>((ref, radius) async {
   final res = await ApiClient.instance.get('/geo/nearby', params: {
-    'lat': AppConstants.defaultLat, 'lng': AppConstants.defaultLng, 'radius': 15
+    'lat': AppConstants.defaultLat,
+    'lng': AppConstants.defaultLng,
+    'radius': radius == 0 ? 200 : radius,
   });
   final list = res['data'] as List? ?? [];
-  return list.map((e) => Professional.fromJson(e)).toList();
+  return list.map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 final bannersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -39,6 +43,14 @@ String _avatarInitial(String? name) {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchCtrl = TextEditingController();
   String _selectedCategory = 'all';
+  int    _selectedRadius   = 0; // 0 = Tout
+
+  static const _radiusOptions = [
+    (label: 'Tout',  km: 0),
+    (label: '5 km',  km: 5),
+    (label: '10 km', km: 10),
+    (label: '20 km', km: 20),
+  ];
 
   final _categories = [
     {'id': 'all', 'label': 'Tout', 'emoji': '🌟'},
@@ -52,7 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final professionals = ref.watch(nearbyProfessionalsProvider);
+    final professionals = ref.watch(nearbyProfessionalsProvider(_selectedRadius));
     final banners = ref.watch(bannersProvider);
 
     return CustomScrollView(
@@ -107,6 +119,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ]),
                   ),
                 ),
+                const SizedBox(height: 12),
+                // Sélecteur de rayon
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: _radiusOptions.map((opt) {
+                    final sel = _selectedRadius == opt.km;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedRadius = opt.km),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: sel ? Colors.white : Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(sel ? 0 : 0.5)),
+                        ),
+                        child: Text(opt.label, style: TextStyle(
+                          fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
+                          color: sel ? AppColors.primary : Colors.white,
+                        )),
+                      ),
+                    );
+                  }).toList()),
+                ),
               ]),
             )),
           )),
@@ -160,7 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
-                    onPressed: () => ref.invalidate(nearbyProfessionalsProvider),
+                    onPressed: () => ref.invalidate(nearbyProfessionalsProvider(_selectedRadius)),
                     icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: const Text('Réessayer'),
                     style: ElevatedButton.styleFrom(
@@ -197,7 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const Text('Vérifiez votre connexion internet et réessayez.', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: () => ref.invalidate(nearbyProfessionalsProvider),
+                    onTap: () => ref.invalidate(nearbyProfessionalsProvider(_selectedRadius)),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                       decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),

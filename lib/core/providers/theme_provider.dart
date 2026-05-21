@@ -44,13 +44,18 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
   Future<void> _load() async {
     final saved = await _storage.read(key: AppConstants.themeKey);
-    // Fallback = light (cohérent avec le défaut du constructor, cf comment).
+    // 'auto' désactivé temporairement : les écrans client/pro utilisent des
+    // couleurs hardcodées claires ; en dark automatique la nuit le rendu
+    // devient invisible. On le migre vers 'light' jusqu'à ce que tous les
+    // écrans soient dark-aware (Sprint 5).
     final ov = switch (saved) {
       'light' => ThemeOverride.light,
       'dark'  => ThemeOverride.dark,
-      'auto'  => ThemeOverride.auto,
-      _       => ThemeOverride.light,
+      _       => ThemeOverride.light,  // 'auto' et null → light
     };
+    if (saved == 'auto') {
+      await _storage.write(key: AppConstants.themeKey, value: 'light');
+    }
     state = state.copyWith(override: ov, isNight: _isNight());
   }
 

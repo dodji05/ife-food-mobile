@@ -186,12 +186,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // ─── 6. VÉRIFICATION CROSS-RÔLE ─────────────────────────────────────
-      if (authState.role == UserRole.client && loc.startsWith('/pro')) return '/home';
-      if (authState.role == UserRole.client && loc.startsWith('/driver')) return '/home';
+      // Utiliser '/pro/' (avec slash) et non '/pro' — sinon '/profile'
+      // (route client) serait bloqué car il commence aussi par '/pro'.
+      if (authState.role == UserRole.client && loc.startsWith('/pro/')) return '/home';
+      if (authState.role == UserRole.client && loc.startsWith('/driver/')) return '/home';
       if (authState.role == UserRole.driver && loc.startsWith('/home')) return '/driver/dashboard';
-      if (authState.role == UserRole.driver && loc.startsWith('/pro')) return '/driver/dashboard';
+      if (authState.role == UserRole.driver && loc.startsWith('/pro/')) return '/driver/dashboard';
       if (authState.role == UserRole.professional && loc.startsWith('/home')) return '/pro/dashboard';
-      if (authState.role == UserRole.professional && loc.startsWith('/driver')) return '/pro/dashboard';
+      if (authState.role == UserRole.professional && loc.startsWith('/driver/')) return '/pro/dashboard';
 
       return null;
     },

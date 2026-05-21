@@ -15,6 +15,7 @@ class ClientMainShell extends ConsumerWidget {
     if (loc == '/profile') idx = 2;
 
     return Scaffold(
+      backgroundColor: AppColors.offWhite,
       body: child,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

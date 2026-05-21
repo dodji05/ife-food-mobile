@@ -55,9 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final professionals = ref.watch(nearbyProfessionalsProvider);
     final banners = ref.watch(bannersProvider);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
+    return CustomScrollView(
         slivers: [
           // Header
           SliverToBoxAdapter(child: Container(
@@ -211,8 +209,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             )),
           ),
         ],
-      ),
-    );
+      );
   }
 }
 

@@ -112,7 +112,12 @@ class Professional {
     // Champs de configuration métier — exposés par l'API /professionals/me.
     commissionRate:   (j['commissionRate']   as num?)?.toDouble(),
     deliveryRadiusKm: (j['deliveryRadiusKm'] as num?)?.toDouble(),
-    openingHours:     j['openingHours']      as Map<String, dynamic>?,
+    // Cast sécurisé : le champ Prisma Json? peut théoriquement contenir
+    // n'importe quelle valeur JSON (tableau, string…) — `as Map?` lancerait
+    // une TypeError si ce n'est pas un objet. Le `is` guard évite ça.
+    openingHours:     j['openingHours'] is Map<String, dynamic>
+                          ? j['openingHours'] as Map<String, dynamic>
+                          : null,
     adminNote:        j['adminNote']         as String?,
   );
 

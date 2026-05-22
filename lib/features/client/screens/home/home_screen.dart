@@ -62,8 +62,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ];
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    // Diagnostic — affiché dans les logs device si HomeScreen rend.
+    // À retirer une fois le bug confirmé résolu.
+    debugPrint('[HomeScreen] build — user=${user?.phone}, hasProfile=${authState.hasProfile}, role=${authState.role}');
     final professionals = ref.watch(nearbyProfessionalsProvider(_selectedRadius));
     final banners = ref.watch(bannersProvider);
 

@@ -37,25 +37,28 @@ void main() async {
   // Symptôme : écran totalement vide impossible à diagnostiquer sans logs.
   // On override pour afficher l'exception + stack à l'écran, scrollable.
   // À retirer/dégrader une fois le bug d'écrans blancs résolu.
+  // Fond jaune vif + texte noir = impossible à confondre avec un "écran blanc".
+  // Si l'utilisateur voit jaune → une exception de build est levée et visible.
+  // Si l'utilisateur voit blanc → le problème vient du routing, pas d'un crash widget.
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
-      color: const Color(0xFFFFEBEE),
+      color: const Color(0xFFFFD600), // jaune vif
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('⚠️ Erreur de rendu',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C))),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black)),
               const SizedBox(height: 12),
               Text('${details.exception}',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFB71C1C))),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black)),
               const SizedBox(height: 12),
               const Text('Stack :',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF7F0000))),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF333333))),
               const SizedBox(height: 4),
               Text('${details.stack}',
-                style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF7F0000))),
+                style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF333333))),
             ]),
           ),
         ),

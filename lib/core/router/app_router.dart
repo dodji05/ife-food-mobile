@@ -36,6 +36,7 @@ import '../../features/client/screens/cart/checkout_screen.dart';
 import '../../features/client/screens/order/order_history_screen.dart';
 import '../../features/client/screens/order/order_detail_screen.dart';
 import '../../features/client/screens/order/review_screen.dart';
+import '../../features/client/screens/order/tip_screen.dart';
 import '../../features/client/screens/tracking/tracking_screen.dart';
 import '../../features/client/screens/profile/profile_screen.dart';
 import '../../features/client/screens/profile/edit_profile_screen.dart';
@@ -273,6 +274,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           OrderDetailScreen(orderId: state.pathParameters['id']!)),
       GoRoute(path: '/order/:id/review', builder: (_, state) =>
           ReviewScreen(orderId: state.pathParameters['id']!)),
+      GoRoute(path: '/order/:id/tip', builder: (_, state) =>
+          TipScreen(orderId: state.pathParameters['id']!)),
       GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
           TrackingScreen(orderId: state.pathParameters['orderId']!)),
       GoRoute(path: '/addresses',         builder: (_, __) => const AddressesScreen()),

@@ -18,16 +18,40 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String _selectedPayment = 'KKIAPAY';
   final _noteCtrl = TextEditingController();
   bool _loading = false;
+  bool _codEnabled = false;
   /// Adresse sélectionnée manuellement par l'utilisateur. Si null, on
   /// retombe sur defaultAddressProvider (cf. effectiveAddress dans build).
   UserAddress? _manuallySelectedAddress;
 
-  final _paymentMethods = [
-    {'id': 'KKIAPAY', 'label': 'Mobile Money', 'sub': 'MTN, Moov, Orange, Wave', 'icon': '📱'},
-    {'id': 'STRIPE', 'label': 'Carte bancaire', 'sub': 'Visa, Mastercard', 'icon': '💳'},
-    {'id': 'PAYPAL', 'label': 'PayPal', 'sub': 'Compte PayPal', 'icon': '🅿️'},
-    {'id': 'FEDAPAY', 'label': 'FedaPay', 'sub': 'Paiement local', 'icon': '🏦'},
+  static const _basePaymentMethods = [
+    {'id': 'KKIAPAY',          'label': 'Mobile Money',           'sub': 'MTN, Moov, Orange, Wave', 'icon': '📱'},
+    {'id': 'STRIPE',           'label': 'Carte bancaire',         'sub': 'Visa, Mastercard',        'icon': '💳'},
+    {'id': 'PAYPAL',           'label': 'PayPal',                 'sub': 'Compte PayPal',           'icon': '🅿️'},
+    {'id': 'FEDAPAY',          'label': 'FedaPay',                'sub': 'Paiement local',          'icon': '🏦'},
   ];
+  static const _codMethod =
+    {'id': 'CASH_ON_DELIVERY', 'label': 'Espèces à la livraison', 'sub': 'Payez au livreur',        'icon': '💵'};
+
+  List<Map<String, String>> get _paymentMethods => [
+    ..._basePaymentMethods,
+    if (_codEnabled) _codMethod,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCodConfig();
+  }
+
+  Future<void> _loadCodConfig() async {
+    try {
+      final res = await ApiClient.instance.get('/payments/gateways');
+      final gateways = res['data'] as Map<String, dynamic>? ?? {};
+      if (mounted) setState(() => _codEnabled = gateways['CASH_ON_DELIVERY'] == true);
+    } catch (_) {
+      // Config non critique — on continue sans COD si l'appel échoue
+    }
+  }
 
   /// Calcule l'adresse effective : sélection manuelle si user a tapé "Changer",
   /// sinon adresse par défaut du provider. `null` si user n'a aucune adresse.

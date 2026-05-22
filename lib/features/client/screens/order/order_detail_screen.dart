@@ -72,10 +72,31 @@ class OrderDetailScreen extends ConsumerWidget {
             _Row('Sous-total', '${o.subtotal.toStringAsFixed(0)} F'),
             _Row('Livraison', '${o.deliveryFee.toStringAsFixed(0)} F'),
             if (o.promoDiscount > 0) _Row('Réduction', '-${o.promoDiscount.toStringAsFixed(0)} F', color: AppColors.success),
+            if (o.tipAmount > 0) _Row('Pourboire livreur 🎁', '${o.tipAmount.toStringAsFixed(0)} F', color: AppColors.warning),
             const Divider(height: 20),
             _Row('Total', '${o.totalAmount.toStringAsFixed(0)} F', bold: true),
           ])),
           const SizedBox(height: 12),
+
+          // Bouton pourboire — visible uniquement si livré et pas encore de tip
+          if (o.isDelivered && o.tipAmount == 0) ...[
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/order/${o.id}/tip'),
+                icon: const Text('🎁', style: TextStyle(fontSize: 16)),
+                label: const Text('Laisser un pourboire au livreur',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Delivery info
           _Card(title: '📍 Livraison', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

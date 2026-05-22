@@ -18,6 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:url_launcher/url_launcher.dart';
@@ -118,6 +119,12 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                   ? AppColors.success
                   : AppColors.primary,
         ));
+        // Proposer le pourboire 3s après la notification de livraison
+        if (newStatus == 'DELIVERED') {
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) context.push('/order/${widget.orderId}/tip');
+          });
+        }
       }
     });
   }

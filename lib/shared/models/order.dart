@@ -76,6 +76,7 @@ class Order {
   final Map<String, dynamic>? driver;
   final String? promoCode;
   final double discount;
+  final double tipAmount;
   final DateTime createdAt;
   final DateTime? deliveredAt;
 
@@ -96,7 +97,8 @@ class Order {
     this.driverId,
     this.driver,
     this.promoCode,
-    this.discount     = 0.0,
+    this.discount   = 0.0,
+    this.tipAmount  = 0.0,
     required this.createdAt,
     this.deliveredAt,
   });
@@ -130,6 +132,7 @@ class Order {
       promoCode:        j['promoCode']        as String?,
       // Backend Prisma → promoDiscount. Fallback sur discount.
       discount:        ((j['promoDiscount']  as num?) ?? (j['discount'] as num?))?.toDouble() ?? 0.0,
+      tipAmount:       (j['tipAmount']       as num?)?.toDouble() ?? 0.0,
       createdAt:       DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
       deliveredAt:     j['deliveredAt'] != null
           ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')

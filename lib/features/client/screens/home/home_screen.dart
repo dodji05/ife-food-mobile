@@ -262,7 +262,7 @@ class _CatHeader extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(context, shrink, overlaps) => Container(
-    color: Theme.of(context).scaffoldBackgroundColor,
+    color: AppColors.offWhite,
     child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -347,8 +347,13 @@ class _RestaurantCard extends StatelessWidget {
         ClipRRect(
           borderRadius: const BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
           child: Stack(children: [
-            pro.coverImageUrl != null
-              ? CachedNetworkImage(imageUrl: pro.coverImageUrl!, height: 160, width: double.infinity, fit: BoxFit.cover)
+            (pro.coverImageUrl != null && pro.coverImageUrl!.isNotEmpty)
+              ? CachedNetworkImage(
+                  imageUrl: pro.coverImageUrl!,
+                  height: 160, width: double.infinity, fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(height: 160, color: AppColors.primary.withOpacity(0.08),
+                      child: Center(child: Text(pro.categoryEmoji, style: const TextStyle(fontSize: 52)))),
+                )
               : Container(height: 160, color: AppColors.primary.withOpacity(0.08),
                   child: Center(child: Text(pro.categoryEmoji, style: const TextStyle(fontSize: 52)))),
             if (!pro.isOpen) Container(height: 160, color: Colors.black.withOpacity(0.4),

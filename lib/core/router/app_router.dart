@@ -86,9 +86,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     // H2: refreshListenable déclenche le redirect sans recréer le router
     refreshListenable: GoRouterRefreshStream(ref, authProvider),
     errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text(
-        'Erreur de navigation : ${state.error?.toString() ?? 'inconnue'}',
-        style: const TextStyle(fontFamily: 'Nunito'),
+      backgroundColor: const Color(0xFFFF3B30),
+      body: SafeArea(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.error_outline, color: Colors.white, size: 64),
+          const SizedBox(height: 16),
+          const Text('ERREUR DE ROUTAGE', textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
+          const SizedBox(height: 12),
+          Text(state.error?.toString() ?? 'Route inconnue', textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: Colors.white, height: 1.4)),
+        ]),
       )),
     ),
     redirect: (context, state) {

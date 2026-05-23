@@ -79,6 +79,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return CustomScrollView(
         slivers: [
+          // ── DEBUG BANNER — à retirer une fois le bug identifié ─────────
+          SliverToBoxAdapter(child: Container(
+            color: const Color(0xFFFF9500),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            child: Text(
+              'DEBUG HOME ✓ | user=${user?.phone ?? "null"} | profile=${authState.hasProfile} | role=${authState.role}',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+          )),
           // Header
           SliverToBoxAdapter(child: Container(
             color: AppColors.primary,

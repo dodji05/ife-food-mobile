@@ -170,6 +170,9 @@ class Order {
   String? get driverAvatarUrl =>
       (_driverUser?['avatarUrl'] ?? driver?['avatarUrl']) as String?;
 
+  String? get driverLicensePlate => driver?['licensePlate'] as String?;
+  String? get driverVehicleType  => driver?['vehicleType']  as String?;
+
   /// True si un livreur est assigné à cette commande (driver != null).
   bool get hasDriver => driver != null;
 

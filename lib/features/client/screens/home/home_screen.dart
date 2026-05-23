@@ -1000,9 +1000,11 @@ class _RestaurantCard extends StatelessWidget {
                   label: '${pro.estimatedDeliveryMin ?? 25}-${(pro.estimatedDeliveryMin ?? 25) + 10} min'),
                 const SizedBox(width: 8),
                 _InfoChip(icon: Icons.delivery_dining_rounded,
-                  label: (pro.deliveryFee ?? 0) == 0
+                  label: (pro.deliveryFee != null && pro.deliveryFee == 0)
                       ? 'Livraison gratuite'
-                      : '${(pro.deliveryFee ?? 0).toStringAsFixed(0)} F'),
+                      : pro.deliveryFee != null
+                          ? '${pro.deliveryFee!.toStringAsFixed(0)} F'
+                          : 'Livraison'),
               ]),
             ]),
           ),

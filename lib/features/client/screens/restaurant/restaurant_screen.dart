@@ -268,6 +268,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                   professionalId: pro.id,
                   proName: pro.businessName,
                   productsAsync: products,
+                  isProOpen: pro.isOpen,
                 ),
                 // ── Onglet Avis ──────────────────────────────────────────
                 _ReviewsTab(
@@ -376,9 +377,11 @@ class _InfoSectionState extends State<_InfoSection> {
               '${(pro.estimatedDeliveryMin ?? 25) + 15} min'),
         _InfoPill(
           icon: Icons.delivery_dining_rounded,
-          label: (pro.deliveryFee ?? 0) == 0
+          label: (pro.deliveryFee != null && pro.deliveryFee == 0)
               ? 'Livraison gratuite'
-              : '${(pro.deliveryFee ?? 0).toStringAsFixed(0)} F'),
+              : pro.deliveryFee != null
+                  ? '${pro.deliveryFee!.toStringAsFixed(0)} F'
+                  : 'Livraison'),
         if (pro.distance != null)
           _InfoPill(
             icon: Icons.near_me_rounded,
@@ -496,6 +499,7 @@ class _MenuTab extends ConsumerWidget {
   final String               professionalId;
   final String               proName;
   final AsyncValue<List<Product>> productsAsync;
+  final bool isProOpen;
 
   const _MenuTab({
     required this.products,
@@ -507,6 +511,7 @@ class _MenuTab extends ConsumerWidget {
     required this.professionalId,
     required this.proName,
     required this.productsAsync,
+    required this.isProOpen,
   });
 
   @override
@@ -570,6 +575,7 @@ class _MenuTab extends ConsumerWidget {
                       product: filtered[i],
                       professionalId: professionalId,
                       proName: proName,
+                      isProOpen: isProOpen,
                     ),
                     childCount: filtered.length,
                   ),
@@ -783,10 +789,12 @@ class _ProductItem extends ConsumerStatefulWidget {
   final Product product;
   final String professionalId;
   final String proName;
+  final bool isProOpen;
   const _ProductItem({
     required this.product,
     required this.professionalId,
     required this.proName,
+    required this.isProOpen,
   });
 
   @override
@@ -795,6 +803,14 @@ class _ProductItem extends ConsumerStatefulWidget {
 
 class _ProductItemState extends ConsumerState<_ProductItem> {
   Future<void> _addWithGuard() async {
+    if (!widget.isProOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Cet établissement est actuellement fermé'),
+        backgroundColor: AppColors.danger,
+        duration: Duration(seconds: 2),
+      ));
+      return;
+    }
     final notifier = ref.read(cartProvider.notifier);
     if (notifier.canAddFrom(widget.professionalId)) {
       notifier.addItem(widget.product, widget.professionalId);

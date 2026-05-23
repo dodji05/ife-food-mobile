@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../providers/cart_provider.dart';
 
 class ClientMainShell extends ConsumerWidget {
   final Widget child;
@@ -9,7 +10,8 @@ class ClientMainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loc = GoRouterState.of(context).matchedLocation;
+    final loc       = GoRouterState.of(context).matchedLocation;
+    final cartItems = ref.watch(cartProvider).totalItems;
     int idx = 0;
     if (loc == '/orders')  idx = 1;
     if (loc == '/profile') idx = 2;
@@ -22,13 +24,46 @@ class ClientMainShell extends ConsumerWidget {
           color: Colors.white,
           border: Border(top: BorderSide(color: AppColors.lightBorder))),
         child: SafeArea(child: SizedBox(height: 60, child: Row(children: [
-          _NavItem(Icons.home_rounded,         'Accueil',    idx == 0, () => context.go('/home')),
-          _NavItem(Icons.receipt_long_rounded, 'Commandes',  idx == 1, () => context.go('/orders')),
-          _NavItem(Icons.person_rounded,       'Profil',     idx == 2, () => context.go('/profile')),
+          _NavItem(Icons.home_rounded,         'Accueil',   idx == 0, () => context.go('/home')),
+          _NavItem(Icons.receipt_long_rounded, 'Commandes', idx == 1, () => context.go('/orders')),
+          _CartNavItem(cartItems),
+          _NavItem(Icons.person_rounded,       'Profil',    idx == 2, () => context.go('/profile')),
         ]))),
       ),
     );
   }
+}
+
+// Icône panier dans la bottom nav — badge rouge si items présents.
+class _CartNavItem extends StatelessWidget {
+  final int count;
+  const _CartNavItem(this.count);
+
+  @override
+  Widget build(BuildContext context) => Expanded(child: InkWell(
+    onTap: () => context.push('/cart'),
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Stack(clipBehavior: Clip.none, children: [
+        const Icon(Icons.shopping_bag_rounded, color: Color(0xFF9AA89C), size: 24),
+        if (count > 0) Positioned(
+          top: -4, right: -6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(8)),
+            child: Text('$count',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 9,
+                  fontWeight: FontWeight.w800, color: Colors.white)),
+          ),
+        ),
+      ]),
+      const SizedBox(height: 2),
+      Text('Panier', style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+        fontWeight: count > 0 ? FontWeight.w700 : FontWeight.w500,
+        color: count > 0 ? AppColors.primary : const Color(0xFF9AA89C))),
+    ]),
+  ));
 }
 
 class _NavItem extends StatelessWidget {

@@ -49,10 +49,11 @@ class CartScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(12),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(item.product.localizedName('fr'), style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.nearBlack), maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 2),
+                      Text('${item.product.price.toStringAsFixed(0)} F / unité',
+                        style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                      const SizedBox(height: 8),
                       Row(children: [
-                        Text('${item.product.price.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary)),
-                        const Spacer(),
                         // Qty controls
                         Row(children: [
                           GestureDetector(onTap: () => ref.read(cartProvider.notifier).updateQuantity(item.product.id, item.quantity - 1),
@@ -64,6 +65,9 @@ class CartScreen extends ConsumerWidget {
                             child: Container(width: 28, height: 28, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
                               child: const Icon(Icons.add_rounded, size: 16, color: Colors.white))),
                         ]),
+                        const Spacer(),
+                        Text('${item.total.toStringAsFixed(0)} F',
+                          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       ]),
                     ]),
                   )),

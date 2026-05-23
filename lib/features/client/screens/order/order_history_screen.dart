@@ -223,26 +223,67 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
           border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text(order.professional?['businessName'] ?? 'Restaurant',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w800, color: AppColors.nearBlack))),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Logo restaurant
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: _statusColor.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-              child: Text(order.statusLabel,
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                    fontWeight: FontWeight.w700, color: _statusColor)),
+              width: 44, height: 44,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: AppColors.lightGrey,
+                borderRadius: BorderRadius.circular(10),
+                image: order.professionalLogoUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(order.professionalLogoUrl!),
+                        fit: BoxFit.cover)
+                    : null,
+              ),
+              child: order.professionalLogoUrl == null
+                  ? const Icon(Icons.storefront_rounded, color: AppColors.grey, size: 22)
+                  : null,
             ),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(
+                  order.professionalName.isNotEmpty ? order.professionalName : 'Restaurant',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                      fontWeight: FontWeight.w800, color: AppColors.nearBlack))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: _statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: Text(order.statusLabel,
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        fontWeight: FontWeight.w700, color: _statusColor)),
+                ),
+              ]),
+              const SizedBox(height: 4),
+              Text(
+                '${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.totalAmount.toStringAsFixed(0)} F',
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+              const SizedBox(height: 2),
+              Text(
+                '${order.createdAt.day.toString().padLeft(2, '0')}/${order.createdAt.month.toString().padLeft(2, '0')}/${order.createdAt.year}  ${order.createdAt.hour.toString().padLeft(2, '0')}h${order.createdAt.minute.toString().padLeft(2, '0')}',
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+            ])),
           ]),
-          const SizedBox(height: 6),
-          Text('${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.totalAmount.toStringAsFixed(0)} F',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
           const SizedBox(height: 10),
           Row(children: [
-            Text('${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
             const Spacer(),
+            // Bouton avis (livré, pas encore d'avis)
+            if (order.isDelivered && !order.hasReview) ...[
+              OutlinedButton.icon(
+                onPressed: () => context.push('/order/${order.id}/review'),
+                icon: const Icon(Icons.star_rounded, size: 14),
+                label: const Text('Avis', style: TextStyle(fontFamily: 'Nunito', fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(80, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             if (order.isDelivered) OutlinedButton(
               onPressed: _reordering ? null : _reorder,
               style: OutlinedButton.styleFrom(

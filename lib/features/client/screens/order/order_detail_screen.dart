@@ -78,24 +78,44 @@ class OrderDetailScreen extends ConsumerWidget {
           ])),
           const SizedBox(height: 12),
 
-          // Bouton pourboire — visible uniquement si livré et pas encore de tip
-          if (o.isDelivered && o.tipAmount == 0) ...[
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => context.push('/order/${o.id}/tip'),
-                icon: const Text('🎁', style: TextStyle(fontSize: 16)),
-                label: const Text('Laisser un pourboire au livreur',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  side: const BorderSide(color: AppColors.warning),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          // CTAs post-livraison : avis + pourboire
+          if (o.isDelivered) ...[
+            if (!o.hasReview) ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/order/${o.id}/review'),
+                  icon: const Icon(Icons.star_rounded, size: 18),
+                  label: const Text('Laisser un avis',
+                    style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.warning,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 10),
+            ],
+            if (o.tipAmount == 0) ...[
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/order/${o.id}/tip'),
+                  icon: const Text('🎁', style: TextStyle(fontSize: 16)),
+                  label: const Text('Laisser un pourboire au livreur',
+                    style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.warning,
+                    side: const BorderSide(color: AppColors.warning),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ],
 
           // Delivery info

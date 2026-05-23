@@ -72,8 +72,12 @@ class Order {
   final double? deliveryLng;
   final String? driverId;
   /// Relation driver jointe par le backend (driver.user.{name,phone,avatarUrl}).
-  /// Null tant que pas assigné. Symétrique de ProOrder.driver.
+  /// Null tant que pas assigné.
   final Map<String, dynamic>? driver;
+  /// Relation professional jointe par le backend ({businessName, logoUrl}).
+  final Map<String, dynamic>? professionalData;
+  /// Relation review jointe (null = pas encore donné d'avis).
+  final Map<String, dynamic>? reviewData;
   final String? promoCode;
   final double discount;
   final double tipAmount;
@@ -96,6 +100,8 @@ class Order {
     this.deliveryLng,
     this.driverId,
     this.driver,
+    this.professionalData,
+    this.reviewData,
     this.promoCode,
     this.discount   = 0.0,
     this.tipAmount  = 0.0,
@@ -129,6 +135,8 @@ class Order {
       deliveryLng:     (j['deliveryLng']     as num?)?.toDouble(),
       driverId:         j['driverId']         as String?,
       driver:           j['driver']           as Map<String, dynamic>?,
+      professionalData: j['professional']     as Map<String, dynamic>?,
+      reviewData:       j['review']           as Map<String, dynamic>?,
       promoCode:        j['promoCode']        as String?,
       // Backend Prisma → promoDiscount. Fallback sur discount.
       discount:        ((j['promoDiscount']  as num?) ?? (j['discount'] as num?))?.toDouble() ?? 0.0,
@@ -140,12 +148,16 @@ class Order {
     );
   }
 
-  // Helpers
-  // Aliases
-  double get totalAmount        => total;
-  double get promoDiscount      => discount;
+  // Helpers / Aliases
+  double get totalAmount          => total;
+  double get promoDiscount        => discount;
   int?   get estimatedDeliveryMin => null;
-  Map<String, dynamic>? get professional => null;
+  Map<String, dynamic>? get professional => professionalData;
+
+  String? get professionalLogoUrl =>
+      (professionalData?['logoUrl'] ?? professionalData?['logo']) as String?;
+
+  bool get hasReview => reviewData != null;
 
   // ── Helpers driver (relation Prisma nested driver.user.*) ────────────────
   /// L'API renvoie driver.user.{name, firstName, phone, avatarUrl} car le
@@ -177,19 +189,26 @@ class Order {
   bool get hasDriver => driver != null;
 
   bool get isPaid       => paymentStatus == 'SUCCESS';
-  bool get isActive     => ['PAID', 'PREPARING', 'READY', 'IN_DELIVERY'].contains(status);
+  bool get isActive     => ['PAID', 'ACCEPTED', 'IN_PREPARATION', 'READY_FOR_PICKUP',
+                            'DRIVER_ASSIGNED', 'HEADING_TO_PICKUP', 'ARRIVED_AT_PICKUP',
+                            'PICKED_UP', 'IN_DELIVERY'].contains(status);
   bool get isDelivered  => status == 'DELIVERED';
   bool get isCancelled  => status == 'CANCELLED';
 
   String get statusLabel => switch (status) {
-    'PENDING_PAYMENT' => 'En attente de paiement',
-    'PAID'            => 'Payée',
-    'PREPARING'       => 'En préparation',
-    'READY'           => 'Prête',
-    'IN_DELIVERY'     => 'En livraison',
-    'DELIVERED'       => 'Livrée',
-    'CANCELLED'       => 'Annulée',
-    _                 => status,
+    'PENDING_PAYMENT'  => 'En attente',
+    'PAID'             => 'Payée',
+    'ACCEPTED'         => 'Acceptée',
+    'IN_PREPARATION'   => 'En préparation',
+    'READY_FOR_PICKUP' => 'Prête',
+    'DRIVER_ASSIGNED'  => 'Livreur assigné',
+    'HEADING_TO_PICKUP'=> 'Livreur en route',
+    'ARRIVED_AT_PICKUP'=> 'Livreur arrivé',
+    'PICKED_UP'        => 'En route vers vous',
+    'IN_DELIVERY'      => 'En livraison',
+    'DELIVERED'        => 'Livrée',
+    'CANCELLED'        => 'Annulée',
+    _                  => status,
   };
 
   String get formattedTotal => '${total.toStringAsFixed(0)} F';

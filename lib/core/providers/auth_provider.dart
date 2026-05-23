@@ -169,7 +169,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isLoading: false,
       needsPinSetup: needsPin,
     );
-    debugPrint('[Auth] Session locale restaurée (needsPinSetup=$needsPin)');
+    debugPrint('[Auth] Session locale restaurée (needsPinSetup=$needsPin, hasProfile=${(user.firstName ?? '').trim().isNotEmpty})');
+
+    // Si firstName est absent du cache local, on rafraîchit depuis /users/me
+    // avant que le router décide du routage (évite un redirect inutile vers
+    // /auth/complete-profile pour un compte déjà complet côté serveur).
+    if (!needsPin && (user.firstName ?? '').trim().isEmpty) {
+      debugPrint('[Auth] firstName manquant en cache — refresh silencieux…');
+      await refreshProfile();
+    }
   }
 
   // ── OTP ───────────────────────────────────────────────────────────────────

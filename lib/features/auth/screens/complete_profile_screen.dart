@@ -64,7 +64,12 @@ class _State extends ConsumerState<CompleteProfileScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.white,
-    appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
+    appBar: AppBar(
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      title: const Text('Compléter mon profil',
+        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: Colors.white, fontSize: 17)),
+    ),
     body: SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

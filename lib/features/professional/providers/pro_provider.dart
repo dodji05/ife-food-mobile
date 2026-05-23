@@ -472,6 +472,35 @@ class ProNotifier extends StateNotifier<ProState> {
     await _load();
   }
 
+  // ── Favorite / private drivers ────────────────────────────────────────────
+
+  Future<void> addFavoriteDriver(String driverId) async {
+    await ApiClient.instance.post('/professionals/me/favorite-drivers/$driverId');
+  }
+
+  Future<void> removeFavoriteDriver(String driverId) async {
+    await ApiClient.instance.delete('/professionals/me/favorite-drivers/$driverId');
+  }
+
+  Future<void> markDriverPrivate(String driverId, {required bool isPrivate}) async {
+    await ApiClient.instance.patch(
+      '/professionals/me/favorite-drivers/$driverId/mark-private',
+      data: {'isPrivate': isPrivate},
+    );
+  }
+
+  /// Retourne le `FavoriteDriverEntry` correspondant au numéro,
+  /// ou lève une `Exception` si non trouvé.
+  Future<FavoriteDriverEntry> searchDriverByPhone(String phone) async {
+    final res = await ApiClient.instance.get(
+      '/professionals/me/drivers/search',
+      params: {'phone': phone},
+    );
+    final data = res['data'] as Map<String, dynamic>?;
+    if (data == null) throw Exception('Livreur introuvable');
+    return FavoriteDriverEntry.fromJson({'driver': data});
+  }
+
   /// Upload une image pour un produit existant.
   /// Backend : `POST /products/:id/image` avec champ multipart `image`.
   /// Retourne l'URL de l'image hébergée.
@@ -488,3 +517,60 @@ class ProNotifier extends StateNotifier<ProState> {
 
 final proProvider = StateNotifierProvider<ProNotifier, ProState>(
     (_) => ProNotifier());
+
+// ── Favorite drivers provider ─────────────────────────────────────────────────
+/// Entrée de la liste des livreurs favoris.
+/// Contient le Driver enrichi de son User (nom, avatar, téléphone).
+class FavoriteDriverEntry {
+  final String  driverId;
+  final String  vehicleType;
+  final String? licensePlate;
+  final String  driverStatus;   // PENDING | VALIDATED | SUSPENDED
+  final bool    isAvailable;
+  final bool    isPrivate;
+  final String? privateForProfessionalId;
+  final String  userName;
+  final String? avatarUrl;
+  final String? phone;
+
+  const FavoriteDriverEntry({
+    required this.driverId,
+    required this.vehicleType,
+    this.licensePlate,
+    required this.driverStatus,
+    required this.isAvailable,
+    required this.isPrivate,
+    this.privateForProfessionalId,
+    required this.userName,
+    this.avatarUrl,
+    this.phone,
+  });
+
+  factory FavoriteDriverEntry.fromJson(Map<String, dynamic> j) {
+    final driver = j['driver'] as Map<String, dynamic>? ?? j;
+    final user   = driver['user'] as Map<String, dynamic>? ?? {};
+    final name   = (user['name'] ?? user['firstName'] ?? '') as String;
+    return FavoriteDriverEntry(
+      driverId:                driver['driverId'] as String? ?? driver['id'] as String? ?? '',
+      vehicleType:             driver['vehicleType'] as String? ?? '',
+      licensePlate:            driver['licensePlate'] as String?,
+      driverStatus:            driver['status'] as String? ?? 'PENDING',
+      isAvailable:             driver['isAvailable'] as bool? ?? false,
+      isPrivate:               driver['isPrivate'] as bool? ?? false,
+      privateForProfessionalId: driver['privateForProfessionalId'] as String?,
+      userName:  name.isEmpty ? (user['phone'] as String? ?? '—') : name,
+      avatarUrl: user['avatarUrl'] as String?,
+      phone:     user['phone'] as String?,
+    );
+  }
+}
+
+final favoriteDriversProvider = FutureProvider.autoDispose<List<FavoriteDriverEntry>>((ref) async {
+  final res = await ApiClient.instance.get('/professionals/me/favorite-drivers');
+  final list = res['data'] as List? ?? [];
+  return list.whereType<Map<String, dynamic>>().map(FavoriteDriverEntry.fromJson).toList();
+});
+
+/// Résultat de la recherche d'un livreur par téléphone.
+/// `null` si pas encore recherché, `FavoriteDriverEntry` si trouvé.
+final driverSearchProvider = StateProvider.autoDispose<FavoriteDriverEntry?>((ref) => null);

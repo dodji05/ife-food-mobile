@@ -159,6 +159,7 @@ class ProDashboardScreen extends ConsumerWidget {
                   _QuickAction('💰', 'Revenus',   () => context.go('/pro/earnings')),
                   _QuickAction('⏰', 'Horaires',  () => context.push('/pro/schedule')),
                   _QuickAction('⭐', 'Avis',      () => context.push('/pro/reviews')),
+                  _QuickAction('🛵', 'Livreurs',  () => context.push('/pro/favorite-drivers')),
                   _QuickAction('👤', 'Profil',    () => context.go('/pro/profile')),
                 ],
               ),
@@ -183,12 +184,14 @@ class _DashboardBody extends StatelessWidget {
     final orders  = (data['orders']  as Map?) ?? {};
     final today   = (revenue['today'] as num?)?.toDouble() ?? 0;
     final week    = (revenue['week']  as num?)?.toDouble() ?? 0;
+    final month   = (revenue['month'] as num?)?.toDouble() ?? 0;
     final pending = (orders['pending'] as num?)?.toInt() ?? 0;
     final total   = (orders['total']   as num?)?.toInt() ?? 0;
     final rating  = (data['avgRating'] as num?)?.toDouble() ?? 0;
     final reviewCount = (data['reviewCount'] as num?)?.toInt() ?? 0;
-    final revenueByDay = (data['revenueByDay'] as List?) ?? const [];
-    final topProducts  = (data['topProducts']  as List?) ?? const [];
+    final revenueByDay  = (data['revenueByDay']  as List?) ?? const [];
+    final topProducts   = (data['topProducts']   as List?) ?? const [];
+    final recentReviews = (data['recentReviews'] as List?) ?? const [];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -203,7 +206,7 @@ class _DashboardBody extends StatelessWidget {
             emoji: '💰',
             label: 'Revenus du jour',
             value: '${today.toStringAsFixed(0)} F',
-            sub: 'Semaine : ${week.toStringAsFixed(0)} F',
+            sub: 'Mois : ${_shortAmount(month)} F',
             color: AppColors.success,
           )),
           const SizedBox(width: 10),
@@ -221,7 +224,7 @@ class _DashboardBody extends StatelessWidget {
             emoji: '📦',
             label: 'Commandes livrées',
             value: '$total',
-            sub: 'Total cumulé',
+            sub: 'Semaine : ${week.toStringAsFixed(0)} F',
             color: AppColors.info,
           )),
           const SizedBox(width: 10),
@@ -262,6 +265,15 @@ class _DashboardBody extends StatelessWidget {
           )
         else
           ...topProducts.cast<Map<String, dynamic>>().map((t) => _TopProductRow(entry: t)),
+
+        // ── Avis récents ──────────────────────────────────────────────────
+        if (recentReviews.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Text('Avis récents',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+          const SizedBox(height: 12),
+          ...recentReviews.cast<Map<String, dynamic>>().map((r) => _ReviewRow(review: r)),
+        ],
       ]),
     );
   }
@@ -421,22 +433,7 @@ class _RevenueChart extends StatelessWidget {
     );
   }
 
-  /// Compacte 12500 → "12.5k", 1500000 → "1.5M".
-  /// (Les digit separators 1_000_000 requièrent un flag expérimental Dart 3.6
-  /// donc on garde l'écriture classique.)
-  String _shortAmount(double v) {
-    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
-    if (v >= 1000)    return '${(v / 1000).toStringAsFixed(v >= 10000 ? 0 : 1)}k';
-    return v.toStringAsFixed(0);
-  }
 
-  /// 'YYYY-MM-DD' → 'Lun', 'Mar' … selon le jour de semaine.
-  String _dayLabel(String iso) {
-    final d = DateTime.tryParse(iso);
-    if (d == null) return '';
-    const labels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    return labels[d.weekday - 1];
-  }
 }
 
 // ── Ligne top produit ───────────────────────────────────────────────────────
@@ -515,6 +512,56 @@ class _TopProductRow extends StatelessWidget {
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.success)),
           ]),
         ),
+      ]),
+    );
+  }
+}
+
+// ── Ligne avis récent ────────────────────────────────────────────────────────
+class _ReviewRow extends StatelessWidget {
+  final Map<String, dynamic> review;
+  const _ReviewRow({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final rating   = (review['professionalRating'] as num?)?.toInt() ?? 0;
+    final comment  = review['comment']  as String?;
+    final reviewer = review['reviewer'] as Map<String, dynamic>?;
+    final name     = (reviewer?['name'] ?? reviewer?['firstName'] ?? 'Client') as String;
+    final createdAt = DateTime.tryParse(review['createdAt'] as String? ?? '');
+    final dateStr = createdAt != null
+        ? '${createdAt.day.toString().padLeft(2,'0')}/${createdAt.month.toString().padLeft(2,'0')}'
+        : '';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.darkCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          // Étoiles
+          Row(children: List.generate(5, (i) => Icon(
+            i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+            size: 14,
+            color: AppColors.warning,
+          ))),
+          const SizedBox(width: 8),
+          Expanded(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                fontWeight: FontWeight.w700, color: AppColors.darkText))),
+          if (dateStr.isNotEmpty)
+            Text(dateStr, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                color: AppColors.darkMuted)),
+        ]),
+        if (comment != null && comment.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(comment, maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: AppColors.darkSubtext, height: 1.4)),
+        ],
       ]),
     );
   }
@@ -647,3 +694,11 @@ class _ErrorBlock extends StatelessWidget {
     ),
   );
 }
+
+// ── Helpers top-level ────────────────────────────────────────────────────────
+String _shortAmount(double v) {
+  if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+  if (v >= 1000)    return '${(v / 1000).toStringAsFixed(v >= 10000 ? 0 : 1)}k';
+  return v.toStringAsFixed(0);
+}
+

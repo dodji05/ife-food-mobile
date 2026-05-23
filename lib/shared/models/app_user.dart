@@ -17,6 +17,7 @@ class AppUser {
   final String? email;
   final Map<String, dynamic>? professional; // si PROFESSIONAL
   final Map<String, dynamic>? driver;       // si DRIVER
+  final bool biometricEnabled;
 
   const AppUser({
     required this.id,
@@ -32,6 +33,7 @@ class AppUser {
     this.email,
     this.professional,
     this.driver,
+    this.biometricEnabled = false,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
@@ -45,9 +47,10 @@ class AppUser {
     name:        j['name'] as String?,
     firstName:   j['firstName'] as String?,
     avatarUrl:   j['avatarUrl'] as String?,
-    email:       j['email'] as String?,
-    professional: j['professional'] as Map<String, dynamic>?,
-    driver:      j['driver'] as Map<String, dynamic>?,
+    email:            j['email'] as String?,
+    professional:     j['professional'] as Map<String, dynamic>?,
+    driver:           j['driver'] as Map<String, dynamic>?,
+    biometricEnabled: j['biometricEnabled'] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -55,6 +58,7 @@ class AppUser {
     'lang': lang, 'countryCode': countryCode, 'currency': currency,
     'name': name, 'firstName': firstName, 'avatarUrl': avatarUrl,
     'email': email, 'professional': professional, 'driver': driver,
+    'biometricEnabled': biometricEnabled,
   };
 
   String get displayName {

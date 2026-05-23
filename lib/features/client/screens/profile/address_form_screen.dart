@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/addresses_provider.dart';
@@ -40,6 +41,9 @@ class _State extends ConsumerState<AddressFormScreen> {
   final _instructions = TextEditingController();
   bool _isDefault = false;
   bool _loading = false;
+  bool _geoLoading = false;
+  double? _lat;
+  double? _lng;
 
   bool get _isEdit => widget.addressId != null;
 
@@ -59,6 +63,8 @@ class _State extends ConsumerState<AddressFormScreen> {
       _city.text         = (i['city']         as String?) ?? 'Cotonou';
       _instructions.text = (i['instructions'] as String?) ?? '';
       _isDefault         = (i['isDefault']    as bool?)   ?? false;
+      _lat               = (i['lat']          as num?)?.toDouble();
+      _lng               = (i['lng']          as num?)?.toDouble();
     }
   }
 
@@ -69,6 +75,52 @@ class _State extends ConsumerState<AddressFormScreen> {
     _city.dispose();
     _instructions.dispose();
     super.dispose();
+  }
+
+  Future<void> _useGps() async {
+    setState(() => _geoLoading = true);
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Permission de localisation refusée'),
+            backgroundColor: AppColors.error,
+          ));
+        }
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+        if (_address.text.trim().isEmpty) {
+          _address.text = 'Position GPS';
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Position GPS capturée ✓'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 2),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Localisation impossible : ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    } finally {
+      if (mounted) { setState(() => _geoLoading = false); }
+    }
   }
 
   Future<void> _save() async {
@@ -82,6 +134,8 @@ class _State extends ConsumerState<AddressFormScreen> {
           label:        _label.text.trim(),
           address:      _address.text.trim(),
           city:         _city.text.trim(),
+          lat:          _lat,
+          lng:          _lng,
           instructions: _instructions.text.trim(),
           isDefault:    _isDefault,
         );
@@ -90,6 +144,8 @@ class _State extends ConsumerState<AddressFormScreen> {
           label:        _label.text.trim(),
           address:      _address.text.trim(),
           city:         _city.text.trim(),
+          lat:          _lat,
+          lng:          _lng,
           instructions: _instructions.text.trim().isEmpty ? null : _instructions.text.trim(),
           isDefault:    _isDefault,
         );
@@ -168,6 +224,36 @@ class _State extends ConsumerState<AddressFormScreen> {
         const SizedBox(height: 8),
         _TF(_address, 'Ex: Carré 1234, Quartier Cadjèhoun', maxLines: 2,
             onChanged: (_) => setState(() {})),
+        const SizedBox(height: 8),
+        // Bouton GPS — remplit _lat/_lng et pré-remplit l'adresse si vide
+        Row(children: [
+          OutlinedButton.icon(
+            onPressed: _geoLoading ? null : _useGps,
+            icon: _geoLoading
+                ? const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                : const Icon(Icons.my_location_rounded, size: 16),
+            label: Text(
+              _lat != null ? 'GPS capturé ✓' : 'Utiliser ma position GPS',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _lat != null ? AppColors.success : AppColors.primary,
+              side: BorderSide(color: _lat != null ? AppColors.success : AppColors.primary),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          if (_lat != null) ...[
+            const SizedBox(width: 8),
+            Expanded(child: Text(
+              '${_lat!.toStringAsFixed(4)}, ${_lng!.toStringAsFixed(4)}',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                  color: AppColors.grey),
+              overflow: TextOverflow.ellipsis,
+            )),
+          ],
+        ]),
         const SizedBox(height: 16),
 
         _Label('Ville *'),

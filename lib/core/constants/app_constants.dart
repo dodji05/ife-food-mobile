@@ -16,6 +16,7 @@ class AppConstants {
   static const String userKey         = 'ife_user';
   static const String themeKey        = 'ife_theme';
   static const String pinKey          = 'ife_pin_set';
+  static const String notifEnabledKey = 'ife_notif_enabled';
   static const String onboardedKey    = 'ife_onboarded';
 
   // Auth

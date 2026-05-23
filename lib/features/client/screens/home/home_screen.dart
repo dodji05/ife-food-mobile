@@ -69,11 +69,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ── DIAGNOSTIC ABSOLU — à retirer dès confirmation ──────────────────
+    // Si l'écran est rouge → build() s'exécute, le Scaffold rend.
+    // Si l'écran est toujours blanc → problème en dehors de HomeScreen.
+    return const Scaffold(
+      backgroundColor: Color(0xFFFF3B30),
+      body: Center(
+        child: Text('HOME BUILD OK',
+          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+      ),
+    );
+    // ignore: dead_code
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    // Diagnostic — affiché dans les logs device si HomeScreen rend.
-    // À retirer une fois le bug confirmé résolu.
-    debugPrint('[HomeScreen] build — user=${user?.phone}, hasProfile=${authState.hasProfile}, role=${authState.role}');
     final professionals = ref.watch(nearbyProfessionalsProvider(_selectedRadius));
     final banners = ref.watch(bannersProvider);
 

@@ -10,14 +10,18 @@ import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
+import '../../../../core/providers/location_provider.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
 final nearbyProfessionalsProvider =
     FutureProvider.autoDispose.family<List<Professional>, int>((ref, radius) async {
+  final loc = ref.read(locationProvider);
+  final lat = loc.position?.latitude  ?? AppConstants.defaultLat;
+  final lng = loc.position?.longitude ?? AppConstants.defaultLng;
   final res = await ApiClient.instance.get('/geo/nearby', params: {
-    'lat': AppConstants.defaultLat,
-    'lng': AppConstants.defaultLng,
+    'lat': lat,
+    'lng': lng,
     'radius': radius == 0 ? 200 : radius,
   });
   final list = res['data'] as List? ?? [];
@@ -25,12 +29,15 @@ final nearbyProfessionalsProvider =
 });
 
 final popularProductsProvider = FutureProvider.autoDispose<List<Product>>((ref) async {
+  final loc = ref.read(locationProvider);
+  final lat = loc.position?.latitude  ?? AppConstants.defaultLat;
+  final lng = loc.position?.longitude ?? AppConstants.defaultLng;
   final res = await ApiClient.instance.get('/products/search', params: {
     'q': '',
-    'lat': AppConstants.defaultLat,
-    'lng': AppConstants.defaultLng,
+    'lat': lat,
+    'lng': lng,
   });
-  final raw = res['data'];
+  final raw  = res['data'];
   final list = raw is List ? raw : (raw as Map<String, dynamic>?)?['items'] as List? ?? [];
   return list
       .take(16)
@@ -43,22 +50,82 @@ final bannersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((
   return List<Map<String, dynamic>>.from(res['data'] ?? []);
 });
 
-// ── Écran principal ───────────────────────────────────────────────────────────
+// ── Filtres ───────────────────────────────────────────────────────────────────
+
+class HomeFilters {
+  final double? minRating;
+  final int?    maxDeliveryMin;
+  final bool    openNow;
+
+  const HomeFilters({this.minRating, this.maxDeliveryMin, this.openNow = false});
+
+  bool get hasAny => minRating != null || maxDeliveryMin != null || openNow;
+  int  get count  => (minRating != null ? 1 : 0) + (maxDeliveryMin != null ? 1 : 0) + (openNow ? 1 : 0);
+
+  HomeFilters copyWith({
+    Object? minRating     = _keep,
+    Object? maxDeliveryMin = _keep,
+    bool?   openNow,
+  }) => HomeFilters(
+    minRating:      minRating      == _keep ? this.minRating      : minRating as double?,
+    maxDeliveryMin: maxDeliveryMin == _keep ? this.maxDeliveryMin : maxDeliveryMin as int?,
+    openNow:        openNow ?? this.openNow,
+  );
+
+  List<Professional> apply(List<Professional> list) {
+    var r = list;
+    if (openNow)           r = r.where((p) => p.isOpen).toList();
+    if (minRating != null) r = r.where((p) => (p.avgRating ?? 0) >= minRating!).toList();
+    if (maxDeliveryMin != null) {
+      r = r.where((p) => (p.estimatedDeliveryMin ?? 60) <= maxDeliveryMin!).toList();
+    }
+    return r;
+  }
+
+  static const _keep = Object();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 String _avatarInitial(String? name) {
   if (name == null || name.trim().isEmpty) return '?';
   return name.trim().substring(0, 1).toUpperCase();
 }
 
+/// Retourne true si l'établissement ferme dans les 45 prochaines minutes.
+bool _isClosingSoon(Professional pro) {
+  if (!pro.isOpen || pro.openingHours == null) return false;
+  final now = DateTime.now();
+  const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  final dayHours = pro.openingHours![dayKeys[now.weekday - 1]];
+  if (dayHours is! Map) return false;
+  final closeStr = dayHours['close'] as String?;
+  if (closeStr == null) return false;
+  final parts = closeStr.split(':');
+  if (parts.length < 2) return false;
+  try {
+    final closeTime = DateTime(now.year, now.month, now.day,
+        int.parse(parts[0]), int.parse(parts[1]));
+    final diff = closeTime.difference(now).inMinutes;
+    return diff > 0 && diff <= 45;
+  } catch (_) {
+    return false;
+  }
+}
+
+// ── Écran principal ───────────────────────────────────────────────────────────
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _selectedCategory = 'all';
-  int    _selectedRadius   = 0;
+  String      _selectedCategory = 'all';
+  int         _selectedRadius   = 0;
+  HomeFilters _filters          = const HomeFilters();
 
   static const _radiusOptions = [
     (label: 'Tout',  km: 0),
@@ -67,14 +134,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     (label: '20 km', km: 20),
   ];
 
-  final _categories = [
+  static const _categories = [
     {'id': 'all',         'label': 'Tout',     'emoji': '🌟'},
     {'id': 'RESTAURANT',  'label': 'Restos',   'emoji': '🍽️'},
     {'id': 'GROCERY',     'label': 'Épicerie', 'emoji': '🛒'},
     {'id': 'SUPERMARKET', 'label': 'Super',    'emoji': '🏪'},
     {'id': 'BAKERY',      'label': 'Boulang.', 'emoji': '🥖'},
     {'id': 'PHARMACY',    'label': 'Pharma',   'emoji': '💊'},
+    {'id': 'other',       'label': 'Divers',   'emoji': '🏬'},
   ];
+
+  void _showFilters() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FilterSheet(
+        current: _filters,
+        onApply: (f) => setState(() => _filters = f),
+      ),
+    );
+  }
+
+  List<Professional> _applyCategory(List<Professional> list) {
+    if (_selectedCategory == 'all') return list;
+    if (_selectedCategory == 'other') {
+      const known = {'RESTAURANT', 'GROCERY', 'SUPERMARKET', 'BAKERY', 'PHARMACY'};
+      return list.where((p) => !known.contains(p.category)).toList();
+    }
+    return list.where((p) => p.category == _selectedCategory).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -103,21 +192,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Livraison à',
-                              style: TextStyle(
-                                fontFamily: 'Nunito', fontSize: 13,
-                                color: Colors.white.withOpacity(0.8)),
-                            ),
+                            Text('Livraison à',
+                              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                                  color: Colors.white.withOpacity(0.8))),
                             const Row(children: [
                               Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
                               SizedBox(width: 2),
-                              Text(
-                                'Cotonou, Bénin',
-                                style: TextStyle(
-                                  fontFamily: 'Nunito', fontSize: 15,
-                                  fontWeight: FontWeight.w700, color: Colors.white),
-                              ),
+                              Text('Cotonou, Bénin',
+                                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                                    fontWeight: FontWeight.w700, color: Colors.white)),
                               Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
                             ]),
                           ],
@@ -133,73 +216,102 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
                               ? NetworkImage(user.avatarUrl!) : null,
                           child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
-                              ? Text(
-                                  _avatarInitial(user?.displayName),
-                                  style: const TextStyle(
-                                    fontFamily: 'Nunito', color: Colors.white,
-                                    fontWeight: FontWeight.w800, fontSize: 16),
-                                )
+                              ? Text(_avatarInitial(user?.displayName),
+                                  style: const TextStyle(fontFamily: 'Nunito', color: Colors.white,
+                                      fontWeight: FontWeight.w800, fontSize: 16))
                               : null,
                         ),
                       ),
                     ]),
-                    const SizedBox(height: 16),
-                    // Barre de recherche (tap → /search)
+                    const SizedBox(height: 14),
+                    // Barre de recherche
                     GestureDetector(
                       onTap: () => context.push('/search'),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
+                          color: Colors.white, borderRadius: BorderRadius.circular(14),
                           boxShadow: [BoxShadow(
                             color: Colors.black.withOpacity(0.08),
                             blurRadius: 12, offset: const Offset(0, 4))],
                         ),
-                        child: const Row(children: [
-                          Padding(
+                        child: Row(children: [
+                          const Padding(
                             padding: EdgeInsets.only(left: 16),
                             child: Icon(Icons.search, color: AppColors.grey, size: 22)),
-                          Expanded(child: Padding(
+                          const Expanded(child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            child: Text(
-                              'Plat, restaurant, produit…',
-                              style: TextStyle(
-                                color: AppColors.grey, fontFamily: 'Nunito', fontSize: 15)),
-                          )),
+                            child: Text('Plat, restaurant, boutique…',
+                              style: TextStyle(color: AppColors.grey,
+                                  fontFamily: 'Nunito', fontSize: 15)))),
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10)),
+                            child: const Text('Chercher',
+                              style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                                  fontWeight: FontWeight.w700, color: AppColors.primary)),
+                          ),
                         ]),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    // Chips rayon géo
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _radiusOptions.map((opt) {
-                          final sel = _selectedRadius == opt.km;
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedRadius = opt.km),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: sel ? Colors.white : Colors.white.withOpacity(0.18),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(sel ? 0 : 0.5)),
-                              ),
-                              child: Text(
-                                opt.label,
-                                style: TextStyle(
-                                  fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
-                                  color: sel ? AppColors.primary : Colors.white,
+                    const SizedBox(height: 10),
+                    // Ligne rayon + filtre
+                    Row(children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _radiusOptions.map((opt) {
+                              final sel = _selectedRadius == opt.km;
+                              return GestureDetector(
+                                onTap: () => setState(() => _selectedRadius = opt.km),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: sel ? Colors.white : Colors.white.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(sel ? 0 : 0.5))),
+                                  child: Row(children: [
+                                    Icon(Icons.my_location_rounded,
+                                      color: sel ? AppColors.primary : Colors.white, size: 11),
+                                    const SizedBox(width: 4),
+                                    Text(opt.label, style: TextStyle(
+                                      fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
+                                      color: sel ? AppColors.primary : Colors.white)),
+                                  ]),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
+                          ),
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: _showFilters,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _filters.hasAny ? Colors.white : Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(_filters.hasAny ? 0 : 0.5))),
+                          child: Row(children: [
+                            Icon(Icons.tune_rounded,
+                              color: _filters.hasAny ? AppColors.primary : Colors.white, size: 15),
+                            const SizedBox(width: 4),
+                            Text('Filtres${_filters.hasAny ? ' (${_filters.count})' : ''}',
+                              style: TextStyle(
+                                fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
+                                color: _filters.hasAny ? AppColors.primary : Colors.white)),
+                          ]),
+                        ),
+                      ),
+                    ]),
                   ],
                 ),
               ),
@@ -207,13 +319,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
 
-        // ── Catégories ───────────────────────────────────────────────────────
+        // ── Catégories rapides ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Container(
             color: AppColors.offWhite,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: _categories.map((c) {
                   final sel = c['id'] == _selectedCategory;
@@ -222,21 +334,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
                         color: sel ? AppColors.primary : Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: sel ? AppColors.primary : AppColors.lightGrey),
-                      ),
+                        border: Border.all(
+                            color: sel ? AppColors.primary : AppColors.lightGrey)),
                       child: Row(children: [
-                        Text(c['emoji']!, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 6),
-                        Text(
-                          c['label']!,
-                          style: TextStyle(
-                            fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                            color: sel ? Colors.white : AppColors.darkGrey),
-                        ),
+                        Text(c['emoji']!, style: const TextStyle(fontSize: 15)),
+                        const SizedBox(width: 5),
+                        Text(c['label']!, style: TextStyle(
+                          fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
+                          color: sel ? Colors.white : AppColors.darkGrey)),
                       ]),
                     ),
                   );
@@ -245,6 +354,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ),
+
+        // ── Filtres actifs (chips résumé) ─────────────────────────────────────
+        if (_filters.hasAny)
+          SliverToBoxAdapter(
+            child: Container(
+              color: AppColors.offWhite,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Row(children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: [
+                        if (_filters.openNow)
+                          _ActiveFilterChip(label: 'Ouvert maintenant',
+                            onRemove: () => setState(() =>
+                                _filters = _filters.copyWith(openNow: false))),
+                        if (_filters.minRating != null)
+                          _ActiveFilterChip(label: '${_filters.minRating!.toStringAsFixed(1)}★ min',
+                            onRemove: () => setState(() =>
+                                _filters = _filters.copyWith(minRating: null))),
+                        if (_filters.maxDeliveryMin != null)
+                          _ActiveFilterChip(label: '< ${_filters.maxDeliveryMin} min',
+                            onRemove: () => setState(() =>
+                                _filters = _filters.copyWith(maxDeliveryMin: null))),
+                      ]),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _filters = const HomeFilters()),
+                    child: const Text('Réinitialiser',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                          fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  ),
+                ]),
+              ),
+            ),
+          ),
 
         // ── Banners ──────────────────────────────────────────────────────────
         banners.when(
@@ -255,27 +402,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
         ),
 
+        // ── Nouveautés + Promos (sections horizontales dynamiques) ────────────
+        if (professionals.value != null && professionals.value!.isNotEmpty)
+          ..._buildDynamicSections(professionals.value!),
+
         // ── Produits populaires ───────────────────────────────────────────────
-        SliverToBoxAdapter(
+        const SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
             child: Row(children: [
-              const Text(
-                'Produits populaires',
-                style: TextStyle(
-                  fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w800,
-                  color: AppColors.nearBlack),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => context.push('/search'),
-                child: const Text(
-                  'Voir tout',
-                  style: TextStyle(
-                    fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                    color: AppColors.primary),
-                ),
-              ),
+              Text('Populaires près de vous',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              Spacer(),
+              Text('⭐', style: TextStyle(fontSize: 16)),
             ]),
           ),
         ),
@@ -308,18 +448,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
 
         // ── Titre établissements ──────────────────────────────────────────────
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
             child: Row(children: [
-              Text(
-                'Établissements',
-                style: TextStyle(
-                  fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w800,
-                  color: AppColors.nearBlack),
-              ),
-              Spacer(),
-              Text('🔥', style: TextStyle(fontSize: 18)),
+              const Text('Établissements',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              const Spacer(),
+              if (_filters.hasAny)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8)),
+                  child: const Text('Filtres actifs',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        fontWeight: FontWeight.w700, color: AppColors.primary)),
+                )
+              else
+                const Text('🏪', style: TextStyle(fontSize: 16)),
             ]),
           ),
         ),
@@ -327,47 +475,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // ── Liste établissements ──────────────────────────────────────────────
         professionals.when(
           data: (list) {
-            final filtered = _selectedCategory == 'all'
-                ? list
-                : list.where((p) => p.category == _selectedCategory).toList();
+            final byCat   = _applyCategory(list);
+            final filtered = _filters.apply(byCat);
             if (filtered.isEmpty) {
               return SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
-                  child: Center(
-                    child: Column(children: [
-                      const Text('😔', style: TextStyle(fontSize: 56)),
-                      const SizedBox(height: 12),
-                      Text(
-                        list.isEmpty
-                            ? 'Aucun établissement disponible'
-                            : 'Aucun établissement dans cette catégorie',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700,
-                          color: AppColors.nearBlack),
+                  child: Center(child: Column(children: [
+                    const Text('😔', style: TextStyle(fontSize: 56)),
+                    const SizedBox(height: 12),
+                    Text(
+                      list.isEmpty
+                          ? 'Aucun établissement disponible'
+                          : 'Aucun résultat avec ces filtres',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                          fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                    const SizedBox(height: 6),
+                    Text(
+                      list.isEmpty
+                          ? 'Aucun établissement validé pour le moment.'
+                          : 'Modifiez vos filtres ou élargissez la zone.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          color: AppColors.grey, height: 1.4)),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _filters = const HomeFilters());
+                        ref.invalidate(nearbyProfessionalsProvider(_selectedRadius));
+                      },
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Réinitialiser'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(180, 44),
+                        backgroundColor: AppColors.primary,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        list.isEmpty
-                            ? 'Aucun établissement validé pour le moment.'
-                            : 'Essayez une autre catégorie.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey, height: 1.4),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () => ref.invalidate(nearbyProfessionalsProvider(_selectedRadius)),
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: const Text('Réessayer'),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(160, 44),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      ),
-                    ]),
-                  ),
+                    ),
+                  ])),
                 ),
               );
             }
@@ -385,8 +530,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
-                (ctx, i) => _ShimmerRestaurantCard(), childCount: 4),
-            ),
+                (ctx, i) => _ShimmerRestaurantCard(), childCount: 4)),
           ),
           error: (e, _) => SliverToBoxAdapter(
             child: Padding(
@@ -399,14 +543,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(children: [
                   const Text('📡', style: TextStyle(fontSize: 40)),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Connexion impossible',
-                    style: TextStyle(
-                      fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700,
-                      color: AppColors.nearBlack)),
+                  const Text('Connexion impossible',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                        fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Vérifiez votre connexion internet et réessayez.',
+                  const Text('Vérifiez votre connexion internet et réessayez.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
                   const SizedBox(height: 16),
@@ -416,10 +557,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-                      child: const Text(
-                        'Réessayer',
-                        style: TextStyle(
-                          fontFamily: 'Nunito', color: Colors.white, fontWeight: FontWeight.w700)),
+                      child: const Text('Réessayer',
+                        style: TextStyle(fontFamily: 'Nunito', color: Colors.white,
+                            fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ]),
@@ -428,6 +568,296 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Construit les sections horizontales dynamiques à partir de la liste complète.
+  List<Widget> _buildDynamicSections(List<Professional> list) {
+    final top = list.where((p) => p.isOpen).toList()
+      ..sort((a, b) => (b.avgRating ?? 0).compareTo(a.avgRating ?? 0));
+    final promos = list.where((p) => (p.deliveryFee ?? 1) == 0).toList();
+    return [
+      ..._horizSection('🔥 Populaires maintenant', top.take(8).toList()),
+      if (promos.isNotEmpty)
+        ..._horizSection('🎁 Livraison gratuite', promos.take(8).toList()),
+    ];
+  }
+
+  List<Widget> _horizSection(String title, List<Professional> items) {
+    if (items.isEmpty) return [];
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+          child: Text(title,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            itemCount: items.length,
+            itemBuilder: (ctx, i) => _RestaurantMiniCard(pro: items[i]),
+          ),
+        ),
+      ),
+    ];
+  }
+}
+
+// ── Filter Sheet ──────────────────────────────────────────────────────────────
+
+class _FilterSheet extends StatefulWidget {
+  final HomeFilters current;
+  final ValueChanged<HomeFilters> onApply;
+  const _FilterSheet({required this.current, required this.onApply});
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late HomeFilters _local;
+
+  @override
+  void initState() {
+    super.initState();
+    _local = widget.current;
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Center(child: Container(
+        width: 40, height: 4,
+        decoration: BoxDecoration(
+          color: AppColors.lightGrey, borderRadius: BorderRadius.circular(2)))),
+      const SizedBox(height: 20),
+      Row(children: [
+        const Text('Filtres', style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
+            fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+        const Spacer(),
+        if (_local.hasAny) GestureDetector(
+          onTap: () => setState(() => _local = const HomeFilters()),
+          child: const Text('Réinitialiser', style: TextStyle(
+            fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
+            color: AppColors.primary)),
+        ),
+      ]),
+      const SizedBox(height: 20),
+
+      // Ouvert maintenant
+      _filterRow(
+        icon: Icons.store_rounded,
+        label: 'Ouvert maintenant',
+        child: Switch(
+          value: _local.openNow,
+          onChanged: (v) => setState(() => _local = _local.copyWith(openNow: v)),
+          activeColor: AppColors.primary,
+        ),
+      ),
+      const Divider(height: 24, color: AppColors.lightGrey),
+
+      // Note minimale
+      const Text('Note minimale',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+      const SizedBox(height: 10),
+      Row(children: [
+        for (final r in [null, 3.0, 4.0, 4.5]) _RatingChip(
+          label: r == null ? 'Toutes' : '${r.toStringAsFixed(r % 1 == 0 ? 0 : 1)}★',
+          selected: _local.minRating == r,
+          onTap: () => setState(() => _local = _local.copyWith(minRating: r)),
+        ),
+      ]),
+      const Divider(height: 24, color: AppColors.lightGrey),
+
+      // Temps de livraison
+      const Text('Temps de livraison',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+      const SizedBox(height: 10),
+      Row(children: [
+        for (final t in [null, 20, 30, 45]) _RatingChip(
+          label: t == null ? 'Tout' : '< $t min',
+          selected: _local.maxDeliveryMin == t,
+          onTap: () => setState(() => _local = _local.copyWith(maxDeliveryMin: t)),
+        ),
+      ]),
+
+      const SizedBox(height: 24),
+      ElevatedButton(
+        onPressed: () { widget.onApply(_local); Navigator.pop(context); },
+        child: const Text('Appliquer'),
+      ),
+    ]),
+  );
+
+  Widget _filterRow({required IconData icon, required String label, required Widget child}) =>
+    Row(children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: AppColors.primary, size: 18)),
+      const SizedBox(width: 12),
+      Expanded(child: Text(label, style: const TextStyle(
+        fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600,
+        color: AppColors.nearBlack))),
+      child,
+    ]);
+}
+
+class _RatingChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _RatingChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.primary : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: selected ? AppColors.primary : AppColors.lightGrey)),
+      child: Text(label, style: TextStyle(
+        fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
+        color: selected ? Colors.white : AppColors.darkGrey)),
+    ),
+  );
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onRemove;
+  const _ActiveFilterChip({required this.label, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(right: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(16)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Text(label, style: const TextStyle(
+        fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
+        color: AppColors.primary)),
+      const SizedBox(width: 4),
+      GestureDetector(
+        onTap: onRemove,
+        child: const Icon(Icons.close_rounded, size: 14, color: AppColors.primary)),
+    ]),
+  );
+}
+
+// ── Restaurant mini card (sections horizontales) ──────────────────────────────
+
+class _RestaurantMiniCard extends StatelessWidget {
+  final Professional pro;
+  const _RestaurantMiniCard({required this.pro});
+
+  @override
+  Widget build(BuildContext context) {
+    final closingSoon = _isClosingSoon(pro);
+    return GestureDetector(
+      onTap: () => context.push('/restaurant/${pro.id}'),
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.lightGrey.withOpacity(0.7))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(13), topRight: Radius.circular(13)),
+            child: Stack(children: [
+              (pro.coverImageUrl != null && pro.coverImageUrl!.isNotEmpty)
+                  ? CachedNetworkImage(
+                      imageUrl: pro.coverImageUrl!,
+                      height: 90, width: 150, fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        height: 90, width: 150,
+                        color: AppColors.primary.withOpacity(0.08),
+                        child: Center(child: Text(pro.categoryEmoji,
+                            style: const TextStyle(fontSize: 32)))))
+                  : Container(
+                      height: 90, width: 150,
+                      color: AppColors.primary.withOpacity(0.08),
+                      child: Center(child: Text(pro.categoryEmoji,
+                          style: const TextStyle(fontSize: 32)))),
+              // Badge statut temps réel
+              Positioned(top: 6, left: 6, child: _StatusBadge(
+                isOpen: pro.isOpen, closingSoon: closingSoon)),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(pro.businessName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              const SizedBox(height: 3),
+              Row(children: [
+                if (pro.avgRating != null && (pro.avgRating ?? 0) > 0) ...[
+                  const Icon(Icons.star_rounded, color: AppColors.yellow, size: 12),
+                  const SizedBox(width: 2),
+                  Text(pro.avgRating!.toStringAsFixed(1),
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                  const SizedBox(width: 6),
+                ],
+                const Icon(Icons.access_time_rounded, size: 11, color: AppColors.grey),
+                const SizedBox(width: 2),
+                Text('${pro.estimatedDeliveryMin ?? 25} min',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+              ]),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Badge statut temps réel ───────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  final bool isOpen;
+  final bool closingSoon;
+  const _StatusBadge({required this.isOpen, required this.closingSoon});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg;
+    final String label;
+    if (!isOpen) {
+      bg = AppColors.grey; label = 'Fermé';
+    } else if (closingSoon) {
+      bg = AppColors.warning; label = 'Ferme bientôt';
+    } else {
+      bg = AppColors.success; label = 'Ouvert';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(7)),
+      child: Text(label, style: const TextStyle(
+        fontFamily: 'Nunito', color: Colors.white, fontSize: 10,
+        fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -445,91 +875,59 @@ class _ProductCard extends StatelessWidget {
       width: 140,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(15), topRight: Radius.circular(15)),
-            child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                ? CachedNetworkImage(
-                    imageUrl: product.imageUrl!,
-                    height: 110, width: 140, fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Container(
-                      height: 110, width: 140,
-                      color: AppColors.primary.withOpacity(0.08),
-                      child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 36)))),
-                  )
-                : Container(
+        color: Colors.white, borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+          child: (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+              ? CachedNetworkImage(
+                  imageUrl: product.imageUrl!,
+                  height: 110, width: 140, fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(
                     height: 110, width: 140,
                     color: AppColors.primary.withOpacity(0.08),
-                    child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 36)))),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                    color: AppColors.nearBlack),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.formattedPrice,
-                  style: const TextStyle(
-                    fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800,
-                    color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                    child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 36)))))
+              : Container(
+                  height: 110, width: 140,
+                  color: AppColors.primary.withOpacity(0.08),
+                  child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 36)))),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            const SizedBox(height: 4),
+            Text(product.formattedPrice,
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  fontWeight: FontWeight.w800, color: AppColors.primary)),
+          ]),
+        ),
+      ]),
     ),
   );
 }
 
-class _ShimmerProductCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Shimmer.fromColors(
-    baseColor: Colors.grey[300]!,
-    highlightColor: Colors.grey[100]!,
-    child: Container(
-      width: 140, height: 184,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(16)),
-    ),
-  );
-}
-
-// ── Cartes restaurant ─────────────────────────────────────────────────────────
+// ── Restaurant card (liste verticale) ────────────────────────────────────────
 
 class _RestaurantCard extends StatelessWidget {
   final Professional pro;
   const _RestaurantCard({required this.pro});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () => context.push('/restaurant/${pro.id}'),
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+  Widget build(BuildContext context) {
+    final closingSoon = _isClosingSoon(pro);
+    return GestureDetector(
+      onTap: () => context.push('/restaurant/${pro.id}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(15), topRight: Radius.circular(15)),
@@ -541,91 +939,77 @@ class _RestaurantCard extends StatelessWidget {
                       errorWidget: (_, __, ___) => Container(
                         height: 160, color: AppColors.primary.withOpacity(0.08),
                         child: Center(child: Text(pro.categoryEmoji,
-                            style: const TextStyle(fontSize: 52)))),
-                    )
+                            style: const TextStyle(fontSize: 52)))))
                   : Container(
                       height: 160, color: AppColors.primary.withOpacity(0.08),
                       child: Center(child: Text(pro.categoryEmoji,
                           style: const TextStyle(fontSize: 52)))),
               if (!pro.isOpen) Container(
                 height: 160, color: Colors.black.withOpacity(0.4),
-                child: const Center(child: Text(
-                  'FERMÉ',
-                  style: TextStyle(
-                    fontFamily: 'Nunito', color: Colors.white,
-                    fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: 2)))),
-              Positioned(
-                top: 12, left: 12,
+                child: const Center(child: Text('FERMÉ',
+                  style: TextStyle(fontFamily: 'Nunito', color: Colors.white,
+                      fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: 2)))),
+              Positioned(top: 12, left: 12,
+                child: _StatusBadge(isOpen: pro.isOpen, closingSoon: closingSoon)),
+              // Badge livraison gratuite
+              if ((pro.deliveryFee ?? 1) == 0) Positioned(top: 12, right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: pro.isOpen ? AppColors.success : AppColors.grey,
-                    borderRadius: BorderRadius.circular(8)),
-                  child: Text(
-                    pro.isOpen ? 'Ouvert' : 'Fermé',
-                    style: const TextStyle(
-                      fontFamily: 'Nunito', color: Colors.white,
-                      fontSize: 11, fontWeight: FontWeight.w700)),
+                    color: AppColors.success, borderRadius: BorderRadius.circular(7)),
+                  child: const Text('Livraison gratuite',
+                    style: TextStyle(fontFamily: 'Nunito', color: Colors.white,
+                        fontSize: 10, fontWeight: FontWeight.w700)),
                 )),
             ]),
           ),
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Expanded(child: Text(
-                    pro.businessName,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800,
-                      color: AppColors.nearBlack))),
-                  if (pro.avgRating != null && (pro.avgRating ?? 0) > 0)
-                    Row(children: [
-                      const Icon(Icons.star_rounded, color: AppColors.yellow, size: 16),
-                      const SizedBox(width: 2),
-                      Text(
-                        pro.avgRating!.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                          color: AppColors.nearBlack)),
-                    ]),
-                ]),
-                const SizedBox(height: 6),
-                Row(children: [
-                  const Icon(Icons.location_on_rounded, size: 14, color: AppColors.grey),
-                  const SizedBox(width: 2),
-                  Expanded(child: Text(
-                    pro.city ?? '',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey))),
-                  if (pro.distance != null) ...[
-                    const Icon(Icons.directions_bike_rounded, size: 14, color: AppColors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${pro.distance!.toStringAsFixed(1)} km',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
-                  ],
-                ]),
-                const SizedBox(height: 8),
-                Row(children: [
-                  _InfoChip(
-                    icon: Icons.access_time_rounded,
-                    label: '${pro.estimatedDeliveryMin ?? 25}-${(pro.estimatedDeliveryMin ?? 25) + 10} min'),
-                  const SizedBox(width: 8),
-                  _InfoChip(
-                    icon: Icons.delivery_dining_rounded,
-                    label: (pro.deliveryFee ?? 0) == 0
-                        ? 'Livraison gratuite'
-                        : '${(pro.deliveryFee ?? 0).toStringAsFixed(0)} F'),
-                ]),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(pro.businessName,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                      fontWeight: FontWeight.w800, color: AppColors.nearBlack))),
+                if (pro.avgRating != null && (pro.avgRating ?? 0) > 0)
+                  Row(children: [
+                    const Icon(Icons.star_rounded, color: AppColors.yellow, size: 16),
+                    const SizedBox(width: 2),
+                    Text(pro.avgRating!.toStringAsFixed(1),
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                  ]),
+              ]),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.location_on_rounded, size: 14, color: AppColors.grey),
+                const SizedBox(width: 2),
+                Expanded(child: Text(pro.city ?? '',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                      color: AppColors.grey))),
+                if (pro.distance != null) ...[
+                  const Icon(Icons.directions_bike_rounded, size: 14, color: AppColors.grey),
+                  const SizedBox(width: 4),
+                  Text('${pro.distance!.toStringAsFixed(1)} km',
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                        color: AppColors.grey)),
+                ],
+              ]),
+              const SizedBox(height: 8),
+              Row(children: [
+                _InfoChip(icon: Icons.access_time_rounded,
+                  label: '${pro.estimatedDeliveryMin ?? 25}-${(pro.estimatedDeliveryMin ?? 25) + 10} min'),
+                const SizedBox(width: 8),
+                _InfoChip(icon: Icons.delivery_dining_rounded,
+                  label: (pro.deliveryFee ?? 0) == 0
+                      ? 'Livraison gratuite'
+                      : '${(pro.deliveryFee ?? 0).toStringAsFixed(0)} F'),
+              ]),
+            ]),
           ),
-        ],
+        ]),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _InfoChip extends StatelessWidget {
@@ -636,16 +1020,12 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: AppColors.offWhite, borderRadius: BorderRadius.circular(8)),
+    decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(8)),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 13, color: AppColors.grey),
       const SizedBox(width: 4),
-      Text(
-        label,
-        style: const TextStyle(
-          fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkGrey,
-          fontWeight: FontWeight.w600)),
+      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          color: AppColors.darkGrey, fontWeight: FontWeight.w600)),
     ]),
   );
 }
@@ -677,16 +1057,12 @@ class _BannersCarouselState extends State<_BannersCarousel> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: CachedNetworkImage(
-                imageUrl: banner['imageUrl'] ?? '',
-                fit: BoxFit.cover,
+                imageUrl: banner['imageUrl'] ?? '', fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => Container(
                   color: AppColors.primary.withOpacity(0.2),
-                  child: const Center(child: Text(
-                    'ifè FOOD',
-                    style: TextStyle(
-                      fontFamily: 'Nunito', fontWeight: FontWeight.w800,
-                      color: AppColors.primary, fontSize: 20)))),
-              ),
+                  child: const Center(child: Text('ifè FOOD',
+                    style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800,
+                        color: AppColors.primary, fontSize: 20))))),
             ),
           );
         },
@@ -727,8 +1103,7 @@ class _ClientHomeBell extends StatelessWidget {
             unread > 0
                 ? Icons.notifications_active_rounded
                 : Icons.notifications_none_rounded,
-            color: Colors.white, size: 24,
-          ),
+            color: Colors.white, size: 24),
         ),
       ),
     ),
@@ -738,31 +1113,33 @@ class _ClientHomeBell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
         constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
         decoration: BoxDecoration(
-          color: AppColors.danger,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.primary, width: 1.5),
-        ),
+          color: AppColors.danger, borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primary, width: 1.5)),
         alignment: Alignment.center,
-        child: Text(
-          unread > 99 ? '99+' : '$unread',
-          style: const TextStyle(
-            fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w900,
-            color: Colors.white)),
+        child: Text(unread > 99 ? '99+' : '$unread',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
+              fontWeight: FontWeight.w900, color: Colors.white)),
       ),
     ),
   ]);
 }
 
-// ── Shimmer restaurant ────────────────────────────────────────────────────────
+// ── Shimmers ──────────────────────────────────────────────────────────────────
 
 class _ShimmerRestaurantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Shimmer.fromColors(
-    baseColor: Colors.grey[300]!,
-    highlightColor: Colors.grey[100]!,
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 12), height: 260,
-      decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(16))),
+    baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
+    child: Container(margin: const EdgeInsets.only(bottom: 12), height: 260,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+  );
+}
+
+class _ShimmerProductCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Shimmer.fromColors(
+    baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
+    child: Container(width: 140, height: 184, margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
   );
 }

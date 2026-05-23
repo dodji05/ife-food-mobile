@@ -21,6 +21,7 @@ class CatalogueScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync   = ref.watch(productsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final commissionRate  = ref.watch(proProvider).professional?.commissionRate;
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -49,7 +50,23 @@ class CatalogueScreen extends ConsumerWidget {
         label: const Text('Ajouter',
           style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: Colors.white)),
       ),
-      body: productsAsync.when(
+      body: Column(children: [
+        if (commissionRate != null && commissionRate > 0)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: AppColors.primary.withOpacity(0.10),
+            child: Row(children: [
+              const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                'Une commission de ${commissionRate.toStringAsFixed(0)}% sera ajoutée à chaque plat ou menu.',
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    fontWeight: FontWeight.w600, color: AppColors.primary),
+              )),
+            ]),
+          ),
+        Expanded(child: productsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => _ErrorState(message: e.toString(), onRetry: () => ref.invalidate(productsProvider)),
         data: (products) {
@@ -69,7 +86,8 @@ class CatalogueScreen extends ConsumerWidget {
             child: _GroupedCatalogue(products: products, categories: categories),
           );
         },
-      ),
+        )),
+      ]),
     );
   }
 }

@@ -160,6 +160,8 @@ class ProDashboardScreen extends ConsumerWidget {
                   _QuickAction('⏰', 'Horaires',  () => context.push('/pro/schedule')),
                   _QuickAction('⭐', 'Avis',      () => context.push('/pro/reviews')),
                   _QuickAction('🛵', 'Livreurs',  () => context.push('/pro/favorite-drivers')),
+                  _QuickAction('🎟️', 'Promos',    () => context.push('/pro/promo')),
+                  _QuickAction('🤝', 'Parrainage',() => context.push('/pro/referral')),
                   _QuickAction('👤', 'Profil',    () => context.go('/pro/profile')),
                 ],
               ),

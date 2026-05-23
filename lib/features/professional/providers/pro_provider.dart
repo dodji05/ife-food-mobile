@@ -501,6 +501,27 @@ class ProNotifier extends StateNotifier<ProState> {
     return FavoriteDriverEntry.fromJson({'driver': data});
   }
 
+  // ── Promo codes ───────────────────────────────────────────────────────────
+
+  Future<List<PromoCode>> listPromoCodes() async {
+    final res = await ApiClient.instance.get('/professionals/me/promo-codes');
+    final list = res['data'] as List? ?? [];
+    return list.whereType<Map<String, dynamic>>().map(PromoCode.fromJson).toList();
+  }
+
+  Future<PromoCode> createPromoCode(Map<String, dynamic> data) async {
+    final res = await ApiClient.instance.post('/professionals/me/promo-codes', data: data);
+    return PromoCode.fromJson(res['data'] as Map<String, dynamic>);
+  }
+
+  Future<void> updatePromoCode(String promoId, Map<String, dynamic> data) async {
+    await ApiClient.instance.patch('/professionals/me/promo-codes/$promoId', data: data);
+  }
+
+  Future<void> deletePromoCode(String promoId) async {
+    await ApiClient.instance.delete('/professionals/me/promo-codes/$promoId');
+  }
+
   /// Upload une image pour un produit existant.
   /// Backend : `POST /products/:id/image` avec champ multipart `image`.
   /// Retourne l'URL de l'image hébergée.
@@ -574,3 +595,61 @@ final favoriteDriversProvider = FutureProvider.autoDispose<List<FavoriteDriverEn
 /// Résultat de la recherche d'un livreur par téléphone.
 /// `null` si pas encore recherché, `FavoriteDriverEntry` si trouvé.
 final driverSearchProvider = StateProvider.autoDispose<FavoriteDriverEntry?>((ref) => null);
+
+// ── PromoCode (vue pro) ───────────────────────────────────────────────────────
+class PromoCode {
+  final String  id;
+  final String  code;
+  final String  discountType;   // PERCENTAGE | FIXED_AMOUNT
+  final double  discountValue;
+  final double? minOrderAmount;
+  final int?    maxUses;
+  final int     usesCount;
+  final bool    isActive;
+  final DateTime? expiresAt;
+
+  const PromoCode({
+    required this.id,
+    required this.code,
+    required this.discountType,
+    required this.discountValue,
+    this.minOrderAmount,
+    this.maxUses,
+    required this.usesCount,
+    required this.isActive,
+    this.expiresAt,
+  });
+
+  factory PromoCode.fromJson(Map<String, dynamic> j) => PromoCode(
+    id:            j['id']            as String? ?? '',
+    code:          j['code']          as String? ?? '',
+    discountType:  j['discountType']  as String? ?? 'PERCENTAGE',
+    discountValue: (j['discountValue'] as num?)?.toDouble() ?? 0,
+    minOrderAmount: (j['minOrderAmount'] as num?)?.toDouble(),
+    maxUses:       (j['maxUses'] as num?)?.toInt(),
+    usesCount:     (j['usesCount'] as num?)?.toInt() ?? 0,
+    isActive:      j['isActive']      as bool? ?? true,
+    expiresAt:     j['expiresAt'] != null
+        ? DateTime.tryParse(j['expiresAt'] as String)
+        : null,
+  );
+
+  String get discountLabel => discountType == 'PERCENTAGE'
+      ? '${discountValue.toStringAsFixed(0)}%'
+      : '${discountValue.toStringAsFixed(0)} F';
+}
+
+final promoCodesProvider = FutureProvider.autoDispose<List<PromoCode>>((ref) async {
+  final res = await ApiClient.instance.get('/professionals/me/promo-codes');
+  final list = res['data'] as List? ?? [];
+  return list.whereType<Map<String, dynamic>>().map(PromoCode.fromJson).toList();
+});
+
+// ── Referral code (parrainage pro) ────────────────────────────────────────────
+/// Retourne le code de parrainage du pro courant (le crée s'il n'existe pas).
+/// Le backend génère côté User (GET /users/me/referral-code).
+final referralCodeProvider = FutureProvider.autoDispose<String>((ref) async {
+  final res = await ApiClient.instance.get('/users/me/referral-code');
+  final data = res['data'] as Map<String, dynamic>?;
+  return data?['referralCode'] as String? ?? '';
+});

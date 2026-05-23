@@ -41,6 +41,7 @@ class _State extends ConsumerState<AddProductScreen> {
   final _stock  = TextEditingController();
 
   bool   _available = true;
+  bool   _isMenu    = false;
   bool   _loading   = false;
   /// Fichier image local choisi par l'utilisateur (pas encore uploadé).
   File?  _pickedImage;
@@ -50,6 +51,15 @@ class _State extends ConsumerState<AddProductScreen> {
   /// Catégorie sélectionnée (id). `null` = sans catégorie (groupe par défaut
   /// dans le catalogue côté pro).
   String? _categoryId;
+
+  // ── Variantes (taille / portion) ─────────────────────────────────────────
+  final List<TextEditingController> _variantNameCtrls  = [];
+  final List<TextEditingController> _variantPriceCtrls = [];
+
+  // ── Options / extras ─────────────────────────────────────────────────────
+  final List<TextEditingController> _optionNameCtrls  = [];
+  final List<TextEditingController> _optionPriceCtrls = [];
+  final List<bool> _optionRequired = [];
 
   bool get _isEdit => widget.product != null;
   bool get _canSave =>
@@ -80,6 +90,7 @@ class _State extends ConsumerState<AddProductScreen> {
       _price.text  = ((p['price'] as num?) ?? 0).toStringAsFixed(0);
       _stock.text  = p['stock'] != null ? '${p['stock']}' : '';
       _available   = p['isAvailable'] as bool? ?? true;
+      _isMenu      = p['isMenu'] as bool? ?? false;
       _existingImageUrl = p['imageUrl'] as String?;
       // categoryId peut venir aplati OU dans la relation 'category' jointe.
       final rawCat = p['category'];
@@ -87,6 +98,27 @@ class _State extends ConsumerState<AddProductScreen> {
         _categoryId = rawCat['id'] as String?;
       } else {
         _categoryId = p['categoryId'] as String?;
+      }
+      // Variantes
+      final rawVariants = p['variants'];
+      if (rawVariants is List) {
+        for (final v in rawVariants) {
+          if (v is Map) {
+            _variantNameCtrls.add(TextEditingController(text: (v['name'] ?? '').toString()));
+            _variantPriceCtrls.add(TextEditingController(text: '${v['price'] ?? 0}'));
+          }
+        }
+      }
+      // Options / extras
+      final rawOptions = p['options'];
+      if (rawOptions is List) {
+        for (final o in rawOptions) {
+          if (o is Map) {
+            _optionNameCtrls.add(TextEditingController(text: (o['name'] ?? '').toString()));
+            _optionPriceCtrls.add(TextEditingController(text: '${o['price'] ?? 0}'));
+            _optionRequired.add(o['required'] as bool? ?? false);
+          }
+        }
       }
     }
   }
@@ -98,6 +130,10 @@ class _State extends ConsumerState<AddProductScreen> {
     _descFr.dispose();
     _price.dispose();
     _stock.dispose();
+    for (final c in _variantNameCtrls)  { c.dispose(); }
+    for (final c in _variantPriceCtrls) { c.dispose(); }
+    for (final c in _optionNameCtrls)   { c.dispose(); }
+    for (final c in _optionPriceCtrls)  { c.dispose(); }
     super.dispose();
   }
 
@@ -154,14 +190,41 @@ class _State extends ConsumerState<AddProductScreen> {
     final descFr = _descFr.text.trim();
     final stockVal = int.tryParse(_stock.text.trim());
 
+    // Construction des variantes à partir des controllers
+    final variants = <Map<String, dynamic>>[];
+    for (var i = 0; i < _variantNameCtrls.length; i++) {
+      final name = _variantNameCtrls[i].text.trim();
+      if (name.isNotEmpty) {
+        variants.add({
+          'name':  name,
+          'price': double.tryParse(_variantPriceCtrls[i].text.trim()) ?? 0,
+        });
+      }
+    }
+    // Construction des options / extras
+    final options = <Map<String, dynamic>>[];
+    for (var i = 0; i < _optionNameCtrls.length; i++) {
+      final name = _optionNameCtrls[i].text.trim();
+      if (name.isNotEmpty) {
+        options.add({
+          'name':     name,
+          'price':    double.tryParse(_optionPriceCtrls[i].text.trim()) ?? 0,
+          'required': _optionRequired[i],
+        });
+      }
+    }
+
     final data = <String, dynamic>{
       'name':       {'fr': fr, 'en': en},
       if (descFr.isNotEmpty) 'description': {'fr': descFr, 'en': descFr},
       'price':      double.tryParse(_price.text.trim()) ?? 0,
       'currency':   'XOF',
       'isAvailable': _available,
+      'isMenu':     _isMenu,
       if (stockVal != null) 'stock': stockVal,
       if (_categoryId != null) 'categoryId': _categoryId,
+      if (variants.isNotEmpty) 'variants': variants,
+      if (options.isNotEmpty)  'options':  options,
     };
 
     try {
@@ -308,35 +371,117 @@ class _State extends ConsumerState<AddProductScreen> {
         const SizedBox(height: 20),
 
         // ── Disponibilité ──────────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.darkCard,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
-          ),
-          child: Row(children: [
-            const Icon(Icons.inventory_2_rounded, color: AppColors.darkSubtext, size: 20),
-            const SizedBox(width: 12),
-            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Disponible',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
-              Text('Le produit est visible et commandable',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
-            ])),
-            Switch(
-              value: _available,
-              onChanged: (v) => setState(() => _available = v),
-              activeColor: AppColors.primary,
-            ),
-          ]),
+        _ToggleRow(
+          icon: Icons.inventory_2_rounded,
+          title: 'Disponible',
+          subtitle: 'Le produit est visible et commandable',
+          value: _available,
+          onChanged: (v) => setState(() => _available = v),
         ),
-        // Bouton save retiré d'ici : il est maintenant dans le
-        // bottomNavigationBar du Scaffold (toujours visible).
+        const SizedBox(height: 12),
+
+        // ── Type : plat ou menu ────────────────────────────────────────────
+        _ToggleRow(
+          icon: Icons.restaurant_menu_rounded,
+          title: 'Menu',
+          subtitle: 'Cocher si c\'est un menu (plat complet avec accompagnements)',
+          value: _isMenu,
+          onChanged: (v) => setState(() => _isMenu = v),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Bannière commission ────────────────────────────────────────────
+        Consumer(builder: (context, cRef, _) {
+          final rate = cRef.watch(proProvider).professional?.commissionRate;
+          if (rate == null || rate <= 0) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  'Une commission de ${rate.toStringAsFixed(0)}% sera ajoutée à ce produit.',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                      fontWeight: FontWeight.w600, color: AppColors.primary),
+                )),
+              ]),
+            ),
+          );
+        }),
+
+        // ── Variantes ─────────────────────────────────────────────────────
+        _SectionTitle(
+          'Variantes (optionnel)',
+          'Ex: Petit, Normal, Grand — des prix différents pour le même plat',
+        ),
+        const SizedBox(height: 10),
+        for (var i = 0; i < _variantNameCtrls.length; i++)
+          _VariantOptionRow(
+            nameCtrl: _variantNameCtrls[i],
+            priceCtrl: _variantPriceCtrls[i],
+            nameHint: 'Ex: Grand',
+            priceHint: '3500',
+            onRemove: () => _removeVariant(i),
+          ),
+        _AddRowButton('Ajouter une variante', _addVariant),
+        const SizedBox(height: 20),
+
+        // ── Options / Extras ───────────────────────────────────────────────
+        _SectionTitle(
+          'Options / Extras (optionnel)',
+          'Ex: Sauce supplémentaire, Sans oignon — suppléments à la commande',
+        ),
+        const SizedBox(height: 10),
+        for (var i = 0; i < _optionNameCtrls.length; i++)
+          _VariantOptionRow(
+            nameCtrl: _optionNameCtrls[i],
+            priceCtrl: _optionPriceCtrls[i],
+            nameHint: 'Ex: Sauce pimentée',
+            priceHint: '0',
+            required: _optionRequired[i],
+            onRequiredChanged: (v) => setState(() => _optionRequired[i] = v),
+            onRemove: () => _removeOption(i),
+          ),
+        _AddRowButton('Ajouter une option', _addOption),
         const SizedBox(height: 24),
       ]),
     );
   }
+
+  // ── Gestion variantes ─────────────────────────────────────────────────────
+  void _addVariant() => setState(() {
+    _variantNameCtrls.add(TextEditingController());
+    _variantPriceCtrls.add(TextEditingController());
+  });
+
+  void _removeVariant(int i) => setState(() {
+    _variantNameCtrls[i].dispose();
+    _variantPriceCtrls[i].dispose();
+    _variantNameCtrls.removeAt(i);
+    _variantPriceCtrls.removeAt(i);
+  });
+
+  // ── Gestion options ───────────────────────────────────────────────────────
+  void _addOption() => setState(() {
+    _optionNameCtrls.add(TextEditingController());
+    _optionPriceCtrls.add(TextEditingController());
+    _optionRequired.add(false);
+  });
+
+  void _removeOption(int i) => setState(() {
+    _optionNameCtrls[i].dispose();
+    _optionPriceCtrls[i].dispose();
+    _optionNameCtrls.removeAt(i);
+    _optionPriceCtrls.removeAt(i);
+    _optionRequired.removeAt(i);
+  });
 
   // ── Aperçu image (3 états : local choisi / URL existante / placeholder) ──
   Widget _buildImagePreview() {
@@ -396,6 +541,133 @@ class _State extends ConsumerState<AddProductScreen> {
     onChanged: onChanged,
     style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.darkText),
     decoration: InputDecoration(hintText: hint),
+  );
+}
+
+// ── Toggle row (disponibilité, isMenu) ────────────────────────────────────
+class _ToggleRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _ToggleRow({
+    required this.icon, required this.title, required this.subtitle,
+    required this.value, required this.onChanged,
+  });
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: AppColors.darkCard,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.darkBorder),
+    ),
+    child: Row(children: [
+      Icon(icon, color: AppColors.darkSubtext, size: 20),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(
+          fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+        Text(subtitle, style: const TextStyle(
+          fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+      ])),
+      Switch(value: value, onChanged: onChanged, activeColor: AppColors.primary),
+    ]),
+  );
+}
+
+// ── En-tête de section (variantes / options) ──────────────────────────────
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  const _SectionTitle(this.title, this.subtitle);
+  @override
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(title, style: const TextStyle(
+      fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
+      color: AppColors.darkSubtext, letterSpacing: 0.3)),
+    const SizedBox(height: 2),
+    Text(subtitle, style: const TextStyle(
+      fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkMuted)),
+  ]);
+}
+
+// ── Ligne variante ou option ──────────────────────────────────────────────
+class _VariantOptionRow extends StatelessWidget {
+  final TextEditingController nameCtrl;
+  final TextEditingController priceCtrl;
+  final String nameHint;
+  final String priceHint;
+  final bool? required;
+  final ValueChanged<bool>? onRequiredChanged;
+  final VoidCallback onRemove;
+  const _VariantOptionRow({
+    required this.nameCtrl, required this.priceCtrl,
+    required this.nameHint, required this.priceHint,
+    this.required, this.onRequiredChanged,
+    required this.onRemove,
+  });
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(children: [
+      Expanded(flex: 3, child: TextField(
+        controller: nameCtrl,
+        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+        decoration: InputDecoration(
+          hintText: nameHint,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      )),
+      const SizedBox(width: 8),
+      Expanded(flex: 2, child: TextField(
+        controller: priceCtrl,
+        keyboardType: TextInputType.number,
+        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+        decoration: InputDecoration(
+          hintText: priceHint,
+          suffixText: 'F',
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      )),
+      if (required != null && onRequiredChanged != null) ...[
+        const SizedBox(width: 4),
+        Tooltip(
+          message: 'Obligatoire',
+          child: Checkbox(
+            value: required,
+            onChanged: (v) => onRequiredChanged!(v ?? false),
+            activeColor: AppColors.primary,
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+      ],
+      IconButton(
+        onPressed: onRemove,
+        icon: const Icon(Icons.remove_circle_outline_rounded, size: 20, color: AppColors.danger),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+      ),
+    ]),
+  );
+}
+
+// ── Bouton "Ajouter une ligne" ────────────────────────────────────────────
+class _AddRowButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _AddRowButton(this.label, this.onTap);
+  @override
+  Widget build(BuildContext context) => TextButton.icon(
+    onPressed: onTap,
+    icon: const Icon(Icons.add_rounded, size: 16, color: AppColors.primary),
+    label: Text(label,
+      style: const TextStyle(
+        fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+    style: TextButton.styleFrom(padding: EdgeInsets.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
   );
 }
 

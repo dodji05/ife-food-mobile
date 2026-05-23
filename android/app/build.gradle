@@ -49,8 +49,9 @@ android {
         versionName flutterVersionName
         multiDexEnabled true
         // Clé Google Maps — lue depuis l'env CI (MAPS_API_KEY) ou local.properties
+        // += préserve les placeholders Flutter par défaut (applicationName, etc.)
         def mapsKey = System.getenv("MAPS_API_KEY") ?: localProperties.getProperty('MAPS_API_KEY', '')
-        manifestPlaceholders = [MAPS_API_KEY: mapsKey]
+        manifestPlaceholders += [MAPS_API_KEY: mapsKey]
     }
 
     buildTypes {

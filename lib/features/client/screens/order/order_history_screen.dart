@@ -7,9 +7,7 @@ import '../../../../shared/models/order.dart';
 import '../../providers/cart_provider.dart';
 
 final ordersProvider = FutureProvider.autoDispose<List<Order>>((ref) async {
-  final res = await ApiClient.instance.get('/orders/my-orders');
-  // Backend returns paginated { data: [...], meta: {...} }.
-  // TransformInterceptor wraps to { success, data: { data: [...], meta: {...} } }.
+  final res = await ApiClient.instance.get('/orders/my-orders', params: {'limit': '50'});
   final raw = res['data'];
   final list = raw is List ? raw : (raw is Map ? (raw['data'] as List? ?? []) : []);
   return list.map((e) => Order.fromJson(e as Map<String, dynamic>)).toList();

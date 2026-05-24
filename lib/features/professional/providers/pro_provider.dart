@@ -201,25 +201,16 @@ class ProOrder {
 // ── Providers ─────────────────────────────────────────────────────────────────
 final liveOrdersProvider = FutureProvider.autoDispose
     .family<List<ProOrder>, String>((ref, status) async {
-  // Backend : GET /orders/professional (le filtre status n'est pas géré par
-  // l'endpoint, on filtre côté client en attendant un query param dédié).
-  final res = await ApiClient.instance.get('/orders/professional');
+  final res = await ApiClient.instance.get(
+    '/orders/professional',
+    params: {'status': status, 'limit': '50'},
+  );
   final list = res['data'] as List? ?? [];
-  return list
-      .whereType<Map<String, dynamic>>()
-      .where((e) => e['status'] == status)
-      .map(ProOrder.fromJson)
-      .toList();
+  return list.whereType<Map<String, dynamic>>().map(ProOrder.fromJson).toList();
 });
 
-/// Liste des catégories du pro courant, triées par sortOrder croissant.
-/// Le backend GET /products/categories/:proId inclut les products mais on
-/// les ignore ici — la liste produits vient du `productsProvider`.
 final categoriesProvider = FutureProvider.autoDispose<List<ProductCategory>>((ref) async {
-  final me = await ApiClient.instance.get('/professionals/me');
-  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
-  if (proId == null) return [];
-  final res = await ApiClient.instance.get('/products/categories/$proId');
+  final res = await ApiClient.instance.get('/products/categories/mine');
   final list = res['data'] as List? ?? [];
   return list
       .whereType<Map<String, dynamic>>()
@@ -229,26 +220,16 @@ final categoriesProvider = FutureProvider.autoDispose<List<ProductCategory>>((re
 });
 
 final productsProvider = FutureProvider.autoDispose<List<Product>>((ref) async {
-  // /professionals/me/products n'existe pas. On passe par /professionals/me
-  // pour récupérer l'id puis on appelle /products/professional/:id (public).
-  final me = await ApiClient.instance.get('/professionals/me');
-  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
-  if (proId == null) return [];
-  final res = await ApiClient.instance.get('/products/professional/$proId');
+  final res = await ApiClient.instance.get('/products/mine');
   final list = res['data'] as List? ?? [];
   return list.whereType<Map<String, dynamic>>().map(Product.fromJson).toList();
 });
 
 final reviewsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  // /professionals/me/reviews n'existe pas. On passe par /reviews/professional/:id.
-  final me = await ApiClient.instance.get('/professionals/me');
-  final proId = (me['data'] as Map<String, dynamic>?)?['id'] as String?;
-  if (proId == null) return {};
-  final res = await ApiClient.instance.get('/reviews/professional/$proId');
-  // Le contrôleur renvoie une liste — on l'enveloppe pour conserver la signature.
+  final res = await ApiClient.instance.get('/professionals/me/reviews');
   final data = res['data'];
-  if (data is List) return {'reviews': data};
-  return (data as Map<String, dynamic>?) ?? {};
+  if (data is Map<String, dynamic>) return data;
+  return {};
 });
 
 final dashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {

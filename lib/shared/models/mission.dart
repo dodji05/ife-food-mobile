@@ -17,6 +17,8 @@ class Mission {
   final double deliveryFee;
   final String currency;
   final double distanceKm;
+  final double? distanceToPickupKm;
+  final String deliveryZone;
   final int estimatedMinutes;
   final String orderStatus;
   final String deliveryStatus;
@@ -29,20 +31,22 @@ class Mission {
     required this.professionalAddress,
     required this.professionalLat,
     required this.professionalLng,
-    this.professionalPhone = '',
+    this.professionalPhone    = '',
     required this.clientAddress,
     required this.clientLat,
     required this.clientLng,
-    this.clientName        = '',
-    this.clientPhone       = '',
+    this.clientName           = '',
+    this.clientPhone          = '',
     required this.deliveryFee,
-    this.currency          = 'XOF',
-    this.distanceKm        = 0,
-    this.estimatedMinutes  = 20,
+    this.currency             = 'XOF',
+    this.distanceKm           = 0,
+    this.distanceToPickupKm,
+    this.deliveryZone         = '',
+    this.estimatedMinutes     = 20,
     required this.orderStatus,
-    this.deliveryStatus    = 'ASSIGNED',
+    this.deliveryStatus       = 'ASSIGNED',
     required this.createdAt,
-    this.items             = const [],
+    this.items                = const [],
   });
 
   // Depuis un Order (payload de la notification initiale)
@@ -66,7 +70,9 @@ class Mission {
       clientPhone:         client['phone']       ?? json['clientPhone']      ?? '',
       deliveryFee:         (json['deliveryFee']  ?? 0).toDouble(),
       currency:            json['currency'] ?? 'XOF',
-      distanceKm:          (json['distanceKm']   ?? 0).toDouble(),
+      distanceKm:          (json['distanceKm']        ?? 0).toDouble(),
+      distanceToPickupKm:  (json['distanceToPickupKm'] as num?)?.toDouble(),
+      deliveryZone:        json['deliveryZone']        ?? '',
       estimatedMinutes:    json['estimatedDeliveryMin'] ?? 20,
       orderStatus:         json['status'] ?? 'DRIVER_ASSIGNED',
       deliveryStatus:      json['delivery']?['status'] ?? 'ASSIGNED',
@@ -92,6 +98,7 @@ class Mission {
     clientAddress: clientAddress, clientLat: clientLat, clientLng: clientLng,
     clientName: clientName, clientPhone: clientPhone,
     deliveryFee: deliveryFee, currency: currency, distanceKm: distanceKm,
+    distanceToPickupKm: distanceToPickupKm, deliveryZone: deliveryZone,
     estimatedMinutes: estimatedMinutes, orderStatus: orderStatus,
     deliveryStatus: step, createdAt: createdAt, items: items,
   );

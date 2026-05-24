@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
@@ -140,10 +141,7 @@ class DriverProfileScreen extends ConsumerWidget {
           _Item(Icons.directions_bike_rounded, 'Mon véhicule',
               sub: _vehicleLabel(driver?.vehicleType) +
                   (driver?.licensePlate != null ? ' • ${driver!.licensePlate}' : ''),
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Modification du véhicule — contactez le support'),
-                  backgroundColor: AppColors.info))),
+              onTap: () => _showVehicleSheet(context, ref, driver)),
           _Item(Icons.location_city_rounded, 'Zones de livraison',
               sub: 'Gérer mes zones d\'activité',
               onTap: () => Navigator.push(context,
@@ -253,6 +251,21 @@ class DriverProfileScreen extends ConsumerWidget {
       backgroundColor: AppColors.info,
     ));
   }
+}
+
+// ── Bottom sheet modification véhicule ───────────────────────────────────────
+Future<void> _showVehicleSheet(
+    BuildContext context, WidgetRef ref, driver) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _VehicleSheet(
+      currentType:  driver?.vehicleType ?? 'MOTORCYCLE',
+      currentPlate: driver?.licensePlate,
+      onSaved: () => ref.invalidate(driverProvider),
+    ),
+  );
 }
 
 // ── Bottom sheet contact support (WhatsApp / Email) ──────────────────────
@@ -399,4 +412,207 @@ class _Item extends StatelessWidget {
     trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.darkMuted, size: 18),
     onTap: onTap,
   );
+}
+
+// ── Bottom sheet modification véhicule ────────────────────────────────────────
+class _VehicleSheet extends ConsumerStatefulWidget {
+  final String currentType;
+  final String? currentPlate;
+  final VoidCallback onSaved;
+  const _VehicleSheet({
+    required this.currentType,
+    required this.currentPlate,
+    required this.onSaved,
+  });
+  @override
+  ConsumerState<_VehicleSheet> createState() => _VehicleSheetState();
+}
+
+class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
+  late String _type;
+  late final TextEditingController _plate;
+  bool _loading = false;
+
+  static const _vehicles = [
+    ('MOTORCYCLE', '🛵', 'Moto'),
+    ('CAR',        '🚗', 'Voiture'),
+    ('BICYCLE',    '🚲', 'Vélo'),
+    ('ON_FOOT',    '🚶', 'À pied'),
+  ];
+
+  bool get _plateRequired =>
+      _type == 'MOTORCYCLE' || _type == 'CAR';
+
+  bool get _isValid =>
+      !_plateRequired || _plate.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _type  = widget.currentType;
+    _plate = TextEditingController(text: widget.currentPlate ?? '');
+  }
+
+  @override
+  void dispose() {
+    _plate.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_isValid) return;
+    setState(() => _loading = true);
+    try {
+      await ApiClient.instance.patch('/drivers/me', data: {
+        'vehicleType':  _type,
+        'licensePlate': _plateRequired ? _plate.text.trim() : null,
+      });
+      widget.onSaved();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.darkSurface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Drag handle
+          Container(width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.darkBorder,
+              borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 20),
+          const Text('Mon véhicule',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+          const SizedBox(height: 20),
+
+          // Sélecteur type de véhicule
+          Row(children: _vehicles.map((v) {
+            final (id, emoji, label) = v;
+            final selected = _type == id;
+            return Expanded(child: GestureDetector(
+              onTap: () => setState(() {
+                _type = id;
+                if (!_plateRequired) _plate.clear();
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.primary.withOpacity(0.15)
+                      : AppColors.darkBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected
+                        ? AppColors.primary
+                        : AppColors.darkBorder,
+                    width: selected ? 2 : 1),
+                ),
+                child: Column(children: [
+                  Text(emoji,
+                    style: const TextStyle(fontSize: 22)),
+                  const SizedBox(height: 4),
+                  Text(label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Nunito', fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.darkSubtext)),
+                ]),
+              ),
+            ));
+          }).toList()),
+
+          // Champ immatriculation (requis pour moto/voiture)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            child: _plateRequired
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: TextField(
+                      controller: _plate,
+                      textCapitalization: TextCapitalization.characters,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          color: AppColors.darkText,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5),
+                      decoration: InputDecoration(
+                        labelText: 'Immatriculation *',
+                        labelStyle: const TextStyle(
+                            fontFamily: 'Nunito',
+                            color: AppColors.darkSubtext,
+                            fontSize: 13),
+                        hintText: 'ex : AB 1234 BJ',
+                        prefixIcon: const Icon(
+                            Icons.pin_rounded,
+                            color: AppColors.darkSubtext,
+                            size: 18),
+                        filled: true,
+                        fillColor: AppColors.darkBg,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: AppColors.darkBorder)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: AppColors.darkBorder)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 1.5)),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: (_isValid && !_loading) ? _save : null,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              textStyle: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15)),
+            child: _loading
+                ? const SizedBox(width: 22, height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
+                : const Text('Enregistrer'),
+          ),
+        ]),
+      ),
+    );
+  }
 }

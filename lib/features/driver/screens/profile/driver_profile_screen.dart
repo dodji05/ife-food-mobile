@@ -23,6 +23,7 @@ import '../../../../shared/models/driver.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
 import '../../providers/driver_provider.dart';
+import 'driver_zones_screen.dart';
 
 class DriverProfileScreen extends ConsumerWidget {
   const DriverProfileScreen({super.key});
@@ -143,12 +144,10 @@ class DriverProfileScreen extends ConsumerWidget {
                 const SnackBar(
                   content: Text('Modification du véhicule — contactez le support'),
                   backgroundColor: AppColors.info))),
-          _Item(Icons.location_city_rounded, 'Zone de livraison',
-              sub: driver?.zoneCity ?? 'Non définie',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Modification de zone — contactez le support'),
-                  backgroundColor: AppColors.info))),
+          _Item(Icons.location_city_rounded, 'Zones de livraison',
+              sub: 'Gérer mes zones d\'activité',
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const DriverZonesScreen()))),
           _Item(Icons.lock_rounded, 'Modifier le PIN', onTap: () {
             final phone = user?.phone;
             if (phone == null || phone.isEmpty) return;

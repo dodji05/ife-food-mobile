@@ -12,6 +12,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/driver.dart';
+import '../../../shared/models/driver_zone.dart';
 import '../../../shared/models/mission.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../widgets/incoming_mission_dialog.dart';
@@ -362,4 +363,12 @@ final driverConfigProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   } catch (_) {
     return const {'missionTimeoutSeconds': 30, 'navigationProvider': 'GOOGLE_MAPS'};
   }
+});
+
+// Zones d'activité du livreur — autoDispose pour forcer un reload à chaque
+// ouverture de l'écran zones (ajout/suppression se reflète immédiatement).
+final driverZonesProvider = FutureProvider.autoDispose<List<DriverZone>>((ref) async {
+  final res = await ApiClient.instance.get('/drivers/me/zones');
+  final list = res['data'] as List? ?? [];
+  return list.whereType<Map<String, dynamic>>().map(DriverZone.fromJson).toList();
 });

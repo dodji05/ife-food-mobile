@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../../core/utils/location_utils.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/addresses_provider.dart';
 import '../../widgets/address_selector_modal.dart';
@@ -90,18 +91,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Future<void> _useGeolocation() async {
     setState(() => _geoLoading = true);
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      final granted = await ensureLocationPermission();
+      if (!granted) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Permission de localisation refusée'),
           backgroundColor: AppColors.danger,
         ));
         return;
       }
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
       if (!mounted) return;
       final now = DateTime.now();
       setState(() {

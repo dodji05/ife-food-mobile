@@ -97,13 +97,17 @@ class DriverNotifier extends StateNotifier<DriverState> {
   final _api = ApiClient.instance;
   final Ref _ref;
   io.Socket? _socket;
-  Timer? _locationTimer;
 
   // Garde-fou anti-spam : on n'ouvre pas deux fois le dialog pour la même
   // mission (le backend peut broadcaster plusieurs fois en cas de reconnect
   // ou de retry). Et on ignore une mission déjà acceptée.
   bool _missionDialogOpen = false;
   final Set<String> _seenMissionIds = <String>{};
+
+  // Stream GPS natif — s'active uniquement si le livreur bouge de ≥10 m.
+  // Bien moins consommateur qu'un Timer + getCurrentPosition toutes les 5 s
+  // qui force un cold fix GPS à chaque tick.
+  StreamSubscription<Position>? _locationSub;
 
   DriverNotifier(this._ref) : super(const DriverState()) {
     _loadProfile();
@@ -165,18 +169,21 @@ class DriverNotifier extends StateNotifier<DriverState> {
   }
 
   void _startLocationUpdates() {
-    _stopLocationUpdates(); // FIX: annule le timer existant avant d'en créer un nouveau
-    _locationTimer = Timer.periodic(
-      Duration(milliseconds: AppConstants.locationUpdateIntervalMs),
-      (_) async {
+    _stopLocationUpdates();
+    // getPositionStream délègue au gestionnaire de localisation natif du OS.
+    // distanceFilter: 10 m → aucune mise à jour si le livreur est immobile,
+    // ce qui économise la batterie comparé à un Timer + cold GPS fix toutes les 5 s.
+    const settings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+    _locationSub = Geolocator.getPositionStream(locationSettings: settings).listen(
+      (pos) async {
         try {
-          final pos = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.high);
           await _api.patch('/drivers/me/location',
               data: {'lat': pos.latitude, 'lng': pos.longitude});
           state = state.copyWith(
               currentLat: pos.latitude, currentLng: pos.longitude);
-
           for (final mission in state.activeMissions) {
             _socket?.emit('driver_location', {
               'orderId':  mission.orderId,
@@ -187,12 +194,14 @@ class DriverNotifier extends StateNotifier<DriverState> {
           }
         } catch (_) {}
       },
+      onError: (_) {},
+      cancelOnError: false,
     );
   }
 
   void _stopLocationUpdates() {
-    _locationTimer?.cancel();
-    _locationTimer = null;
+    _locationSub?.cancel();
+    _locationSub = null;
   }
 
   void _connectSocket() {
@@ -320,7 +329,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
   @override
   void dispose() {
-    _stopLocationUpdates();
+    _locationSub?.cancel();
     _socket?.disconnect();
     super.dispose();
   }

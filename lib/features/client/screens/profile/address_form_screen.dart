@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/location_utils.dart';
 import '../../providers/addresses_provider.dart';
 
 class AddressFormScreen extends ConsumerStatefulWidget {
@@ -80,12 +81,8 @@ class _State extends ConsumerState<AddressFormScreen> {
   Future<void> _useGps() async {
     setState(() => _geoLoading = true);
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      final granted = await ensureLocationPermission();
+      if (!granted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Permission de localisation refusée'),
@@ -96,6 +93,7 @@ class _State extends ConsumerState<AddressFormScreen> {
       }
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
       );
       setState(() {
         _lat = pos.latitude;

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import '../utils/location_utils.dart';
 
 class LocationState {
   final Position? position;
@@ -18,16 +19,17 @@ class LocationNotifier extends StateNotifier<LocationState> {
   Future<void> fetchLocation() async {
     state = state.copyWith(isLoading: true);
     try {
-      var perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
-        perm = await Geolocator.requestPermission();
-      }
-      if (perm == LocationPermission.deniedForever) {
+      final granted = await ensureLocationPermission();
+      if (!granted) {
         state = state.copyWith(isLoading: false, permissionDenied: true);
         return;
       }
+      // Medium accuracy : ±100 m suffisant pour la découverte de restaurants.
+      // Plus rapide à obtenir et moins gourmand en batterie que high.
       final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: const Duration(seconds: 10),
+      );
       state = state.copyWith(position: pos, isLoading: false);
     } catch (_) { state = state.copyWith(isLoading: false); }
   }

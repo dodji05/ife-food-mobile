@@ -24,7 +24,8 @@ class DriverDashboardScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: CustomScrollView(slivers: [
-        // App bar
+
+        // ── App bar ───────────────────────────────────────────────────────────
         SliverToBoxAdapter(child: Container(
           color: AppColors.darkSurface,
           child: SafeArea(bottom: false, child: Padding(
@@ -50,13 +51,12 @@ class DriverDashboardScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w600)),
                 ]),
               ])),
-              // Bell badge avec compteur non-lus -> /driver/notifications
               const NotifBellBadge(pushRoute: '/driver/notifications'),
             ]),
           )),
         )),
 
-        // Availability toggle
+        // ── Toggle disponibilité ──────────────────────────────────────────────
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
           child: _AvailabilityToggle(
@@ -66,7 +66,7 @@ class DriverDashboardScreen extends ConsumerWidget {
           ),
         )),
 
-        // Stats
+        // ── Stats ─────────────────────────────────────────────────────────────
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
           child: stats.when(
@@ -74,7 +74,8 @@ class DriverDashboardScreen extends ConsumerWidget {
             error: (_, __) => Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: AppColors.darkCard,
-                  borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.darkBorder)),
               child: const Row(children: [
                 Icon(Icons.wifi_off_rounded, color: AppColors.darkSubtext, size: 20),
                 SizedBox(width: 10),
@@ -83,35 +84,42 @@ class DriverDashboardScreen extends ConsumerWidget {
               ]),
             ),
             data: (data) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text("Aujourd'hui", style: TextStyle(fontFamily: 'Nunito',
+
+              // Hero card gains
+              _EarningsCard(data: data),
+              const SizedBox(height: 16),
+
+              const Text('Activité', style: TextStyle(fontFamily: 'Nunito',
                   fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _StatCard(
-                  label: 'Livraisons', value: '${data['todayDeliveries'] ?? 0}',
+                  label: 'Livraisons\naujourd\'hui',
+                  value: '${data['todayDeliveries'] ?? 0}',
                   icon: Icons.delivery_dining_rounded, color: AppColors.primary)),
                 const SizedBox(width: 12),
                 Expanded(child: _StatCard(
-                  label: 'Note',
+                  label: 'Note\nmoyenne',
                   value: '${((data['avgRating'] ?? 0) as num).toStringAsFixed(1)} ⭐',
                   icon: Icons.star_rounded, color: AppColors.accent)),
               ]),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _StatCard(
-                  label: 'Gains totaux',
-                  value: '${((data['totalEarnings'] ?? 0) as num).toStringAsFixed(0)} F',
-                  icon: Icons.account_balance_wallet_rounded, color: AppColors.info)),
+                  label: 'Ce mois',
+                  value: '${data['monthDeliveries'] ?? 0} livr.',
+                  icon: Icons.calendar_month_rounded, color: AppColors.info)),
                 const SizedBox(width: 12),
                 Expanded(child: _StatCard(
-                  label: 'Livraisons totales', value: '${data['allDeliveries'] ?? 0}',
+                  label: 'Total livraisons',
+                  value: '${data['allDeliveries'] ?? 0}',
                   icon: Icons.check_circle_rounded, color: AppColors.success)),
               ]),
             ]),
           ),
         )),
 
-        // Missions actives
+        // ── Missions actives ──────────────────────────────────────────────────
         if (isOnline && driver.missionCount > 0) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: GestureDetector(
@@ -149,7 +157,7 @@ class DriverDashboardScreen extends ConsumerWidget {
           ),
         )),
 
-        // Status offline
+        // ── Statut hors ligne ─────────────────────────────────────────────────
         if (!isOnline) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
           child: Container(
@@ -178,7 +186,7 @@ class DriverDashboardScreen extends ConsumerWidget {
           ),
         )),
 
-        // Quick actions
+        // ── Actions rapides ───────────────────────────────────────────────────
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -203,6 +211,102 @@ class DriverDashboardScreen extends ConsumerWidget {
       ]),
     );
   }
+}
+
+// ── Hero card gains ───────────────────────────────────────────────────────────
+class _EarningsCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _EarningsCard({required this.data});
+
+  String _fmt(dynamic v) => '${((v ?? 0) as num).toStringAsFixed(0)} F';
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF1A4D2E), Color(0xFF0D2B1A)],
+        begin: Alignment.topLeft, end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: AppColors.primary.withOpacity(0.35)),
+      boxShadow: [BoxShadow(
+        color: AppColors.primary.withOpacity(0.15),
+        blurRadius: 20, offset: const Offset(0, 6))],
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.account_balance_wallet_rounded,
+            color: AppColors.primary, size: 18),
+        const SizedBox(width: 8),
+        const Text('Mes gains', style: TextStyle(fontFamily: 'Nunito',
+            fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary,
+            letterSpacing: 0.3)),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: Text('Total : ${_fmt(data['totalEarnings'])}',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                fontWeight: FontWeight.w700, color: AppColors.primary)),
+        ),
+      ]),
+      const SizedBox(height: 16),
+      IntrinsicHeight(child: Row(children: [
+        Expanded(child: _EarningsPeriod(
+          label: "Aujourd'hui",
+          amount: _fmt(data['todayEarnings']),
+          deliveries: data['todayDeliveries'] ?? 0,
+          color: AppColors.primary,
+          isFirst: true,
+        )),
+        VerticalDivider(color: AppColors.primary.withOpacity(0.2), width: 1),
+        Expanded(child: _EarningsPeriod(
+          label: 'Cette semaine',
+          amount: _fmt(data['weekEarnings']),
+          deliveries: data['weekDeliveries'] ?? 0,
+          color: AppColors.success,
+        )),
+        VerticalDivider(color: AppColors.primary.withOpacity(0.2), width: 1),
+        Expanded(child: _EarningsPeriod(
+          label: 'Ce mois',
+          amount: _fmt(data['monthEarnings']),
+          deliveries: data['monthDeliveries'] ?? 0,
+          color: AppColors.info,
+        )),
+      ])),
+    ]),
+  );
+}
+
+class _EarningsPeriod extends StatelessWidget {
+  final String label, amount;
+  final int deliveries;
+  final Color color;
+  final bool isFirst;
+  const _EarningsPeriod({
+    required this.label, required this.amount,
+    required this.deliveries, required this.color, this.isFirst = false,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(left: isFirst ? 0 : 12, right: isFirst ? 12 : 0),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 4),
+      Text(amount, style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
+          fontWeight: FontWeight.w900, color: color)),
+      const SizedBox(height: 2),
+      Text('$deliveries livr.', style: const TextStyle(fontFamily: 'Nunito',
+          fontSize: 11, color: AppColors.darkMuted)),
+    ]),
+  );
 }
 
 // ── Toggle disponibilité ──────────────────────────────────────────────────────
@@ -301,7 +405,7 @@ class _StatCard extends StatelessWidget {
           fontWeight: FontWeight.w900, color: color)),
       const SizedBox(height: 2),
       Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-          color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+          color: AppColors.darkSubtext, fontWeight: FontWeight.w600, height: 1.35)),
     ]),
   );
 }
@@ -333,11 +437,16 @@ class _QuickAction extends StatelessWidget {
 class _StatsShimmer extends StatelessWidget {
   const _StatsShimmer();
   @override
-  Widget build(BuildContext context) => Row(children: [
-    Expanded(child: Container(height: 96, decoration: BoxDecoration(
-        color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
-    const SizedBox(width: 12),
-    Expanded(child: Container(height: 96, decoration: BoxDecoration(
-        color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
+  Widget build(BuildContext context) => Column(children: [
+    Container(height: 120, decoration: BoxDecoration(
+        color: AppColors.darkCard, borderRadius: BorderRadius.circular(20))),
+    const SizedBox(height: 16),
+    Row(children: [
+      Expanded(child: Container(height: 90, decoration: BoxDecoration(
+          color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
+      const SizedBox(width: 12),
+      Expanded(child: Container(height: 90, decoration: BoxDecoration(
+          color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
+    ]),
   ]);
 }

@@ -64,9 +64,11 @@ class DriverEarningsScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w900, color: AppColors.primary)),
                 const SizedBox(height: 16),
                 Row(children: [
-                  _EarnChip('Aujourd\'hui', '${(data['todayEarnings'] ?? 0).toStringAsFixed(0)} F'),
-                  const SizedBox(width: 10),
+                  _EarnChip("Aujourd'hui", '${(data['todayEarnings'] ?? 0).toStringAsFixed(0)} F'),
+                  const SizedBox(width: 8),
                   _EarnChip('Cette semaine', '${(data['weekEarnings'] ?? 0).toStringAsFixed(0)} F'),
+                  const SizedBox(width: 8),
+                  _EarnChip('Ce mois', '${(data['monthEarnings'] ?? 0).toStringAsFixed(0)} F'),
                 ]),
               ]),
             ),

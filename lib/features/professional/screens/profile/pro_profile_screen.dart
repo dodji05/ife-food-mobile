@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
@@ -101,27 +103,26 @@ class ProProfileScreen extends ConsumerWidget {
               ));
               return;
             }
-            // mode='set' force la double saisie (création + confirm).
-            // Le redirect GoRouter respecte ce mode (cf. app_router.dart:143).
-            context.push('/auth/pin',
-                extra: PinRouteParams(mode: 'set', phone: phone));
+            context.push('/auth/pin', extra: PinRouteParams(mode: 'set', phone: phone));
           }),
           _Item(Icons.language_rounded, 'Langue',
-              () => showLanguagePicker(context, ref,
-                  currentLang: user?.lang ?? 'fr', darkTheme: true)),
-          _Item(Icons.badge_rounded, 'Mes documents', () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Gestion documents — bientôt disponible'),
-              backgroundColor: AppColors.darkSubtext,
-            ));
-          }),
+              () => showLanguagePicker(context, ref, currentLang: user?.lang ?? 'fr', darkTheme: true)),
+          _Item(Icons.badge_rounded, 'Mes documents',
+              () => context.push('/pro/documents')),
+          _Item(Icons.notifications_rounded, 'Notifications',
+              () => context.push('/pro/notifications')),
         ]),
         const SizedBox(height: 12),
 
         _Section('Aide & Légal', [
-          _Item(Icons.support_agent_rounded, 'Contacter le support', () {}),
-          _Item(Icons.description_rounded, 'Charte du professionnel', () {}),
-          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', () {}),
+          _Item(Icons.support_agent_rounded, 'Contacter le support',
+              () => _showSupportSheet(context)),
+          _Item(Icons.description_rounded, 'Charte du professionnel',
+              () => context.push('/legal/professional-charter')),
+          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité',
+              () => context.push('/legal/privacy')),
+          _Item(Icons.gavel_rounded, 'Conditions générales',
+              () => context.push('/legal/terms')),
         ]),
         const SizedBox(height: 12),
 
@@ -139,6 +140,51 @@ class ProProfileScreen extends ConsumerWidget {
       ]),
     );
   }
+}
+
+void _showSupportSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.darkCard,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2))),
+          const Text('Contacter le support', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.darkText)),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: Container(width: 36, height: 36,
+              decoration: BoxDecoration(color: const Color(0xFF25D366).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 18)),
+            title: const Text('WhatsApp', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            subtitle: const Text('+229 90 00 00 00', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+            onTap: () async {
+              final uri = Uri.parse('https://wa.me/${AppConstants.supportWhatsapp}?text=Bonjour%2C%20j%27ai%20besoin%20d%27aide%20avec%20mon%20compte%20ifè%20PRO.');
+              if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+          ),
+          ListTile(
+            leading: Container(width: 36, height: 36,
+              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.email_rounded, color: AppColors.primary, size: 18)),
+            title: const Text('Email', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            subtitle: const Text(AppConstants.supportEmail, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+            onTap: () async {
+              final uri = Uri(scheme: 'mailto', path: AppConstants.supportEmail,
+                queryParameters: {'subject': 'Support ifè PRO'});
+              if (await canLaunchUrl(uri)) await launchUrl(uri);
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    ),
+  );
 }
 
 // Language picker extrait dans lib/shared/widgets/language_picker.dart

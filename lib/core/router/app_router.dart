@@ -80,6 +80,7 @@ import '../../features/professional/screens/drivers/favorite_drivers_screen.dart
 import '../../features/professional/screens/promo/pro_promo_screen.dart';
 import '../../features/professional/screens/referral/pro_referral_screen.dart';
 import '../../features/professional/screens/chat/pro_chat_screen.dart';
+import '../../features/professional/screens/profile/pro_documents_screen.dart';
 
 // H2: keepAlive évite la recréation du GoRouter à chaque changement d'AuthState
 final routerProvider = Provider<GoRouter>((ref) {
@@ -357,6 +358,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pro/referral',         builder: (_, __) => const ProReferralScreen()),
       GoRoute(path: '/pro/chat/:orderId',    builder: (_, state) =>
           ProChatScreen(orderId: state.pathParameters['orderId']!)),
+      GoRoute(path: '/pro/documents',        builder: (_, __) => const ProDocumentsScreen()),
 
       // ════════════════════════════════════════════════════════════════════════
       // 🛡️ ADMIN — un seul écran pour l'instant (validation pros/drivers).

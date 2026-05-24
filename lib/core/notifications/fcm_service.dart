@@ -25,9 +25,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../api/api_client.dart';
 import '../constants/app_constants.dart';
 import '../providers/auth_provider.dart';
 import '../router/app_router.dart';
+import '../../features/driver/providers/driver_provider.dart';
+import '../../shared/models/mission.dart';
 
 class FcmService {
   static final _messaging = FirebaseMessaging.instance;
@@ -211,14 +214,35 @@ class FcmService {
         router.go('/order/$orderId');
         break;
       case UserRole.driver:
-        // Driver : route vers la mission active (l'orderId est implicite
-        // dans le state du driver, on n'a pas de detail per-mission ouverte).
-        router.go('/driver/active-mission');
+        if (data['type'] == 'NEW_MISSION') {
+          // Mission proposée : afficher le dialog accept/decline.
+          // On va d'abord sur le dashboard (socket backdrop), puis on fetche
+          // la commande pour construire la Mission et ouvrir le dialog.
+          router.go('/driver/dashboard');
+          _fetchAndShowMission(ref, orderId);
+        } else {
+          // Mission déjà acceptée : aller sur l'écran de suivi.
+          router.go('/driver/active-mission');
+        }
         break;
       case UserRole.admin:
       case null:
         router.go('/onboarding');
         break;
+    }
+  }
+
+  /// Fetche la commande depuis le backend et affiche le IncomingMissionDialog.
+  /// Appelé quand le driver tape une notif NEW_MISSION depuis l'arrière-plan.
+  static Future<void> _fetchAndShowMission(Ref ref, String orderId) async {
+    // Léger délai pour laisser le router terminer la navigation vers /driver/dashboard.
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    try {
+      final res = await ApiClient.instance.get('/orders/$orderId');
+      final mission = Mission.fromOrderJson(res['data'] as Map<String, dynamic>);
+      ref.read(driverProvider.notifier).showIncomingMission(mission);
+    } catch (e) {
+      debugPrint('[FCM] _fetchAndShowMission failed: $e');
     }
   }
 

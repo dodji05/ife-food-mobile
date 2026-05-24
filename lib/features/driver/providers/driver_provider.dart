@@ -252,6 +252,10 @@ class DriverNotifier extends StateNotifier<DriverState> {
     });
   }
 
+  /// Point d'entrée public — appelé par FcmService quand le driver tape une
+  /// notification NEW_MISSION depuis l'arrière-plan ou l'app tuée.
+  void showIncomingMission(Mission mission) => _showIncomingMissionDialog(mission);
+
   /// Affiche le dialog mission entrante par-dessus l'écran courant.
   /// Joue une vibration heavyImpact pour attirer l'attention (le son est
   /// joué par la notif FCM côté système / channel `ife_orders`).

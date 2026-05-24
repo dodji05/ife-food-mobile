@@ -253,21 +253,35 @@ class _AddDriverSheetState extends ConsumerState<_AddDriverSheet> {
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _adding ? null : _addToFavorites,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              icon: _adding
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.check_rounded, color: Colors.white),
-              label: Text(_adding ? 'Ajout en cours…' : 'Ajouter aux favoris',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                    fontWeight: FontWeight.w800, color: Colors.white)),
-            ),
+            child: _found!.alreadyFavorite
+                ? ElevatedButton.icon(
+                    onPressed: null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.darkBorder,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      disabledBackgroundColor: AppColors.darkBorder,
+                    ),
+                    icon: const Icon(Icons.check_circle_rounded, color: AppColors.darkSubtext),
+                    label: const Text('Déjà dans vos favoris',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                          fontWeight: FontWeight.w800, color: AppColors.darkSubtext)),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _adding ? null : _addToFavorites,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: _adding
+                        ? const SizedBox(width: 18, height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.check_rounded, color: Colors.white),
+                    label: Text(_adding ? 'Ajout en cours…' : 'Ajouter aux favoris',
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                          fontWeight: FontWeight.w800, color: Colors.white)),
+                  ),
           ),
         ],
         const SizedBox(height: 8),

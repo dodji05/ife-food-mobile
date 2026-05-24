@@ -557,6 +557,7 @@ class FavoriteDriverEntry {
   final String  userName;
   final String? avatarUrl;
   final String? phone;
+  final bool    alreadyFavorite;
 
   const FavoriteDriverEntry({
     required this.driverId,
@@ -569,11 +570,12 @@ class FavoriteDriverEntry {
     required this.userName,
     this.avatarUrl,
     this.phone,
+    this.alreadyFavorite = false,
   });
 
   factory FavoriteDriverEntry.fromJson(Map<String, dynamic> j) {
-    final driver = j['driver'] as Map<String, dynamic>? ?? j;
-    final user   = driver['user'] as Map<String, dynamic>? ?? {};
+    final driver = j['driver'] is Map ? Map<String, dynamic>.from(j['driver'] as Map) : (j.containsKey('id') ? j : <String, dynamic>{});
+    final user   = driver['user'] is Map ? Map<String, dynamic>.from(driver['user'] as Map) : <String, dynamic>{};
     final name   = (user['name'] ?? user['firstName'] ?? '') as String;
     return FavoriteDriverEntry(
       driverId:                driver['driverId'] as String? ?? driver['id'] as String? ?? '',
@@ -586,6 +588,7 @@ class FavoriteDriverEntry {
       userName:  name.isEmpty ? (user['phone'] as String? ?? '—') : name,
       avatarUrl: user['avatarUrl'] as String?,
       phone:     user['phone'] as String?,
+      alreadyFavorite: driver['alreadyFavorite'] as bool? ?? false,
     );
   }
 }

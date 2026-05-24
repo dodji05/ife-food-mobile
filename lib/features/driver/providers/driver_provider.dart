@@ -295,7 +295,11 @@ class DriverNotifier extends StateNotifier<DriverState> {
   }
 
   Future<void> declineMission(String orderId) async {
-    // Backend réassigne automatiquement
+    try {
+      await _api.post('/drivers/missions/$orderId/decline');
+    } catch (_) {
+      // Best-effort : même si l'appel échoue, le timeout backend gère la réattribution.
+    }
   }
 
   Future<void> updateDeliveryStep(
@@ -347,4 +351,15 @@ final driverDashboardProvider = FutureProvider.autoDispose<Map<String, dynamic>>
 final earningsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final res = await ApiClient.instance.get('/drivers/me/earnings');
   return List<Map<String, dynamic>>.from(res['data'] ?? []);
+});
+
+// Config driver-facing : timeout acceptation mission + fournisseur navigation.
+// Non-autoDispose : chargé une fois au démarrage, pas besoin de refetch.
+final driverConfigProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  try {
+    final res = await ApiClient.instance.get('/drivers/config');
+    return res['data'] as Map<String, dynamic>? ?? {};
+  } catch (_) {
+    return const {'missionTimeoutSeconds': 30, 'navigationProvider': 'GOOGLE_MAPS'};
+  }
 });

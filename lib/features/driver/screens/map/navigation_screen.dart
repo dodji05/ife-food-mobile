@@ -1,22 +1,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ifè FOOD — Driver Navigation Screen
 //
-// Écran de navigation GPS vers un point (pickup ou delivery).
-// Affiche une Google Map plein écran avec un marker sur la destination,
-// + un bottom panel avec CTA "Ouvrir dans Google Maps" qui lance le mode
-// navigation natif via deep link `google.navigation:q=lat,lng&mode=d`.
-//
-// Fallback web si l'app Google Maps n'est pas installée.
-//
-// Source : porté depuis ife-food-driver/features/map/screens/navigation_screen.dart
-// Remplace le placeholder Text qui était dans le router (cf app_router.dart).
+// Affiche une Google Maps plein écran (preview in-app) + un bouton qui lance
+// le fournisseur de navigation configuré par l'admin via PlatformConfig
+// key='navigation_provider' :
+//   - GOOGLE_MAPS  : deep link google.navigation: (mode d) — fallback web
+//   - OPENSTREETMAP: geo: scheme Android (ouvre l'app de cartes par défaut)
+//                    + fallback OSM web
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../providers/driver_provider.dart';
 
-class DriverNavigationScreen extends StatefulWidget {
+class DriverNavigationScreen extends ConsumerStatefulWidget {
   final double lat;
   final double lng;
   final String label;
@@ -28,120 +27,163 @@ class DriverNavigationScreen extends StatefulWidget {
   });
 
   @override
-  State<DriverNavigationScreen> createState() => _DriverNavigationScreenState();
+  ConsumerState<DriverNavigationScreen> createState() => _DriverNavigationScreenState();
 }
 
-class _DriverNavigationScreenState extends State<DriverNavigationScreen> {
-  GoogleMapController? _ctrl;
+class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen> {
+  Future<void> _navigate(String provider) async {
+    if (provider == 'OPENSTREETMAP') {
+      await _openOSM();
+    } else {
+      await _openGoogleMaps();
+    }
+  }
 
   Future<void> _openGoogleMaps() async {
-    // Deep link mode navigation Google Maps Android. Sur iOS, le scheme
-    // diffère mais on tombe automatiquement sur le fallback web.
-    final uri = Uri.parse('google.navigation:q=${widget.lat},${widget.lng}&mode=d');
+    final uri = Uri.parse(
+      'google.navigation:q=${widget.lat},${widget.lng}&mode=d');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
-      final fallback = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1'
-        '&destination=${widget.lat},${widget.lng}&travelmode=driving',
+      await launchUrl(
+        Uri.parse('https://www.google.com/maps/dir/?api=1'
+            '&destination=${widget.lat},${widget.lng}&travelmode=driving'),
+        mode: LaunchMode.externalApplication,
       );
-      await launchUrl(fallback, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openOSM() async {
+    // Sur Android, `geo:` ouvre l'app de cartes par défaut (OSM, Maps, etc.).
+    final geoUri = Uri.parse('geo:${widget.lat},${widget.lng}?q=${widget.lat},${widget.lng}(${Uri.encodeComponent(widget.label)})');
+    if (await canLaunchUrl(geoUri)) {
+      await launchUrl(geoUri);
+    } else {
+      // Fallback web OpenStreetMap
+      await launchUrl(
+        Uri.parse('https://www.openstreetmap.org/?mlat=${widget.lat}&mlon=${widget.lng}#map=16/${widget.lat}/${widget.lng}'),
+        mode: LaunchMode.externalApplication,
+      );
     }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.darkBg,
-    extendBodyBehindAppBar: true,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          margin: const EdgeInsets.all(8),
+  Widget build(BuildContext context) {
+    final config   = ref.watch(driverConfigProvider).valueOrNull ?? {};
+    final provider = (config['navigationProvider'] as String?) ?? 'GOOGLE_MAPS';
+    final isOSM    = provider == 'OPENSTREETMAP';
+
+    return Scaffold(
+      backgroundColor: AppColors.darkBg,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+                color: AppColors.darkSurface, shape: BoxShape.circle),
+            child: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
+          ),
+        ),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurface.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20)),
+          child: Text(widget.label,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
+              fontWeight: FontWeight.w700, color: AppColors.darkText)),
+        ),
+      ),
+      body: Stack(children: [
+        // ── Carte in-app (toujours Google Maps) ────────────────────────────
+        GoogleMap(
+          initialCameraPosition: CameraPosition(
+              target: LatLng(widget.lat, widget.lng), zoom: 15),
+          onMapCreated: (_) {},
+          markers: {
+            Marker(
+              markerId: const MarkerId('dest'),
+              position: LatLng(widget.lat, widget.lng),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+              infoWindow: InfoWindow(title: widget.label),
+            ),
+          },
+          myLocationEnabled: true,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          mapToolbarEnabled: false,
+        ),
+
+        // ── Panel bas ───────────────────────────────────────────────────────
+        Positioned(bottom: 0, left: 0, right: 0, child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
           decoration: const BoxDecoration(
             color: AppColors.darkSurface,
-            shape: BoxShape.circle),
-          child: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
-        ),
-      ),
-      title: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.darkSurface.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20)),
-        child: Text(widget.label,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-            fontWeight: FontWeight.w700, color: AppColors.darkText)),
-      ),
-    ),
-    body: Stack(children: [
-      GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: LatLng(widget.lat, widget.lng), zoom: 15),
-        onMapCreated: (c) => _ctrl = c,
-        markers: {
-          Marker(
-            markerId: const MarkerId('dest'),
-            position: LatLng(widget.lat, widget.lng),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-            infoWindow: InfoWindow(title: widget.label),
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24), topRight: Radius.circular(24)),
           ),
-        },
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
-        zoomControlsEnabled: false,
-        mapToolbarEnabled: false,
-      ),
-      // Bottom panel : carte avec destination + CTA navigation externe
-      Positioned(bottom: 0, left: 0, right: 0, child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
-        decoration: const BoxDecoration(
-          color: AppColors.darkSurface,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24)),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 36, height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.darkBorder,
-              borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 20),
-          Row(children: [
-            Container(
-              width: 44, height: 44,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 36, height: 4,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.location_on_rounded,
-                color: AppColors.primary, size: 22),
+                  color: AppColors.darkBorder,
+                  borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Row(children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.location_on_rounded,
+                    color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Destination',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                    color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+                Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                    fontWeight: FontWeight.w700, color: AppColors.darkText)),
+                Text('${widget.lat.toStringAsFixed(4)}, ${widget.lng.toStringAsFixed(4)}',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                    color: AppColors.darkMuted)),
+              ])),
+            ]),
+            const SizedBox(height: 16),
+
+            // Bouton principal — fournisseur configuré
+            ElevatedButton.icon(
+              onPressed: () => _navigate(provider),
+              icon: Icon(isOSM ? Icons.map_rounded : Icons.navigation_rounded, size: 20),
+              label: Text(isOSM ? 'Naviguer avec OpenStreetMap' : 'Ouvrir dans Google Maps'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 54),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Destination',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                  color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
-              Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w700, color: AppColors.darkText)),
-              Text('${widget.lat.toStringAsFixed(4)}, ${widget.lng.toStringAsFixed(4)}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                  color: AppColors.darkMuted)),
-            ])),
+
+            // Bouton secondaire — autre fournisseur (toujours disponible)
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => isOSM ? _openGoogleMaps() : _openOSM(),
+              icon: Icon(
+                isOSM ? Icons.navigation_rounded : Icons.map_rounded,
+                size: 16,
+                color: AppColors.darkSubtext,
+              ),
+              label: Text(
+                isOSM ? 'Ouvrir dans Google Maps' : 'Ouvrir dans OpenStreetMap',
+                style: const TextStyle(
+                    fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+              ),
+            ),
           ]),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _openGoogleMaps,
-            icon: const Icon(Icons.navigation_rounded, size: 20),
-            label: const Text('Ouvrir dans Google Maps'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-          ),
-        ]),
-      )),
-    ]),
-  );
+        )),
+      ]),
+    );
+  }
 }

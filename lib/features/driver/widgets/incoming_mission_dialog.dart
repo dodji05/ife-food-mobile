@@ -16,8 +16,8 @@ class IncomingMissionDialog extends ConsumerStatefulWidget {
 
 class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
     with SingleTickerProviderStateMixin {
-  static const int _initialCountdown = 30;
-  int _countdown = _initialCountdown;
+  int _initialCountdown = 30; // remplacé dès que driverConfigProvider est disponible
+  int _countdown = 30;
   Timer? _timer;
   late AnimationController _ringCtrl;
   late Animation<double> _ringAnim;
@@ -30,6 +30,20 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
       ..repeat(reverse: true);
     _ringAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
         CurvedAnimation(parent: _ringCtrl, curve: Curves.easeInOut));
+
+    // Lit le timeout configuré par l'admin. Si le config n'est pas encore
+    // chargé, on démarre avec 30 s puis on ajuste à la première frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final config = ref.read(driverConfigProvider).valueOrNull;
+      final secs = (config?['missionTimeoutSeconds'] as num?)?.toInt() ?? 30;
+      if (mounted && secs != _initialCountdown) {
+        setState(() {
+          _initialCountdown = secs;
+          _countdown        = secs;
+        });
+      }
+    });
+
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (_countdown <= 0) {
         t.cancel();

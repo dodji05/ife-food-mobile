@@ -99,11 +99,10 @@ Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => ProviderScope(
-      parent: ProviderScope.containerOf(context),
-      child: const _AddDriverSheet(),
-    ),
+    builder: (_) => const _AddDriverSheet(),
   );
+  // Rafraîchit la liste après fermeture du sheet (ajout éventuel).
+  ref.invalidate(favoriteDriversProvider);
 }
 
 class _AddDriverSheet extends ConsumerStatefulWidget {

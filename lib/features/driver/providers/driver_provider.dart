@@ -307,6 +307,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
     String orderId,
     String status, {
     String? confirmPhoto,
+    String? confirmCode,
   }) async {
     try {
       await _api.patch(
@@ -314,6 +315,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
         data: {
           'status': status,
           if (confirmPhoto != null) 'confirmPhoto': confirmPhoto,
+          if (confirmCode  != null) 'confirmCode':  confirmCode,
         },
       );
 

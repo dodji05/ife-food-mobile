@@ -54,12 +54,42 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     final idx = _stepIndex(mission.deliveryStatus);
     if (idx >= _steps.length - 1) return;
     final nextStep = _steps[idx + 1];
-    await ref.read(driverProvider.notifier)
-        .updateDeliveryStep(mission.orderId, nextStep.id);
+
+    // Confirmation de livraison : si l'admin a activé le code de confirmation,
+    // on affiche un dialog de saisie avant d'appeler le backend.
+    String? confirmCode;
+    if (nextStep.id == 'DELIVERED') {
+      final config = ref.read(driverConfigProvider).valueOrNull ?? {};
+      final codeEnabled = config['confirmationCodeEnabled'] as bool? ?? false;
+      if (codeEnabled) {
+        final digits = (config['confirmationCodeDigits'] as int?) ?? 4;
+        if (!mounted) return;
+        confirmCode = await _showConfirmCodeDialog(digits);
+        if (confirmCode == null) return; // annulé par le livreur
+      }
+    }
+
+    try {
+      await ref.read(driverProvider.notifier)
+          .updateDeliveryStep(mission.orderId, nextStep.id, confirmCode: confirmCode);
+    } catch (_) {
+      // L'erreur est déjà stockée dans driverProvider.error — on la lit pour
+      // afficher le bon message (notamment "Code de confirmation invalide").
+      if (!mounted) return;
+      final err = ref.read(driverProvider).error ?? 'Erreur lors de la mise à jour';
+      final msg = err.contains('invalide') || err.contains('400')
+          ? 'Code incorrect. Demandez le code au client.'
+          : err.replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg),
+        backgroundColor: AppColors.danger,
+        duration: const Duration(seconds: 4),
+      ));
+      return;
+    }
 
     if (nextStep.id == 'DELIVERED' && mounted) {
       final remaining = ref.read(driverProvider).activeMissions.length;
-      // FIX: afficher le snackbar AVANT de naviguer, sinon le contexte est mort
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
             '🎉 Livraison #${mission.orderId.substring(0, 6).toUpperCase()} confirmée ! Gains crédités.'),
@@ -70,6 +100,19 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
         context.go('/driver/dashboard');
       }
     }
+  }
+
+  /// Dialogue de saisie du code de confirmation client.
+  /// Retourne le code saisi ou null si le livreur annule.
+  Future<String?> _showConfirmCodeDialog(int digits) async {
+    final ctrl = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _ConfirmCodeDialog(ctrl: ctrl, digits: digits),
+    );
+    ctrl.dispose();
+    return result;
   }
 
   @override
@@ -505,4 +548,118 @@ class _CallButton extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ── Dialog saisie code de confirmation ────────────────────────────────────────
+class _ConfirmCodeDialog extends StatefulWidget {
+  final TextEditingController ctrl;
+  final int digits;
+  const _ConfirmCodeDialog({required this.ctrl, required this.digits});
+  @override State<_ConfirmCodeDialog> createState() => _ConfirmCodeDialogState();
+}
+
+class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
+  bool _obscure = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.darkCard,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.verified_user_rounded,
+                color: AppColors.success, size: 32),
+          ),
+          const SizedBox(height: 16),
+          const Text('Code de confirmation',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+          const SizedBox(height: 8),
+          Text(
+            'Demandez le code à ${widget.digits} chiffres au client\npour confirmer la livraison.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                color: AppColors.darkSubtext, height: 1.4),
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: widget.ctrl,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            maxLength: widget.digits,
+            obscureText: _obscure,
+            style: const TextStyle(
+              fontFamily: 'Nunito', fontSize: 28,
+              fontWeight: FontWeight.w900, color: AppColors.darkText,
+              letterSpacing: 12,
+            ),
+            decoration: InputDecoration(
+              counterText: '',
+              hintText: '·' * widget.digits,
+              hintStyle: TextStyle(
+                fontSize: 28, letterSpacing: 12,
+                color: AppColors.darkBorder),
+              filled: true,
+              fillColor: AppColors.darkSurface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.darkBorder)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.darkBorder)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.success, width: 2)),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  color: AppColors.darkSubtext, size: 20),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(children: [
+            Expanded(child: OutlinedButton(
+              onPressed: () => Navigator.pop(context, null),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.darkBorder),
+                foregroundColor: AppColors.darkSubtext,
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Annuler',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(
+              onPressed: () {
+                final code = widget.ctrl.text.trim();
+                if (code.length == widget.digits) {
+                  Navigator.pop(context, code);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Confirmer',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+            )),
+          ]),
+        ]),
+      ),
+    );
+  }
 }

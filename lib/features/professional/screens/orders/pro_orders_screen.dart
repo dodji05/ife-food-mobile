@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/pro_socket_service.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../providers/pro_provider.dart';
 import '../../../../shared/models/order.dart';
 
@@ -14,20 +18,97 @@ class ProOrdersScreen extends ConsumerStatefulWidget {
 
 class _State extends ConsumerState<ProOrdersScreen> with SingleTickerProviderStateMixin {
   late TabController _tabs;
+  StreamSubscription<Map<String, dynamic>>? _newOrderSub;
+  int _newOrderBadge = 0;
+
   final _tabLabels = ['Nouvelles', 'En cours', 'Livrées', 'Annulées'];
   final _tabStatuses = ['PAID', 'active', 'DELIVERED', 'CANCELLED'];
 
   @override
-  void initState() { super.initState(); _tabs = TabController(length: 4, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: 4, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _connectSocket());
+  }
+
+  void _connectSocket() {
+    final token = ref.read(authProvider).accessToken;
+    if (token == null || token.isEmpty) return;
+    final svc = ref.read(proSocketServiceProvider);
+    svc.connect(token);
+    _newOrderSub = svc.newOrders.listen((payload) {
+      if (!mounted) return;
+      // Rafraîchit la liste des nouvelles commandes.
+      ref.invalidate(liveOrdersProvider('PAID'));
+      // Alerte haptique + badge visuel.
+      HapticFeedback.heavyImpact();
+      setState(() => _newOrderBadge++);
+      // Snackbar discret avec le montant.
+      final amount = (payload['totalAmount'] as num?)?.toStringAsFixed(0) ?? '?';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 4),
+        content: Row(children: [
+          const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            'Nouvelle commande — $amount F CFA',
+            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: Colors.white),
+          )),
+        ]),
+        action: SnackBarAction(
+          label: 'Voir',
+          textColor: Colors.white,
+          onPressed: () {
+            _tabs.animateTo(0);
+            setState(() => _newOrderBadge = 0);
+          },
+        ),
+      ));
+    });
+  }
+
   @override
-  void dispose() { _tabs.dispose(); super.dispose(); }
+  void dispose() {
+    _newOrderSub?.cancel();
+    _tabs.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.darkBg,
     appBar: AppBar(
       title: const Text('Commandes'),
-      actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: () { ref.invalidate(liveOrdersProvider); })],
+      actions: [
+        if (_newOrderBadge > 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Stack(alignment: Alignment.topRight, children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_active_rounded),
+                onPressed: () { _tabs.animateTo(0); setState(() => _newOrderBadge = 0); },
+              ),
+              Positioned(
+                right: 6, top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(color: AppColors.danger, shape: BoxShape.circle),
+                  child: Text('$_newOrderBadge',
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 9,
+                        fontWeight: FontWeight.w900, color: Colors.white)),
+                ),
+              ),
+            ]),
+          ),
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          onPressed: () {
+            ref.invalidate(liveOrdersProvider);
+            setState(() => _newOrderBadge = 0);
+          },
+        ),
+      ],
       bottom: TabBar(
         controller: _tabs,
         isScrollable: true, tabAlignment: TabAlignment.start,

@@ -76,6 +76,7 @@ dependencies:
   package_info_plus: ^5.0.1
   local_auth: ^2.1.8
   csv: ^6.0.0
+  audioplayers: ^5.2.1
 
 # Override win32 — la 5.2.0 (transitive) casse avec Dart 3.5+
 # (UnmodifiableUint8ListView supprimé). Forcé en 5.5.4+.
@@ -109,6 +110,7 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
+    - assets/sounds/
   fonts:
     - family: Nunito
       fonts:

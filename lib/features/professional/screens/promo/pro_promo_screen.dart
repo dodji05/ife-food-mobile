@@ -390,7 +390,7 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
                   height: 52,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.darkInput,
+                    color: AppColors.darkCard,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.darkBorder),
                   ),
@@ -484,7 +484,7 @@ class _TypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.darkInput,
+          color: active ? AppColors.primary : AppColors.darkCard,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: active ? AppColors.primary : AppColors.darkBorder),
         ),

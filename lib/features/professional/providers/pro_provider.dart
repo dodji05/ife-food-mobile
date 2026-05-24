@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/services/pro_socket_service.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/models/professional.dart';
 import '../../../shared/models/product.dart';
@@ -499,6 +500,28 @@ class ProNotifier extends StateNotifier<ProState> {
     final data = res['data'] as Map<String, dynamic>?;
     if (data == null) throw Exception('Livreur introuvable');
     return FavoriteDriverEntry.fromJson({'driver': data});
+  }
+
+  // ── Driver assignment ─────────────────────────────────────────────────────
+
+  /// Assigne manuellement un livreur favori à une commande READY_FOR_PICKUP.
+  Future<void> assignDriver(String orderId, String driverUserId) async {
+    await ApiClient.instance.post('/orders/$orderId/assign-driver/$driverUserId');
+  }
+
+  // ── Available drivers for an order ───────────────────────────────────────
+
+  /// Retourne les livreurs favoris disponibles (VALIDATED + isAvailable)
+  /// pour une commande donnée. Filtre côté client sur la liste complète des
+  /// favoris (pas d'endpoint dédié pour garder le backend léger).
+  Future<List<FavoriteDriverEntry>> availableDriversForOrder() async {
+    final res = await ApiClient.instance.get('/professionals/me/favorite-drivers');
+    final list = res['data'] as List? ?? [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(FavoriteDriverEntry.fromJson)
+        .where((d) => d.isAvailable && d.driverStatus == 'VALIDATED')
+        .toList();
   }
 
   // ── Promo codes ───────────────────────────────────────────────────────────

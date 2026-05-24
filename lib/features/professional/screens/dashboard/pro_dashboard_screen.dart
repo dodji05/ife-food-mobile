@@ -704,3 +704,14 @@ String _shortAmount(double v) {
   return v.toStringAsFixed(0);
 }
 
+/// Convertit 'YYYY-MM-DD' en libellé court ('Lu', 'Ma', 'Me', …).
+String _dayLabel(String date) {
+  try {
+    final d = DateTime.parse(date);
+    const labels = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
+    return labels[d.weekday % 7];
+  } catch (_) {
+    return '';
+  }
+}
+

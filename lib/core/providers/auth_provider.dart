@@ -39,6 +39,7 @@ import '../../shared/models/app_user.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 class AuthState {
   final AppUser? user;
+  final String? accessToken;
   final bool isLoading;
   final bool isAuthenticated;
   final bool splashDone;
@@ -60,6 +61,7 @@ class AuthState {
 
   const AuthState({
     this.user,
+    this.accessToken,
     this.isLoading = false,
     this.isAuthenticated = false,
     this.splashDone = false,
@@ -78,6 +80,7 @@ class AuthState {
   // C2 — clearError permet de remettre error à null explicitement
   AuthState copyWith({
     AppUser? user,
+    String? accessToken,
     bool? isLoading,
     bool? isAuthenticated,
     bool? splashDone,
@@ -87,6 +90,7 @@ class AuthState {
     bool clearError = false,
   }) => AuthState(
     user: user ?? this.user,
+    accessToken: accessToken ?? this.accessToken,
     isLoading: isLoading ?? this.isLoading,
     isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     splashDone: splashDone ?? this.splashDone,
@@ -165,6 +169,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     state = state.copyWith(
       user: user,
+      accessToken: tokenKey,
       isAuthenticated: true,
       isLoading: false,
       needsPinSetup: needsPin,
@@ -363,6 +368,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
     state = state.copyWith(
       user: user,
+      accessToken: accessToken,
       isAuthenticated: true,
       isLoading: false,
       needsPinSetup: needsPinSetup,

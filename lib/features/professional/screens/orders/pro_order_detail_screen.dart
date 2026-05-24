@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -51,16 +52,39 @@ class ProOrderDetailScreen extends ConsumerWidget {
             phone:     o.clientPhone,
             roleIcon:  Icons.person_rounded,
           )),
-          // ── Livreur (uniquement si assigné) ──────────────────────────────
+          // ── Livreur assigné ───────────────────────────────────────────────
           if (o.driver != null) ...[
             const SizedBox(height: 10),
-            _Card('Livreur', _PersonRow(
-              name:      o.driverName ?? '—',
-              avatarUrl: o.driverAvatarUrl,
-              phone:     o.driverPhone,
-              roleIcon:  Icons.two_wheeler_rounded,
-              accentColor: AppColors.primary,
-            )),
+            _Card('Livreur', Column(children: [
+              _PersonRow(
+                name:      o.driverName ?? '—',
+                avatarUrl: o.driverAvatarUrl,
+                phone:     o.driverPhone,
+                roleIcon:  Icons.two_wheeler_rounded,
+                accentColor: AppColors.primary,
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/pro/chat/${o.id}'),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                  label: const Text('Messagerie avec le livreur',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ])),
+          ],
+          // ── Assignation manuelle livreur (READY_FOR_PICKUP sans driver) ───
+          if (o.status == 'READY_FOR_PICKUP' && o.driver == null) ...[
+            const SizedBox(height: 10),
+            _AssignDriverSection(orderId: o.id, onAssigned: () => ref.invalidate(orderDetailProvider(orderId))),
           ],
           const SizedBox(height: 10),
           // Items
@@ -248,4 +272,118 @@ class _PersonRow extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ── Assignation manuelle d'un livreur favori ──────────────────────────────────
+class _AssignDriverSection extends ConsumerStatefulWidget {
+  final String orderId;
+  final VoidCallback onAssigned;
+  const _AssignDriverSection({required this.orderId, required this.onAssigned});
+  @override
+  ConsumerState<_AssignDriverSection> createState() => _AssignDriverSectionState();
+}
+
+class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
+  bool _loading = false;
+  List<FavoriteDriverEntry>? _drivers;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final list = await ref.read(proProvider.notifier).availableDriversForOrder();
+      if (mounted) setState(() => _drivers = list);
+    } catch (_) {
+      if (mounted) setState(() => _drivers = []);
+    }
+  }
+
+  Future<void> _assign(FavoriteDriverEntry driver) async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(proProvider.notifier).assignDriver(widget.orderId, driver.driverId);
+      widget.onAssigned();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_drivers == null) {
+      return _Card('Assigner un livreur', const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+        ),
+      ));
+    }
+    if (_drivers!.isEmpty) {
+      return _Card('Assigner un livreur', const Text(
+        'Aucun livreur favori disponible actuellement.\n'
+        'Un livreur sera assigné automatiquement.',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext),
+      ));
+    }
+    return _Card('Assigner un livreur favori', Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Livreurs disponibles',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+              color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        ..._drivers!.map((d) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.15), shape: BoxShape.circle),
+              child: const Icon(Icons.two_wheeler_rounded, size: 18, color: AppColors.primary),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(d.userName, style: const TextStyle(
+                fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              Text(_vehicleLabel(d.vehicleType),
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+            ])),
+            TextButton(
+              onPressed: _loading ? null : () => _assign(d),
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.primary.withOpacity(0.12),
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _loading
+                  ? const SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                  : const Text('Assigner',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        )),
+      ],
+    ));
+  }
+
+  String _vehicleLabel(String type) => switch (type) {
+    'MOTORCYCLE' => 'Moto',
+    'BICYCLE'    => 'Vélo',
+    'CAR'        => 'Voiture',
+    'TRUCK'      => 'Camion',
+    _            => type,
+  };
 }

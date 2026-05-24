@@ -676,3 +676,104 @@ final referralCodeProvider = FutureProvider.autoDispose<String>((ref) async {
   final data = res['data'] as Map<String, dynamic>?;
   return data?['referralCode'] as String? ?? '';
 });
+
+// ── Earnings ──────────────────────────────────────────────────────────────────
+class EarningsSummaryEntry {
+  final double gross;
+  final double net;
+  const EarningsSummaryEntry({required this.gross, required this.net});
+  factory EarningsSummaryEntry.fromJson(Map<String, dynamic> j) => EarningsSummaryEntry(
+    gross: (j['gross'] as num?)?.toDouble() ?? 0.0,
+    net:   (j['net']   as num?)?.toDouble() ?? 0.0,
+  );
+}
+
+class EarningsDayEntry {
+  final String date;
+  final double gross;
+  final double commission;
+  final double net;
+  final int orders;
+  const EarningsDayEntry({required this.date, required this.gross, required this.commission, required this.net, required this.orders});
+  factory EarningsDayEntry.fromJson(Map<String, dynamic> j) => EarningsDayEntry(
+    date:       j['date'] as String? ?? '',
+    gross:      (j['gross']      as num?)?.toDouble() ?? 0.0,
+    commission: (j['commission'] as num?)?.toDouble() ?? 0.0,
+    net:        (j['net']        as num?)?.toDouble() ?? 0.0,
+    orders:     (j['orders']     as num?)?.toInt()    ?? 0,
+  );
+}
+
+class EarningsOrderEntry {
+  final String id;
+  final DateTime createdAt;
+  final double subtotal;
+  final double commissionAmount;
+  final double netRevenue;
+  final double total;
+  final int itemCount;
+  const EarningsOrderEntry({required this.id, required this.createdAt, required this.subtotal, required this.commissionAmount, required this.netRevenue, required this.total, required this.itemCount});
+  factory EarningsOrderEntry.fromJson(Map<String, dynamic> j) => EarningsOrderEntry(
+    id:               j['id']               as String? ?? '',
+    createdAt:        DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
+    subtotal:         (j['subtotal']         as num?)?.toDouble() ?? 0.0,
+    commissionAmount: (j['commissionAmount'] as num?)?.toDouble() ?? 0.0,
+    netRevenue:       (j['netRevenue']       as num?)?.toDouble() ?? 0.0,
+    total:            (j['total']            as num?)?.toDouble() ?? 0.0,
+    itemCount:        (j['itemCount']        as num?)?.toInt()    ?? 0,
+  );
+}
+
+class EarningsData {
+  final double commissionRate;
+  final EarningsSummaryEntry today;
+  final EarningsSummaryEntry week;
+  final EarningsSummaryEntry month;
+  final double periodGross;
+  final double periodCommission;
+  final double periodNet;
+  final int periodOrders;
+  final List<EarningsDayEntry> revenueByDay;
+  final List<EarningsOrderEntry> recentOrders;
+
+  const EarningsData({
+    required this.commissionRate,
+    required this.today,
+    required this.week,
+    required this.month,
+    required this.periodGross,
+    required this.periodCommission,
+    required this.periodNet,
+    required this.periodOrders,
+    required this.revenueByDay,
+    required this.recentOrders,
+  });
+
+  factory EarningsData.fromJson(Map<String, dynamic> j) {
+    final summary = j['summary'] as Map<String, dynamic>? ?? {};
+    final totals  = j['totals']  as Map<String, dynamic>? ?? {};
+    return EarningsData(
+      commissionRate:    (j['commissionRate'] as num?)?.toDouble() ?? 15.0,
+      today: EarningsSummaryEntry.fromJson(summary['today'] as Map<String, dynamic>? ?? {}),
+      week:  EarningsSummaryEntry.fromJson(summary['week']  as Map<String, dynamic>? ?? {}),
+      month: EarningsSummaryEntry.fromJson(summary['month'] as Map<String, dynamic>? ?? {}),
+      periodGross:      (totals['gross']      as num?)?.toDouble() ?? 0.0,
+      periodCommission: (totals['commission'] as num?)?.toDouble() ?? 0.0,
+      periodNet:        (totals['net']        as num?)?.toDouble() ?? 0.0,
+      periodOrders:     (totals['orders']     as num?)?.toInt()    ?? 0,
+      revenueByDay: (j['revenueByDay'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((e) => EarningsDayEntry.fromJson(e))
+          .toList(),
+      recentOrders: (j['recentOrders'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((e) => EarningsOrderEntry.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+final earningsProvider = FutureProvider.autoDispose.family<EarningsData, int>((ref, days) async {
+  final res = await ApiClient.instance.get('/professionals/me/earnings', params: {'period': days});
+  return EarningsData.fromJson(res['data'] as Map<String, dynamic>? ?? {});
+});

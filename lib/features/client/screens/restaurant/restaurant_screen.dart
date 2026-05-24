@@ -57,10 +57,9 @@ final restaurantDetailProvider =
 
 final restaurantProductsProvider =
     FutureProvider.autoDispose.family<List<Product>, String>((ref, id) async {
-  final res = await ApiClient.instance.get('/products/professional/$id',
-      params: {'isAvailable': 'all'});
+  final res = await ApiClient.instance.get('/products/professional/$id');
   final raw = res['data'];
-  final list = raw is List ? raw : (raw as Map<String, dynamic>?)?['items'] as List? ?? [];
+  final list = raw is List ? raw : (raw as Map<String, dynamic>?)?['data'] as List? ?? [];
   return list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
 });
 

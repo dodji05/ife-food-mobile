@@ -176,9 +176,11 @@ class _NotificationTile extends ConsumerWidget {
     }
     final orderId = notif.orderId;
     if (orderId != null && orderId.isNotEmpty) {
-      // Pour le rôle pro : /pro/order/:id. La logique role-aware existe
-      // déjà dans FcmService — ici on est dans une route pro, donc safe.
       context.push('/pro/order/$orderId');
+    } else {
+      // Fallback : si la notif n'a pas d'orderId (ancienne notif sans data),
+      // on navigue vers la liste des commandes pour que le tap ne soit jamais ignoré.
+      context.push('/pro/orders');
     }
   }
 }

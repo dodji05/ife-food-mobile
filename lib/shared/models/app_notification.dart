@@ -39,7 +39,7 @@ class AppNotification {
     title:     j['title']   as String? ?? '',
     body:      j['body']    as String? ?? '',
     read:      j['read']    as bool?   ?? false,
-    data:      j['data']    as Map<String, dynamic>?,
+    data:      j['data'] is Map ? Map<String, dynamic>.from(j['data'] as Map) : null,
     createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
   );
 

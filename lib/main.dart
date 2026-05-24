@@ -130,6 +130,7 @@ class IfeFoodApp extends ConsumerWidget {
       routerConfig: router,
 
       // Localisation
+      locale: authState.user != null ? Locale(authState.user!.lang) : null,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

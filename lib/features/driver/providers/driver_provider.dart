@@ -367,10 +367,10 @@ final driverConfigProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   }
 });
 
-// Zones d'activité du livreur — autoDispose pour forcer un reload à chaque
-// ouverture de l'écran zones (ajout/suppression se reflète immédiatement).
-final driverZonesProvider = FutureProvider.autoDispose<List<DriverZone>>((ref) async {
+// Zones de livraison admin avec flag selected — autoDispose pour reload
+// immédiat après sélection/désélection.
+final driverZonesProvider = FutureProvider.autoDispose<List<DeliveryZone>>((ref) async {
   final res = await ApiClient.instance.get('/drivers/me/zones');
   final list = res['data'] as List? ?? [];
-  return list.whereType<Map<String, dynamic>>().map(DriverZone.fromJson).toList();
+  return list.whereType<Map<String, dynamic>>().map(DeliveryZone.fromJson).toList();
 });

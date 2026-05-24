@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// ifè FOOD Driver — Zones de livraison
-// Permet au livreur d'ajouter, modifier et supprimer ses zones d'activité.
-// ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
@@ -33,13 +29,6 @@ class DriverZonesScreen extends ConsumerWidget {
         title: const Text('Zones de livraison',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
               fontWeight: FontWeight.w800, color: AppColors.darkText)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
-            tooltip: 'Ajouter une zone',
-            onPressed: () => _showZoneSheet(context, ref, null),
-          ),
-        ],
       ),
       body: zonesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -47,68 +36,57 @@ class DriverZonesScreen extends ConsumerWidget {
           child: Text('Erreur : $e',
               style: const TextStyle(color: AppColors.danger, fontFamily: 'Nunito'))),
         data: (zones) {
-          if (zones.isEmpty) {
-            return _EmptyState(onAdd: () => _showZoneSheet(context, ref, null));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: zones.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (ctx, i) => _ZoneTile(
-              zone: zones[i],
-              onEdit: () => _showZoneSheet(context, ref, zones[i]),
-              onDelete: () => _deleteZone(context, ref, zones[i]),
+          if (zones.isEmpty) return const _EmptyState();
+          return Column(children: [
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.info.withOpacity(0.25)),
+              ),
+              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.info),
+                SizedBox(width: 8),
+                Expanded(child: Text(
+                  'Sélectionnez les zones où vous souhaitez recevoir des missions.',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                      color: AppColors.info, height: 1.4),
+                )),
+              ]),
             ),
-          );
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                itemCount: zones.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (ctx, i) => _ZoneTile(
+                  zone: zones[i],
+                  onToggle: () => _toggle(ctx, ref, zones[i]),
+                ),
+              ),
+            ),
+          ]);
         },
       ),
     );
   }
 
-  Future<void> _showZoneSheet(BuildContext context, WidgetRef ref, DriverZone? zone) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ZoneForm(zone: zone, onSaved: () {
-        ref.invalidate(driverZonesProvider);
-      }),
-    );
-  }
-
-  Future<void> _deleteZone(BuildContext context, WidgetRef ref, DriverZone zone) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
-        title: const Text('Supprimer la zone',
-            style: TextStyle(fontFamily: 'Nunito', color: AppColors.darkText, fontWeight: FontWeight.w800)),
-        content: Text('Supprimer « ${zone.name} » ?',
-            style: const TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler',
-                style: TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer',
-                style: TextStyle(fontFamily: 'Nunito', color: AppColors.danger, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
+  Future<void> _toggle(BuildContext context, WidgetRef ref, DeliveryZone zone) async {
     try {
-      await ApiClient.instance.delete('/drivers/me/zones/${zone.id}');
+      if (zone.selected) {
+        await ApiClient.instance.delete('/drivers/me/zones/${zone.id}');
+      } else {
+        await ApiClient.instance.post('/drivers/me/zones/${zone.id}/select');
+      }
       ref.invalidate(driverZonesProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'),
-              backgroundColor: AppColors.danger));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
       }
     }
   }
@@ -116,250 +94,93 @@ class DriverZonesScreen extends ConsumerWidget {
 
 // ── Tuile de zone ─────────────────────────────────────────────────────────────
 class _ZoneTile extends StatelessWidget {
-  final DriverZone zone;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _ZoneTile({required this.zone, required this.onEdit, required this.onDelete});
+  final DeliveryZone zone;
+  final VoidCallback onToggle;
+  const _ZoneTile({required this.zone, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.darkSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: zone.isDefault
-            ? Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5)
-            : null,
-      ),
-      child: Row(children: [
-        Container(
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            color: (zone.isDefault ? AppColors.primary : AppColors.info).withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            zone.isDefault ? Icons.star_rounded : Icons.place_rounded,
-            color: zone.isDefault ? AppColors.primary : AppColors.info,
-            size: 20,
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: zone.selected
+              ? AppColors.primary.withOpacity(0.08)
+              : AppColors.darkSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: zone.selected
+                ? AppColors.primary.withOpacity(0.5)
+                : AppColors.darkBorder,
+            width: zone.selected ? 1.5 : 1,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text(zone.name,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w800, color: AppColors.darkText)),
-            if (zone.isDefault) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(4)),
-                child: const Text('Par défaut',
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
-                      fontWeight: FontWeight.w700, color: AppColors.primary)),
-              ),
-            ],
-          ]),
-          const SizedBox(height: 2),
-          Text('${zone.city} · ${zone.country} · ${zone.radiusKm.toStringAsFixed(0)} km',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
-        ])),
-        IconButton(
-          icon: const Icon(Icons.edit_rounded, color: AppColors.darkSubtext, size: 18),
-          onPressed: onEdit,
-          tooltip: 'Modifier',
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 18),
-          onPressed: onDelete,
-          tooltip: 'Supprimer',
-        ),
-      ]),
-    );
-  }
-}
-
-// ── Formulaire ajout / édition ────────────────────────────────────────────────
-class _ZoneForm extends StatefulWidget {
-  final DriverZone? zone;
-  final VoidCallback onSaved;
-  const _ZoneForm({this.zone, required this.onSaved});
-
-  @override
-  State<_ZoneForm> createState() => _ZoneFormState();
-}
-
-class _ZoneFormState extends State<_ZoneForm> {
-  late final TextEditingController _name;
-  late final TextEditingController _city;
-  late final TextEditingController _country;
-  late final TextEditingController _radius;
-  bool _isDefault = false;
-  bool _loading   = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _name    = TextEditingController(text: widget.zone?.name ?? '');
-    _city    = TextEditingController(text: widget.zone?.city ?? '');
-    _country = TextEditingController(text: widget.zone?.country ?? 'BJ');
-    _radius  = TextEditingController(
-        text: (widget.zone?.radiusKm ?? 10).toStringAsFixed(0));
-    _isDefault = widget.zone?.isDefault ?? false;
-  }
-
-  @override
-  void dispose() {
-    _name.dispose(); _city.dispose(); _country.dispose(); _radius.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final name   = _name.text.trim();
-    final city   = _city.text.trim();
-    final country = _country.text.trim().toUpperCase();
-    final radius = double.tryParse(_radius.text.trim()) ?? 10.0;
-
-    if (name.isEmpty || city.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nom et ville sont obligatoires'),
-            backgroundColor: AppColors.danger));
-      return;
-    }
-
-    setState(() => _loading = true);
-    try {
-      final body = {
-        'name': name, 'city': city, 'country': country.isEmpty ? 'BJ' : country,
-        'radiusKm': radius, 'isDefault': _isDefault,
-      };
-      if (widget.zone == null) {
-        await ApiClient.instance.post('/drivers/me/zones', data: body);
-      } else {
-        await ApiClient.instance.patch('/drivers/me/zones/${widget.zone!.id}', data: body);
-      }
-      widget.onSaved();
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.danger));
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final editing = widget.zone != null;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.darkSurface,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 36, height: 4,
+        child: Row(children: [
+          // Icône zone
+          Container(
+            width: 44, height: 44,
             decoration: BoxDecoration(
-                color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 20),
-          Text(editing ? 'Modifier la zone' : 'Nouvelle zone',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: AppColors.darkText)),
-          const SizedBox(height: 20),
-          _Field(controller: _name, label: 'Nom (ex: Centre Cotonou)', icon: Icons.label_rounded),
-          const SizedBox(height: 12),
-          _Field(controller: _city, label: 'Ville', icon: Icons.location_city_rounded),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _Field(controller: _country, label: 'Pays (code)', icon: Icons.flag_rounded)),
-            const SizedBox(width: 12),
-            Expanded(child: _Field(controller: _radius, label: 'Rayon (km)', icon: Icons.radar_rounded, isNumber: true)),
-          ]),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () => setState(() => _isDefault = !_isDefault),
-            child: Row(children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 22, height: 22,
-                decoration: BoxDecoration(
-                  color: _isDefault ? AppColors.primary : Colors.transparent,
-                  border: Border.all(color: _isDefault ? AppColors.primary : AppColors.darkBorder, width: 2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: _isDefault
-                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              const Text('Zone par défaut',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    color: AppColors.darkText, fontWeight: FontWeight.w600)),
-            ]),
+              color: (zone.selected ? AppColors.primary : AppColors.info)
+                  .withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.place_rounded,
+              color: zone.selected ? AppColors.primary : AppColors.info,
+              size: 20,
+            ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _loading ? null : _save,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-            child: _loading
-                ? const SizedBox(width: 22, height: 22,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(editing ? 'Enregistrer' : 'Ajouter la zone',
-                    style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
+          const SizedBox(width: 12),
+          // Infos
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(zone.name,
+              style: TextStyle(
+                fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800,
+                color: zone.selected ? AppColors.primary : AppColors.darkText,
+              )),
+            const SizedBox(height: 3),
+            Text(
+              _subtitle(zone),
+              style: const TextStyle(
+                  fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+            ),
+          ])),
+          // Toggle
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: zone.selected ? AppColors.primary : Colors.transparent,
+              border: Border.all(
+                color: zone.selected ? AppColors.primary : AppColors.darkBorder,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: zone.selected
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                : null,
           ),
         ]),
       ),
     );
   }
-}
 
-class _Field extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final bool isNumber;
-  const _Field({required this.controller, required this.label, required this.icon, this.isNumber = false});
-
-  @override
-  Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-    style: const TextStyle(fontFamily: 'Nunito', color: AppColors.darkText, fontSize: 14),
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext, fontSize: 13),
-      prefixIcon: Icon(icon, color: AppColors.darkSubtext, size: 18),
-      filled: true,
-      fillColor: AppColors.darkBg,
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.darkBorder)),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.darkBorder)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-    ),
-  );
+  String _subtitle(DeliveryZone z) {
+    final parts = <String>[];
+    if (z.fromCity != null) parts.add(z.fromCity!);
+    if (z.toCity != null && z.toCity != z.fromCity) parts.add(z.toCity!);
+    parts.add(z.country);
+    if (z.baseFee > 0) parts.add('${z.baseFee.toStringAsFixed(0)} ${z.currency}');
+    return parts.join(' · ');
+  }
 }
 
 // ── État vide ─────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
-  final VoidCallback onAdd;
-  const _EmptyState({required this.onAdd});
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) => Center(
@@ -373,23 +194,13 @@ class _EmptyState extends StatelessWidget {
         child: const Icon(Icons.place_rounded, color: AppColors.primary, size: 34),
       ),
       const SizedBox(height: 16),
-      const Text('Aucune zone configurée',
+      const Text('Aucune zone disponible',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
             fontWeight: FontWeight.w800, color: AppColors.darkText)),
       const SizedBox(height: 6),
-      const Text('Ajoutez vos zones pour recevoir\ndes missions dans ces secteurs.',
+      const Text('L\'administrateur n\'a pas encore créé\nde zones de livraison.',
         textAlign: TextAlign.center,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
-      const SizedBox(height: 24),
-      ElevatedButton.icon(
-        onPressed: onAdd,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Ajouter une zone',
-          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14)),
-      ),
     ]),
   );
 }

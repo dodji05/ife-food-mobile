@@ -56,9 +56,7 @@ dependencies:
 
   # Image
   image_picker: ^1.0.7
-  # file_picker retiré : non utilisé dans le code Dart et générait des
-  # warnings Linux/macOS/Windows polluant le build APK.
-  # À réintégrer si besoin réel (ex: CSV import catalogue pro).
+  file_picker: ^6.1.1   # Upload PDF documents (pièce d'identité, permis)
 
   # Payments
   # stripe_flutter: ^10.1.0   # décommenter pour prod

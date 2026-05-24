@@ -1,54 +1,35 @@
-class DriverZone {
+class DeliveryZone {
   final String id;
   final String name;
-  final String city;
   final String country;
-  final double radiusKm;
-  final bool isDefault;
-  final DateTime createdAt;
+  final String? fromCity;
+  final String? toCity;
+  final double baseFee;
+  final String currency;
+  final bool isActive;
+  final bool selected;
 
-  const DriverZone({
+  const DeliveryZone({
     required this.id,
     required this.name,
-    required this.city,
     required this.country,
-    required this.radiusKm,
-    required this.isDefault,
-    required this.createdAt,
+    this.fromCity,
+    this.toCity,
+    required this.baseFee,
+    required this.currency,
+    required this.isActive,
+    this.selected = false,
   });
 
-  factory DriverZone.fromJson(Map<String, dynamic> j) => DriverZone(
-    id:        j['id'] as String,
-    name:      j['name'] as String,
-    city:      j['city'] as String,
-    country:   j['country'] as String? ?? 'BJ',
-    radiusKm:  (j['radiusKm'] as num?)?.toDouble() ?? 10.0,
-    isDefault: j['isDefault'] as bool? ?? false,
-    createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
-  );
-
-  Map<String, dynamic> toJson() => {
-    'id':        id,
-    'name':      name,
-    'city':      city,
-    'country':   country,
-    'radiusKm':  radiusKm,
-    'isDefault': isDefault,
-  };
-
-  DriverZone copyWith({
-    String? name,
-    String? city,
-    String? country,
-    double? radiusKm,
-    bool?   isDefault,
-  }) => DriverZone(
-    id:        id,
-    name:      name ?? this.name,
-    city:      city ?? this.city,
-    country:   country ?? this.country,
-    radiusKm:  radiusKm ?? this.radiusKm,
-    isDefault: isDefault ?? this.isDefault,
-    createdAt: createdAt,
+  factory DeliveryZone.fromJson(Map<String, dynamic> j) => DeliveryZone(
+    id:       j['id']       as String,
+    name:     j['name']     as String,
+    country:  j['country']  as String? ?? 'BJ',
+    fromCity: j['fromCity'] as String?,
+    toCity:   j['toCity']   as String?,
+    baseFee:  (j['baseFee'] as num).toDouble(),
+    currency: j['currency'] as String? ?? 'XOF',
+    isActive: j['isActive'] as bool? ?? true,
+    selected: j['selected'] as bool? ?? false,
   );
 }

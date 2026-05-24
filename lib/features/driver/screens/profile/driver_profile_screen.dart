@@ -25,6 +25,7 @@ import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
 import '../../providers/driver_provider.dart';
 import 'driver_zones_screen.dart';
+import 'driver_documents_screen.dart';
 
 class DriverProfileScreen extends ConsumerWidget {
   const DriverProfileScreen({super.key});
@@ -160,14 +161,12 @@ class DriverProfileScreen extends ConsumerWidget {
         ]),
         const SizedBox(height: 12),
 
-        // ── Documents (statut depuis driver.documents) ────────────────────
+        // ── Documents ─────────────────────────────────────────────────────
         _Section('Documents', [
-          _Item(Icons.badge_rounded, 'Pièce d\'identité',
-              sub: _docStatus(driver, 'ID_CARD'),
-              onTap: () => _showDocSnack(context, driver, 'ID_CARD')),
-          _Item(Icons.car_repair_rounded, 'Permis de conduire',
-              sub: _docStatus(driver, 'DRIVER_LICENSE'),
-              onTap: () => _showDocSnack(context, driver, 'DRIVER_LICENSE')),
+          _Item(Icons.folder_copy_rounded, 'Mes documents',
+              sub: 'Pièce d\'identité, permis de conduire',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DriverDocumentsScreen()))),
         ]),
         const SizedBox(height: 12),
 
@@ -227,30 +226,6 @@ class DriverProfileScreen extends ConsumerWidget {
     _ => code,
   };
 
-  /// Lit le statut d'un document driver depuis la liste `driver.documents`.
-  /// Le backend stocke des entrées { type, status: PENDING|VERIFIED|REJECTED, url }.
-  /// Retourne un label FR avec emoji statut.
-  String _docStatus(Driver? d, String type) {
-    if (d == null) return 'Non fourni';
-    final doc = d.documents.cast<Map<String, dynamic>?>().firstWhere(
-      (e) => e?['type'] == type, orElse: () => null);
-    if (doc == null) return 'Non fourni';
-    return switch (doc['status']) {
-      'VERIFIED' => 'Vérifié ✓',
-      'REJECTED' => 'Rejeté ✗',
-      _          => 'En attente ⏳',
-    };
-  }
-
-  /// L'upload de documents passe par l'admin pour l'instant (verif manuelle).
-  /// Un futur endpoint POST /drivers/me/documents permettra le self-upload.
-  void _showDocSnack(BuildContext ctx, Driver? d, String type) {
-    final status = _docStatus(d, type);
-    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-      content: Text('Statut: $status. Pour mettre à jour, contactez le support.'),
-      backgroundColor: AppColors.info,
-    ));
-  }
 }
 
 // ── Bottom sheet modification véhicule ───────────────────────────────────────

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/driver_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -303,11 +304,29 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
             child: Column(children: [
               _InfoRow(icon: Icons.store_rounded, color: AppColors.yellow,
                   label: 'Établissement', value: mission.professionalName),
+              if (mission.professionalPhone.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _CallButton(
+                  label: 'Appeler le restaurant',
+                  phone: mission.professionalPhone,
+                  color: AppColors.yellow,
+                ),
+              ],
               const SizedBox(height: 10),
               const Divider(color: AppColors.darkBorder),
               const SizedBox(height: 10),
               _InfoRow(icon: Icons.location_on_rounded, color: AppColors.danger,
                   label: 'Livraison', value: mission.clientAddress),
+              if (mission.clientPhone.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _CallButton(
+                  label: mission.clientName.isNotEmpty
+                      ? 'Appeler ${mission.clientName}'
+                      : 'Appeler le client',
+                  phone: mission.clientPhone,
+                  color: AppColors.info,
+                ),
+              ],
               const SizedBox(height: 10),
               const Divider(color: AppColors.darkBorder),
               const SizedBox(height: 10),
@@ -464,4 +483,26 @@ class _MiniStat extends StatelessWidget {
     Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
         color: AppColors.darkMuted)),
   ]);
+}
+
+class _CallButton extends StatelessWidget {
+  final String label, phone;
+  final Color color;
+  const _CallButton({required this.label, required this.phone, required this.color});
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    child: OutlinedButton.icon(
+      onPressed: () => launchUrl(Uri.parse('tel:$phone')),
+      icon: Icon(Icons.phone_rounded, size: 15, color: color),
+      label: Text(label,
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+            fontWeight: FontWeight.w700, color: color)),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: color.withOpacity(0.4)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    ),
+  );
 }

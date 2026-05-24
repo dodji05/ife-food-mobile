@@ -9,14 +9,17 @@ class Mission {
   final String professionalName;
   final String professionalAddress;
   final double professionalLat, professionalLng;
+  final String professionalPhone;
   final String clientAddress;
   final double clientLat, clientLng;
+  final String clientName;
+  final String clientPhone;
   final double deliveryFee;
   final String currency;
   final double distanceKm;
   final int estimatedMinutes;
-  final String orderStatus;      // statut de la commande (DRIVER_ASSIGNED, etc.)
-  final String deliveryStatus;   // statut de la livraison (ASSIGNED, HEADING_TO_PICKUP, etc.)
+  final String orderStatus;
+  final String deliveryStatus;
   final DateTime createdAt;
   final List<MissionItem> items;
 
@@ -26,34 +29,44 @@ class Mission {
     required this.professionalAddress,
     required this.professionalLat,
     required this.professionalLng,
+    this.professionalPhone = '',
     required this.clientAddress,
     required this.clientLat,
     required this.clientLng,
+    this.clientName        = '',
+    this.clientPhone       = '',
     required this.deliveryFee,
-    this.currency        = 'XOF',
-    this.distanceKm      = 0,
-    this.estimatedMinutes = 20,
+    this.currency          = 'XOF',
+    this.distanceKm        = 0,
+    this.estimatedMinutes  = 20,
     required this.orderStatus,
-    this.deliveryStatus  = 'ASSIGNED',
+    this.deliveryStatus    = 'ASSIGNED',
     required this.createdAt,
-    this.items           = const [],
+    this.items             = const [],
   });
 
   // Depuis un Order (payload de la notification initiale)
   factory Mission.fromOrderJson(Map<String, dynamic> json) {
-    final pro = json['professional'] as Map<String, dynamic>? ?? {};
+    final pro    = json['professional'] as Map<String, dynamic>? ?? {};
+    final client = json['client']       as Map<String, dynamic>? ?? {};
+    final clientFirst = client['firstName'] as String? ?? '';
+    final clientLast  = client['name']      as String? ?? '';
+    final clientFullName = [clientFirst, clientLast].where((s) => s.isNotEmpty).join(' ');
     return Mission(
       orderId:             json['id'] ?? json['orderId'] ?? '',
-      professionalName:    pro['businessName'] ?? json['professionalName'] ?? 'Restaurant',
-      professionalAddress: pro['address']      ?? json['professionalAddress'] ?? '',
-      professionalLat:     (pro['lat']         ?? json['professionalLat'] ?? 0).toDouble(),
-      professionalLng:     (pro['lng']         ?? json['professionalLng'] ?? 0).toDouble(),
+      professionalName:    pro['businessName']  ?? json['professionalName']  ?? 'Restaurant',
+      professionalAddress: pro['address']        ?? json['professionalAddress'] ?? '',
+      professionalLat:     (pro['lat']           ?? json['professionalLat']  ?? 0).toDouble(),
+      professionalLng:     (pro['lng']           ?? json['professionalLng']  ?? 0).toDouble(),
+      professionalPhone:   pro['phone']          ?? json['professionalPhone'] ?? '',
       clientAddress:       json['deliveryAddress'] ?? '',
-      clientLat:           (json['deliveryLat']    ?? 0).toDouble(),
-      clientLng:           (json['deliveryLng']    ?? 0).toDouble(),
-      deliveryFee:         (json['deliveryFee']    ?? 0).toDouble(),
+      clientLat:           (json['deliveryLat']  ?? 0).toDouble(),
+      clientLng:           (json['deliveryLng']  ?? 0).toDouble(),
+      clientName:          clientFullName.isNotEmpty ? clientFullName : (json['clientName'] ?? ''),
+      clientPhone:         client['phone']       ?? json['clientPhone']      ?? '',
+      deliveryFee:         (json['deliveryFee']  ?? 0).toDouble(),
       currency:            json['currency'] ?? 'XOF',
-      distanceKm:          (json['distanceKm']      ?? 0).toDouble(),
+      distanceKm:          (json['distanceKm']   ?? 0).toDouble(),
       estimatedMinutes:    json['estimatedDeliveryMin'] ?? 20,
       orderStatus:         json['status'] ?? 'DRIVER_ASSIGNED',
       deliveryStatus:      json['delivery']?['status'] ?? 'ASSIGNED',
@@ -75,10 +88,12 @@ class Mission {
   Mission withStep(String step) => Mission(
     orderId: orderId, professionalName: professionalName,
     professionalAddress: professionalAddress, professionalLat: professionalLat,
-    professionalLng: professionalLng, clientAddress: clientAddress,
-    clientLat: clientLat, clientLng: clientLng, deliveryFee: deliveryFee,
-    currency: currency, distanceKm: distanceKm, estimatedMinutes: estimatedMinutes,
-    orderStatus: orderStatus, deliveryStatus: step, createdAt: createdAt, items: items,
+    professionalLng: professionalLng, professionalPhone: professionalPhone,
+    clientAddress: clientAddress, clientLat: clientLat, clientLng: clientLng,
+    clientName: clientName, clientPhone: clientPhone,
+    deliveryFee: deliveryFee, currency: currency, distanceKm: distanceKm,
+    estimatedMinutes: estimatedMinutes, orderStatus: orderStatus,
+    deliveryStatus: step, createdAt: createdAt, items: items,
   );
 
   bool get isPickupPhase => const [

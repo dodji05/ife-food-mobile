@@ -40,6 +40,11 @@ class Product {
   final int?    stock;
   final int?    preparationTimeMin;
 
+  /// Variantes de prix : `[{name: 'Grand', price: 3500}, …]`
+  final List<Map<String, dynamic>> variants;
+  /// Options / extras : `[{name: 'Sauce pimentée', price: 0, required: false}, …]`
+  final List<Map<String, dynamic>> options;
+
   const Product({
     required this.id,
     required this.professionalId,
@@ -54,6 +59,8 @@ class Product {
     this.isAvailable = true,
     this.stock,
     this.preparationTimeMin,
+    this.variants = const [],
+    this.options  = const [],
   }) : nameMap = nameMap ?? const {};
 
   factory Product.fromJson(Map<String, dynamic> j) {
@@ -100,6 +107,12 @@ class Product {
       isAvailable:         j['isAvailable']   as bool?   ?? true,
       stock:               (j['stock']         as num?)?.toInt(),
       preparationTimeMin:  (j['preparationTimeMin'] as num?)?.toInt(),
+      variants: (j['variants'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList() ?? [],
+      options: (j['options'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList() ?? [],
     );
   }
 
@@ -122,6 +135,8 @@ class Product {
       'isAvailable':        isAvailable,
       'stock':              stock,
       'preparationTimeMin': preparationTimeMin,
+      if (variants.isNotEmpty) 'variants': variants,
+      if (options.isNotEmpty)  'options':  options,
     };
   }
 
@@ -173,6 +188,8 @@ class Product {
     bool?   isAvailable,
     Object? stock                 = _keep,
     Object? preparationTimeMin    = _keep,
+    List<Map<String, dynamic>>? variants,
+    List<Map<String, dynamic>>? options,
   }) => Product(
     id:                 id,
     professionalId:     professionalId,
@@ -189,6 +206,8 @@ class Product {
     preparationTimeMin: preparationTimeMin == _keep
         ? this.preparationTimeMin
         : preparationTimeMin as int?,
+    variants:           variants        ?? this.variants,
+    options:            options         ?? this.options,
   );
 }
 
@@ -215,7 +234,7 @@ class ProductCategory {
   });
 
   factory ProductCategory.fromJson(Map<String, dynamic> j) {
-    Map<String, String> _toMap(dynamic raw) {
+    Map<String, String> toMap(dynamic raw) {
       if (raw is Map) {
         return raw.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
       }
@@ -225,7 +244,7 @@ class ProductCategory {
     return ProductCategory(
       id:             j['id']             as String? ?? '',
       professionalId: j['professionalId'] as String? ?? '',
-      name:           _toMap(j['name']),
+      name:           toMap(j['name']),
       icon:           j['icon']           as String?,
       sortOrder:      (j['sortOrder']      as num?)?.toInt() ?? 0,
     );

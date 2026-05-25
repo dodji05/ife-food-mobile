@@ -19,11 +19,19 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/pro_provider.dart';
 
-class FavoriteDriversScreen extends ConsumerWidget {
+class FavoriteDriversScreen extends ConsumerStatefulWidget {
   const FavoriteDriversScreen({super.key});
+  @override
+  ConsumerState<FavoriteDriversScreen> createState() => _FavoriteDriversScreenState();
+}
+
+class _FavoriteDriversScreenState extends ConsumerState<FavoriteDriversScreen> {
+  void _refresh() => ref.invalidate(favoriteDriversProvider);
+
+  Future<void> _openAddSheet() => _showAddDriverSheet(context, ref);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final async = ref.watch(favoriteDriversProvider);
 
     return Scaffold(
@@ -33,12 +41,12 @@ class FavoriteDriversScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.invalidate(favoriteDriversProvider),
+            onPressed: _refresh,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDriverSheet(context, ref),
+        onPressed: _openAddSheet,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
         label: const Text('Ajouter',
@@ -48,15 +56,15 @@ class FavoriteDriversScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => _ErrorState(
           message: e.toString(),
-          onRetry: () => ref.invalidate(favoriteDriversProvider),
+          onRetry: _refresh,
         ),
         data: (list) {
-          if (list.isEmpty) return _EmptyState(onAdd: () => _showAddDriverSheet(context, ref));
+          if (list.isEmpty) return _EmptyState(onAdd: _openAddSheet);
           final privateList = list.where((d) => d.isPrivate).toList();
           final publicList  = list.where((d) => !d.isPrivate).toList();
           return RefreshIndicator(
             color: AppColors.primary,
-            onRefresh: () async => ref.invalidate(favoriteDriversProvider),
+            onRefresh: () async => _refresh(),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               children: [

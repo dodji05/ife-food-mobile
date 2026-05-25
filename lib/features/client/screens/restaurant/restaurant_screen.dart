@@ -136,7 +136,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
           final pro = Professional.fromJson(json);
 
           // Groupement produits par catégorie
-          final prodList = products.value ?? [];
+          final prodList = products.valueOrNull ?? [];
           final grouped = <String, List<Product>>{};
           final catLabels = <String, String>{};
           for (final p in prodList) {

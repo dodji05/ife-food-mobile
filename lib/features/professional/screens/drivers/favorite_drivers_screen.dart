@@ -92,6 +92,11 @@ class FavoriteDriversScreen extends ConsumerWidget {
 
 // ── Recherche + ajout d'un livreur ───────────────────────────────────────────
 Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
+  // ProviderScope(parent:) transmet explicitement le container Riverpod
+  // au contexte de la modal route (overlay GoRouter potentiellement isolé).
+  // L'invalidation se fait APRÈS fermeture via le ref du widget parent —
+  // évite le bug où ref.invalidate() dans un scope enfant ne propage pas.
+  final container = ProviderScope.containerOf(context);
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -99,9 +104,11 @@ Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => const _AddDriverSheet(),
+    builder: (_) => UncontrolledProviderScope(
+      container: container,
+      child: const _AddDriverSheet(),
+    ),
   );
-  // Rafraîchit la liste après fermeture du sheet (ajout éventuel).
   ref.invalidate(favoriteDriversProvider);
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/location_utils.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/addresses_provider.dart';
@@ -256,9 +257,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       };
 
       final res = await ApiClient.instance.post('/orders', data: body);
-      final orderId = res['data']['id'];
-      await ApiClient.instance.post('/payments/$orderId/initiate/$_selectedPayment');
+      final orderId = res['data']['id'] as String;
+      final payRes  = await ApiClient.instance.post('/payments/$orderId/initiate/$_selectedPayment');
+      final checkoutUrl = (payRes['data'] as Map<String, dynamic>?)?['checkoutUrl'] as String?;
       ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+      // FedaPay : ouvrir la page de paiement hébergée dans le navigateur
+      if (checkoutUrl != null) {
+        final uri = Uri.parse(checkoutUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
       if (mounted) context.go('/order/$orderId');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(

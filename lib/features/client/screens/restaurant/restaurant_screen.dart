@@ -256,7 +256,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                 pinned: true,
                 delegate: _TabBarDelegate(
                   tabController: _mainTab,
-                  reviewCount: reviews.value?.length,
+                  reviewCount: reviews.valueOrNull?.length,
                   innerBoxIsScrolled: innerScrolled,
                 ),
               ),

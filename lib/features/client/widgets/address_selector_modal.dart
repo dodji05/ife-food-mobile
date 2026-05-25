@@ -18,6 +18,7 @@ import '../providers/addresses_provider.dart';
 
 /// Affiche un bottom sheet de sélection. Retourne l'adresse choisie ou null.
 Future<UserAddress?> showAddressSelector(BuildContext context) {
+  final container = ProviderScope.containerOf(context);
   return showModalBottomSheet<UserAddress>(
     context: context,
     isScrollControlled: true,
@@ -25,7 +26,10 @@ Future<UserAddress?> showAddressSelector(BuildContext context) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => const _Sheet(),
+    builder: (_) => UncontrolledProviderScope(
+      container: container,
+      child: const _Sheet(),
+    ),
   );
 }
 

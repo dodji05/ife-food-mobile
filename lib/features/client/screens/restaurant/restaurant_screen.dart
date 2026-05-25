@@ -153,8 +153,10 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
             grouped.putIfAbsent(key, () => []).add(p);
           }
           // Catégories depuis la réponse detail (si incluses)
-          final rawCats = json['productCategories'] as List? ?? [];
+          final rawCatsRaw = json['productCategories'];
+          final rawCats = rawCatsRaw is List ? rawCatsRaw : <dynamic>[];
           for (final c in rawCats) {
+            if (c is! Map) continue;
             final id = c['id'] as String?;
             final name = c['name'];
             if (id != null) {
@@ -1048,7 +1050,6 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
       Container(
-        color: Colors.white,
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(bottom: BorderSide(

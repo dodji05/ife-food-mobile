@@ -107,12 +107,18 @@ class Product {
       isAvailable:         j['isAvailable']   as bool?   ?? true,
       stock:               (j['stock']         as num?)?.toInt(),
       preparationTimeMin:  (j['preparationTimeMin'] as num?)?.toInt(),
-      variants: (j['variants'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e as Map))
-          .toList() ?? [],
-      options: (j['options'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e as Map))
-          .toList() ?? [],
+      variants: (j['variants'] is List
+          ? (j['variants'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : const <Map<String, dynamic>>[]),
+      options: (j['options'] is List
+          ? (j['options'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : const <Map<String, dynamic>>[]),
     );
   }
 

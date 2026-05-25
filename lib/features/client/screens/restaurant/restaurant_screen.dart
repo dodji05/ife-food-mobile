@@ -11,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/product_detail_modal.dart';
 
 // ── Modèle avis ───────────────────────────────────────────────────────────────
 
@@ -866,12 +867,20 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
 
     return Opacity(
       opacity: unavailable ? 0.55 : 1.0,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
-        child: Row(children: [
+      child: GestureDetector(
+        onTap: () => showProductDetail(
+          context,
+          product: product,
+          professionalId: widget.professionalId,
+          proName: widget.proName,
+          isProOpen: widget.isProOpen,
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: Colors.white, borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+          child: Row(children: [
           // Vignette produit
           Stack(children: [
             ClipRRect(
@@ -977,6 +986,7 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
             ),
           )),
         ]),
+        ),
       ),
     );
   }

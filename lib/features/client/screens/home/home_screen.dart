@@ -13,6 +13,7 @@ import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/providers/location_provider.dart';
 import '../../providers/addresses_provider.dart';
 import '../../widgets/address_selector_modal.dart';
+import '../../widgets/product_detail_modal.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
@@ -889,7 +890,11 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => context.push('/restaurant/${product.professionalId}'),
+    onTap: () => showProductDetail(
+      context,
+      product: product,
+      professionalId: product.professionalId,
+    ),
     child: Container(
       width: 140,
       margin: const EdgeInsets.only(right: 12),

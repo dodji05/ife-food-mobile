@@ -563,19 +563,18 @@ class _MenuTab extends ConsumerWidget {
               ),
 
             if (filtered.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: Padding(
-                  padding: EdgeInsets.all(32),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 64),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Text('🍽️', style: TextStyle(fontSize: 48)),
                     SizedBox(height: 12),
-                    Text('Aucun produit dans cette catégorie',
+                    Text('Aucun produit disponible',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
                           color: AppColors.grey)),
                   ]),
-                )),
+                ),
               )
             else
               SliverPadding(
@@ -716,9 +715,8 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = (review.clientName ?? '?').trim().isEmpty
-        ? '?'
-        : review.clientName!.trim().substring(0, 1).toUpperCase();
+    final _name    = review.clientName?.trim() ?? '';
+    final initials = _name.isEmpty ? '?' : _name[0].toUpperCase();
     final diff     = DateTime.now().difference(review.createdAt);
     final dateStr  = diff.inDays > 30
         ? '${(diff.inDays / 30).floor()} mois'

@@ -524,20 +524,21 @@ class _DeliveryTypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
     onTap: onTap,
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: selected ? AppColors.primary : Colors.transparent,
+        color: selected ? AppColors.primary : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: selected ? AppColors.primary : AppColors.lightGrey),
       ),
       child: Column(children: [
-        Icon(icon, size: 20, color: selected ? Colors.white : AppColors.grey),
+        Icon(icon, size: 20, color: selected ? Colors.white : AppColors.nearBlack),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : AppColors.grey)),
+            color: selected ? Colors.white : AppColors.nearBlack)),
       ]),
     ),
   );

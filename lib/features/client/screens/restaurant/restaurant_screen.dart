@@ -529,6 +529,7 @@ class _MenuTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return productsAsync.when(
       loading: () => ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         itemCount: 4,
         itemBuilder: (_, __) => _ShimmerProductCard()),
@@ -549,6 +550,7 @@ class _MenuTab extends ConsumerWidget {
             : (grouped[selectedCatId] ?? []);
 
         return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Catégories chips (si plusieurs catégories)
             if (catKeys.length > 1)
@@ -639,6 +641,7 @@ class _ReviewsTab extends StatelessWidget {
       final maxCount = counts.reduce((a, b) => a > b ? a : b).toDouble();
 
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           // Résumé note
@@ -715,8 +718,8 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _name    = review.clientName?.trim() ?? '';
-    final initials = _name.isEmpty ? '?' : _name[0].toUpperCase();
+    final name     = review.clientName?.trim() ?? '';
+    final initials = name.isEmpty ? '?' : name[0].toUpperCase();
     final diff     = DateTime.now().difference(review.createdAt);
     final dateStr  = diff.inDays > 30
         ? '${(diff.inDays / 30).floor()} mois'

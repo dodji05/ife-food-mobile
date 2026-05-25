@@ -11,6 +11,8 @@ import '../../../../shared/models/product.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/providers/location_provider.dart';
+import '../../providers/addresses_provider.dart';
+import '../../widgets/address_selector_modal.dart';
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
@@ -25,7 +27,7 @@ final nearbyProfessionalsProvider =
     'radius': radius == 0 ? 200 : radius,
   });
   final list = res['data'] as List? ?? [];
-  return list.map((e) => Professional.fromJson(e as Map<String, dynamic>)).toList();
+  return list.whereType<Map<String, dynamic>>().map(Professional.fromJson).toList();
 });
 
 final popularProductsProvider = FutureProvider.autoDispose<List<Product>>((ref) async {
@@ -41,7 +43,8 @@ final popularProductsProvider = FutureProvider.autoDispose<List<Product>>((ref) 
   final list = raw is List ? raw : (raw as Map<String, dynamic>?)?['items'] as List? ?? [];
   return list
       .take(16)
-      .map((e) => Product.fromJson(e as Map<String, dynamic>))
+      .whereType<Map<String, dynamic>>()
+      .map(Product.fromJson)
       .toList();
 });
 
@@ -173,6 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final popularProducts = ref.watch(popularProductsProvider);
     final banners     = ref.watch(bannersProvider);
     final unread      = ref.watch(unreadCountProvider);
+    final defaultAddress = ref.watch(defaultAddressProvider);
 
     return CustomScrollView(
       slivers: [
@@ -189,21 +193,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Row(children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Livraison à',
-                              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                                  color: Colors.white.withOpacity(0.8))),
-                            const Row(children: [
-                              Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
-                              SizedBox(width: 2),
-                              Text('Cotonou, Bénin',
-                                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                                    fontWeight: FontWeight.w700, color: Colors.white)),
-                              Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
-                            ]),
-                          ],
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showAddressSelector(context);
+                            if (picked != null) {
+                              await ref.read(addressesNotifierProvider)
+                                  .setDefault(picked.id);
+                            }
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Livraison à',
+                                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                                    color: Colors.white.withOpacity(0.8))),
+                              Row(children: [
+                                const Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
+                                const SizedBox(width: 2),
+                                Flexible(child: Text(
+                                  defaultAddress != null
+                                      ? '${defaultAddress.label} — ${defaultAddress.city}'
+                                      : 'Cotonou, Bénin',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                                      fontWeight: FontWeight.w700, color: Colors.white),
+                                )),
+                                const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+                              ]),
+                            ],
+                          ),
                         ),
                       ),
                       _ClientHomeBell(unread: unread),

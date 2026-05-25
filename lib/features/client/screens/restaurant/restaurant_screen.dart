@@ -60,14 +60,20 @@ final restaurantProductsProvider =
   final res = await ApiClient.instance.get('/products/professional/$id');
   final raw = res['data'];
   final list = raw is List ? raw : (raw as Map<String, dynamic>?)?['data'] as List? ?? [];
-  return list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
+  return list
+      .whereType<Map<String, dynamic>>()
+      .map(Product.fromJson)
+      .toList();
 });
 
 final restaurantReviewsProvider =
     FutureProvider.autoDispose.family<List<_Review>, String>((ref, id) async {
   final res = await ApiClient.instance.get('/reviews/professional/$id');
   final list = res['data'] as List? ?? [];
-  return list.map((e) => _Review.fromJson(e as Map<String, dynamic>)).toList();
+  return list
+      .whereType<Map<String, dynamic>>()
+      .map(_Review.fromJson)
+      .toList();
 });
 
 // ── Écran principal ───────────────────────────────────────────────────────────

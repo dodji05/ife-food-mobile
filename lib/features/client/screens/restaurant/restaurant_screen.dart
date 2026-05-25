@@ -69,7 +69,10 @@ final restaurantProductsProvider =
 final restaurantReviewsProvider =
     FutureProvider.autoDispose.family<List<_Review>, String>((ref, id) async {
   final res = await ApiClient.instance.get('/reviews/professional/$id');
-  final list = res['data'] as List? ?? [];
+  // Backend returns { data: { reviews: [...], average: X, count: N } }
+  final dataRaw = res['data'];
+  final list = dataRaw is List     ? dataRaw
+      : (dataRaw is Map ? dataRaw['reviews'] as List? : null) ?? [];
   return list
       .whereType<Map<String, dynamic>>()
       .map(_Review.fromJson)

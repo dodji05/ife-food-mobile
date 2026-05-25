@@ -12,6 +12,7 @@ import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/cart_provider.dart';
 import '../../widgets/product_detail_modal.dart';
+import '../../widgets/scheduled_delivery_dialog.dart';
 
 // ── Modèle avis ───────────────────────────────────────────────────────────────
 
@@ -280,6 +281,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                   proName: pro.businessName,
                   productsAsync: products,
                   isProOpen: pro.isOpen,
+                  openingHours: pro.openingHours,
                 ),
                 // ── Onglet Avis ──────────────────────────────────────────
                 _ReviewsTab(
@@ -511,6 +513,7 @@ class _MenuTab extends ConsumerWidget {
   final String               proName;
   final AsyncValue<List<Product>> productsAsync;
   final bool isProOpen;
+  final Map<String, dynamic>? openingHours;
 
   const _MenuTab({
     required this.products,
@@ -523,6 +526,7 @@ class _MenuTab extends ConsumerWidget {
     required this.proName,
     required this.productsAsync,
     required this.isProOpen,
+    this.openingHours,
   });
 
   @override
@@ -588,6 +592,7 @@ class _MenuTab extends ConsumerWidget {
                       professionalId: professionalId,
                       proName: proName,
                       isProOpen: isProOpen,
+                      openingHours: openingHours,
                     ),
                     childCount: filtered.length,
                   ),
@@ -802,11 +807,13 @@ class _ProductItem extends ConsumerStatefulWidget {
   final String professionalId;
   final String proName;
   final bool isProOpen;
+  final Map<String, dynamic>? openingHours;
   const _ProductItem({
     required this.product,
     required this.professionalId,
     required this.proName,
     required this.isProOpen,
+    this.openingHours,
   });
 
   @override
@@ -815,17 +822,17 @@ class _ProductItem extends ConsumerStatefulWidget {
 
 class _ProductItemState extends ConsumerState<_ProductItem> {
   Future<void> _addWithGuard() async {
+    DateTime? scheduledFor;
     if (!widget.isProOpen) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Cet établissement est actuellement fermé'),
-        backgroundColor: AppColors.danger,
-        duration: Duration(seconds: 2),
-      ));
-      return;
+      final nextOpening = nextOpeningTime(widget.openingHours);
+      final ok = await showScheduledDeliveryDialog(context, nextOpening: nextOpening);
+      if (!ok || !mounted) return;
+      scheduledFor = nextOpening;
     }
     final notifier = ref.read(cartProvider.notifier);
     if (notifier.canAddFrom(widget.professionalId)) {
       notifier.addItem(widget.product, widget.professionalId);
+      if (scheduledFor != null) notifier.setScheduledDelivery(scheduledFor);
       return;
     }
     final confirmed = await showDialog<bool>(
@@ -851,6 +858,7 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
     if (confirmed != true || !mounted) return;
     notifier.clearCart();
     notifier.addItem(widget.product, widget.professionalId);
+    if (scheduledFor != null) notifier.setScheduledDelivery(scheduledFor);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('${widget.product.localizedName('fr')} ajouté.'),
       backgroundColor: AppColors.success,
@@ -875,6 +883,7 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
           professionalId: widget.professionalId,
           proName: widget.proName,
           isProOpen: widget.isProOpen,
+          openingHours: widget.openingHours,
         ),
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),

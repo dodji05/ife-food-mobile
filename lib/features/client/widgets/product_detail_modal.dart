@@ -16,6 +16,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/product.dart';
 import '../providers/cart_provider.dart';
+import 'scheduled_delivery_dialog.dart';
 
 Future<void> showProductDetail(
   BuildContext context, {
@@ -23,6 +24,7 @@ Future<void> showProductDetail(
   required String professionalId,
   String? proName,
   bool isProOpen = true,
+  Map<String, dynamic>? openingHours,
 }) {
   final container = ProviderScope.containerOf(context);
   return showModalBottomSheet<void>(
@@ -36,6 +38,7 @@ Future<void> showProductDetail(
         professionalId: professionalId,
         proName: proName,
         isProOpen: isProOpen,
+        openingHours: openingHours,
       ),
     ),
   );
@@ -46,12 +49,14 @@ class _ProductDetailSheet extends ConsumerStatefulWidget {
   final String   professionalId;
   final String?  proName;
   final bool     isProOpen;
+  final Map<String, dynamic>? openingHours;
 
   const _ProductDetailSheet({
     required this.product,
     required this.professionalId,
     this.proName,
     this.isProOpen = true,
+    this.openingHours,
   });
 
   @override
@@ -79,13 +84,12 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   }
 
   Future<void> _addToCart() async {
+    DateTime? scheduledFor;
     if (!widget.isProOpen) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Cet établissement est actuellement fermé'),
-        backgroundColor: AppColors.danger,
-        duration: Duration(seconds: 2),
-      ));
-      return;
+      final nextOpening = nextOpeningTime(widget.openingHours);
+      final ok = await showScheduledDeliveryDialog(context, nextOpening: nextOpening);
+      if (!ok || !mounted) return;
+      scheduledFor = nextOpening;
     }
 
     final notifier = ref.read(cartProvider.notifier);
@@ -104,6 +108,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
 
     if (notifier.canAddFrom(widget.professionalId)) {
       notifier.addItem(productToAdd, widget.professionalId);
+      if (scheduledFor != null) notifier.setScheduledDelivery(scheduledFor);
       if (mounted) Navigator.pop(context);
       return;
     }
@@ -133,6 +138,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
     if (confirmed != true || !mounted) return;
     notifier.clearCart();
     notifier.addItem(productToAdd, widget.professionalId);
+    if (scheduledFor != null) notifier.setScheduledDelivery(scheduledFor);
     if (mounted) Navigator.pop(context);
   }
 

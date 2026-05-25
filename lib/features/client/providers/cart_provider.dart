@@ -24,12 +24,14 @@ class CartState {
   final String? professionalId;
   final String? promoCode;
   final double promoDiscount;
+  final DateTime? scheduledFor;
 
   const CartState({
     this.items = const [],
     this.professionalId,
     this.promoCode,
     this.promoDiscount = 0,
+    this.scheduledFor,
   });
 
   double get subtotal => items.fold(0, (sum, item) => sum + item.total);
@@ -48,11 +50,13 @@ class CartState {
     Object? professionalId = _keep,
     Object? promoCode      = _keep,
     double? promoDiscount,
+    Object? scheduledFor   = _keep,
   }) => CartState(
     items:          items ?? this.items,
     professionalId: professionalId == _keep ? this.professionalId : professionalId as String?,
     promoCode:      promoCode      == _keep ? this.promoCode      : promoCode      as String?,
     promoDiscount:  promoDiscount  ?? this.promoDiscount,
+    scheduledFor:   scheduledFor   == _keep ? this.scheduledFor   : scheduledFor   as DateTime?,
   );
 }
 
@@ -96,6 +100,10 @@ class CartNotifier extends StateNotifier<CartState> {
 
   void clearCart() {
     state = const CartState();
+  }
+
+  void setScheduledDelivery(DateTime? dt) {
+    state = state.copyWith(scheduledFor: dt);
   }
 
   bool canAddFrom(String professionalId) =>

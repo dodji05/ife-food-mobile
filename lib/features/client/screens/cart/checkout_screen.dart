@@ -45,6 +45,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   void initState() {
     super.initState();
     _loadPaymentGateways();
+    final scheduledFor = ref.read(cartProvider).scheduledFor;
+    if (scheduledFor != null) {
+      _isScheduled    = true;
+      _scheduledDate  = scheduledFor;
+      _scheduledTime  = TimeOfDay.fromDateTime(scheduledFor);
+    }
   }
 
   @override

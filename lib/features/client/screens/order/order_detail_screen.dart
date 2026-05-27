@@ -89,23 +89,42 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
             if (o.paymentStatus == 'PENDING') ...[
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.warning.withOpacity(0.4)),
                 ),
-                child: Row(children: [
-                  const SizedBox(
-                    width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'En attente de confirmation du paiement…',
-                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                          fontWeight: FontWeight.w700, color: AppColors.warning),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const SizedBox(
+                      width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'En attente de confirmation du paiement…',
+                        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                            fontWeight: FontWeight.w700, color: AppColors.warning),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => ref.invalidate(orderDetailProvider(widget.orderId)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.warning,
+                        side: const BorderSide(color: AppColors.warning),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text(
+                        'J\'ai payé — Vérifier le statut',
+                        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
                     ),
                   ),
                 ]),

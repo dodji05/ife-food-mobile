@@ -262,11 +262,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final checkoutUrl = (payRes['data'] as Map<String, dynamic>?)?['checkoutUrl'] as String?;
       ref.read(cartProvider.notifier).clearCart();
       if (!mounted) return;
-      // FedaPay : ouvrir la page de paiement hébergée dans le navigateur
+      // FedaPay : navigateur intégré (inAppBrowserView = Chrome Custom Tab /
+      // SFSafariViewController) → bouton "Fermer" visible, l'utilisateur
+      // revient automatiquement dans l'app en appuyant dessus.
       if (checkoutUrl != null) {
         final uri = Uri.parse(checkoutUrl);
         if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
         }
       }
       if (mounted) context.go('/order/$orderId');

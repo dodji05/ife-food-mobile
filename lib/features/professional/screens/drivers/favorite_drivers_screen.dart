@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/pro_provider.dart';
 
@@ -100,11 +101,6 @@ class _FavoriteDriversScreenState extends ConsumerState<FavoriteDriversScreen> {
 
 // ── Recherche + ajout d'un livreur ───────────────────────────────────────────
 Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
-  // ProviderScope(parent:) transmet explicitement le container Riverpod
-  // au contexte de la modal route (overlay GoRouter potentiellement isolé).
-  // L'invalidation se fait APRÈS fermeture via le ref du widget parent —
-  // évite le bug où ref.invalidate() dans un scope enfant ne propage pas.
-  final container = ProviderScope.containerOf(context);
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -112,21 +108,28 @@ Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => UncontrolledProviderScope(
-      container: container,
-      child: const _AddDriverSheet(),
+    // Theme.dark force les InputDecoration, ElevatedButton, etc. à hériter
+    // du thème sombre plutôt que du thème clair global de l'app.
+    builder: (_) => Theme(
+      data: AppTheme.dark,
+      child: _AddDriverSheet(
+        onSearch: (phone) => ref.read(proProvider.notifier).searchDriverByPhone(phone),
+        onAdd:    (id)    => ref.read(proProvider.notifier).addFavoriteDriver(id),
+      ),
     ),
   );
   ref.invalidate(favoriteDriversProvider);
 }
 
-class _AddDriverSheet extends ConsumerStatefulWidget {
-  const _AddDriverSheet();
+class _AddDriverSheet extends StatefulWidget {
+  final Future<FavoriteDriverEntry> Function(String phone) onSearch;
+  final Future<void> Function(String driverId) onAdd;
+  const _AddDriverSheet({required this.onSearch, required this.onAdd});
   @override
-  ConsumerState<_AddDriverSheet> createState() => _AddDriverSheetState();
+  State<_AddDriverSheet> createState() => _AddDriverSheetState();
 }
 
-class _AddDriverSheetState extends ConsumerState<_AddDriverSheet> {
+class _AddDriverSheetState extends State<_AddDriverSheet> {
   final _phoneCtrl = TextEditingController();
   FavoriteDriverEntry? _found;
   bool _searching = false;
@@ -144,12 +147,12 @@ class _AddDriverSheetState extends ConsumerState<_AddDriverSheet> {
     if (phone.length < 8) return;
     setState(() { _searching = true; _found = null; _error = null; });
     try {
-      final driver = await ref.read(proProvider.notifier).searchDriverByPhone(phone);
+      final driver = await widget.onSearch(phone);
       setState(() => _found = driver);
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
-      setState(() => _searching = false);
+      if (mounted) setState(() => _searching = false);
     }
   }
 
@@ -157,22 +160,11 @@ class _AddDriverSheetState extends ConsumerState<_AddDriverSheet> {
     if (_found == null) return;
     setState(() => _adding = true);
     try {
-      await ref.read(proProvider.notifier).addFavoriteDriver(_found!.driverId);
-      ref.invalidate(favoriteDriversProvider);
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Livreur ajouté aux favoris ✓'),
-          backgroundColor: AppColors.success,
-        ));
-      }
+      await widget.onAdd(_found!.driverId);
+      if (mounted) Navigator.pop(context);
+      AppMessenger.show('Livreur ajouté aux favoris ✓');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: AppColors.danger,
-        ));
-      }
+      AppMessenger.show(e.toString().replaceAll('Exception: ', ''), isError: true);
     } finally {
       if (mounted) setState(() => _adding = false);
     }

@@ -65,6 +65,7 @@ class _State extends ConsumerState<AddProductScreen> {
   bool get _canSave =>
       _nameFr.text.trim().isNotEmpty &&
       _price.text.trim().isNotEmpty &&
+      _categoryId != null &&
       !_loading;
 
   @override
@@ -345,7 +346,7 @@ class _State extends ConsumerState<AddProductScreen> {
         _TF(_descFr, 'Décrivez votre produit…', maxLines: 3),
         const SizedBox(height: 16),
 
-        _Label('Catégorie (optionnelle)'),
+        _Label('Catégorie *'),
         const SizedBox(height: 8),
         _CategoryPicker(
           selectedId: _categoryId,
@@ -671,7 +672,7 @@ class _AddRowButton extends StatelessWidget {
   );
 }
 
-// ── Sélecteur de catégorie (dropdown + bouton 'Nouvelle catégorie') ────────
+// ── Sélecteur de catégorie (lecture seule — la création est réservée à l'admin)
 class _CategoryPicker extends ConsumerWidget {
   final String? selectedId;
   final ValueChanged<String?> onChanged;
@@ -691,136 +692,66 @@ class _CategoryPicker extends ConsumerWidget {
         child: const SizedBox(width: 18, height: 18,
           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
       ),
-      error: (_, __) => _newOnlyButton(context, ref),
-      data: (cats) => Row(children: [
-        Expanded(child: Container(
+      error: (_, __) => const _EmptyCategories(),
+      data: (cats) {
+        if (cats.isEmpty) return const _EmptyCategories();
+        final validId = cats.any((c) => c.id == selectedId) ? selectedId : null;
+        return Container(
           decoration: BoxDecoration(
             color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(
+              color: validId != null ? AppColors.primary.withOpacity(0.5) : AppColors.darkBorder,
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
-              value: cats.any((c) => c.id == selectedId) ? selectedId : null,
+              value: validId,
               isExpanded: true,
-              hint: const Text('Sans catégorie',
+              hint: const Text('Sélectionner une catégorie',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
               dropdownColor: AppColors.darkCard,
               icon: const Icon(Icons.expand_more_rounded, color: AppColors.darkSubtext),
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
                   fontWeight: FontWeight.w600, color: AppColors.darkText),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Sans catégorie',
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
-                ),
-                ...cats.map((c) => DropdownMenuItem<String?>(
-                  value: c.id,
-                  child: Row(children: [
-                    if (c.icon != null && c.icon!.isNotEmpty) ...[
-                      Text(c.icon!, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                    ],
-                    Expanded(child: Text(c.localizedName('fr'),
-                      maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  ]),
-                )),
-              ],
+              items: cats.map((c) => DropdownMenuItem<String?>(
+                value: c.id,
+                child: Row(children: [
+                  if (c.icon != null && c.icon!.isNotEmpty) ...[
+                    Text(c.icon!, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(child: Text(c.localizedName('fr'),
+                    maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ]),
+              )).toList(),
               onChanged: onChanged,
             ),
           ),
-        )),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: 'Nouvelle catégorie',
-          onPressed: () => _showCreateCategoryDialog(context, ref),
-          icon: Container(
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            padding: const EdgeInsets.all(8),
-            child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
-          ),
-        ),
-      ]),
+        );
+      },
     );
   }
+}
 
-  Widget _newOnlyButton(BuildContext context, WidgetRef ref) => OutlinedButton.icon(
-    onPressed: () => _showCreateCategoryDialog(context, ref),
-    icon: const Icon(Icons.add_rounded, size: 16),
-    label: const Text('Nouvelle catégorie'),
+class _EmptyCategories extends StatelessWidget {
+  const _EmptyCategories();
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    decoration: BoxDecoration(
+      color: AppColors.darkCard,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+    ),
+    child: Row(children: const [
+      Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
+      SizedBox(width: 10),
+      Expanded(child: Text(
+        'Aucune catégorie disponible. Créez-en une depuis la gestion du catalogue.',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+            fontWeight: FontWeight.w600, color: AppColors.warning),
+      )),
+    ]),
   );
-
-  Future<void> _showCreateCategoryDialog(BuildContext context, WidgetRef ref) async {
-    final nameCtrl = TextEditingController();
-    final iconCtrl = TextEditingController();
-    final created = await showDialog<String?>(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setState) {
-          bool busy = false;
-          return AlertDialog(
-            backgroundColor: AppColors.darkCard,
-            title: const Text('Nouvelle catégorie',
-              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: AppColors.darkText, fontSize: 16)),
-            content: Column(mainAxisSize: MainAxisSize.min, children: [
-              TextField(
-                controller: nameCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(hintText: 'Ex: Entrées, Boissons…'),
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: iconCtrl,
-                maxLength: 4,
-                decoration: const InputDecoration(
-                  hintText: 'Emoji (optionnel) — ex: 🥗',
-                  counterText: '',
-                ),
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
-              ),
-            ]),
-            actions: [
-              TextButton(
-                onPressed: busy ? null : () => Navigator.pop(ctx),
-                child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
-              ),
-              ElevatedButton(
-                onPressed: busy ? null : () async {
-                  final n = nameCtrl.text.trim();
-                  if (n.isEmpty) return;
-                  setState(() => busy = true);
-                  try {
-                    final id = await ref.read(proProvider.notifier).createCategory(
-                      {'fr': n, 'en': n},
-                      icon: iconCtrl.text.trim().isEmpty ? null : iconCtrl.text.trim(),
-                    );
-                    ref.invalidate(categoriesProvider);
-                    if (ctx.mounted) Navigator.pop(ctx, id);
-                  } catch (e) {
-                    setState(() => busy = false);
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                        content: Text(e.toString().replaceAll('Exception: ', '')),
-                        backgroundColor: AppColors.danger,
-                      ));
-                    }
-                  }
-                },
-                child: busy
-                    ? const SizedBox(width: 18, height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Créer'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-    if (created != null && created.isNotEmpty) onChanged(created);
-  }
 }

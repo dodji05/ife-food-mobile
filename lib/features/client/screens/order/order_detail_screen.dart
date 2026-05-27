@@ -23,6 +23,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
     with WidgetsBindingObserver {
   Timer? _pollTimer;
   DateTime? _pollStart;
+  bool _checking = false;
 
   static const _pollInterval   = Duration(seconds: 3);
   static const _maxPollMinutes = Duration(minutes: 5);
@@ -114,17 +115,49 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () => ref.invalidate(orderDetailProvider(widget.orderId)),
+                      onPressed: _checking ? null : () async {
+                        setState(() => _checking = true);
+                        try {
+                          final res = await ApiClient.instance.post(
+                            '/payments/${widget.orderId}/check-fedapay',
+                          );
+                          final status = res['data']?['status'] as String? ?? 'PENDING';
+                          if (status == 'SUCCESS') {
+                            ref.invalidate(orderDetailProvider(widget.orderId));
+                          } else if (status == 'FAILED') {
+                            ref.invalidate(orderDetailProvider(widget.orderId));
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                content: Text('Paiement refusé ou annulé.'),
+                                backgroundColor: Colors.red,
+                              ));
+                            }
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                content: Text('Paiement toujours en attente de confirmation FedaPay.'),
+                              ));
+                            }
+                          }
+                        } catch (_) {
+                          ref.invalidate(orderDetailProvider(widget.orderId));
+                        } finally {
+                          if (mounted) setState(() => _checking = false);
+                        }
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.warning,
                         side: const BorderSide(color: AppColors.warning),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text(
-                        'J\'ai payé — Vérifier le statut',
-                        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
+                      child: _checking
+                          ? const SizedBox(width: 16, height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning))
+                          : const Text(
+                              'J\'ai payé — Vérifier le statut',
+                              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
                     ),
                   ),
                 ]),

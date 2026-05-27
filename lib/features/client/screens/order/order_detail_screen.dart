@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,13 +11,64 @@ final orderDetailProvider = FutureProvider.autoDispose.family<Order, String>((re
   return Order.fromJson(res['data']);
 });
 
-class OrderDetailScreen extends ConsumerWidget {
+class OrderDetailScreen extends ConsumerStatefulWidget {
   final String orderId;
   const OrderDetailScreen({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final order = ref.watch(orderDetailProvider(orderId));
+  ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
+    with WidgetsBindingObserver {
+  Timer? _pollTimer;
+  DateTime? _pollStart;
+
+  static const _pollInterval   = Duration(seconds: 3);
+  static const _maxPollMinutes = Duration(minutes: 5);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Refresh immédiat quand l'utilisateur revient dans l'app depuis FedaPay.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(orderDetailProvider(widget.orderId));
+    }
+  }
+
+  void _startPolling() {
+    if (_pollTimer?.isActive == true) return;
+    _pollStart = DateTime.now();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      if (_pollStart != null &&
+          DateTime.now().difference(_pollStart!) > _maxPollMinutes) {
+        _stopPolling();
+        return;
+      }
+      ref.invalidate(orderDetailProvider(widget.orderId));
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final order = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
       backgroundColor: AppColors.offWhite,
@@ -24,7 +76,41 @@ class OrderDetailScreen extends ConsumerWidget {
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => Center(child: Text(e.toString())),
-        data: (o) => ListView(padding: const EdgeInsets.all(16), children: [
+        data: (o) {
+          // Démarre le polling tant que le paiement n'est pas confirmé,
+          // l'arrête dès que le webhook a mis à jour le statut.
+          if (o.paymentStatus == 'PENDING') {
+            _startPolling();
+          } else {
+            _stopPolling();
+          }
+          return ListView(padding: const EdgeInsets.all(16), children: [
+            // Bandeau "en attente de confirmation paiement"
+            if (o.paymentStatus == 'PENDING') ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                ),
+                child: Row(children: [
+                  const SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warning),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'En attente de confirmation du paiement…',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          fontWeight: FontWeight.w700, color: AppColors.warning),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
           // Status card
           Container(
             padding: const EdgeInsets.all(20),
@@ -128,7 +214,8 @@ class OrderDetailScreen extends ConsumerWidget {
             ],
           ])),
           const SizedBox(height: 40),
-        ]),
+        ]);
+        },
       ),
     );
   }

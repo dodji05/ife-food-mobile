@@ -46,39 +46,49 @@ class NotificationsListWidget extends ConsumerWidget {
   }
 }
 
-class _Tile extends ConsumerWidget {
+class _Tile extends ConsumerStatefulWidget {
   final AppNotification notif;
   final void Function(String)? onTapOrder;
   const _Tile({required this.notif, this.onTapOrder});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => GestureDetector(
-    onTap: () {
-      if (!notif.read) {
-        ref.read(notificationsNotifierProvider).markRead(notif.id).catchError((_) {});
+  ConsumerState<_Tile> createState() => _TileState();
+}
+
+class _TileState extends ConsumerState<_Tile> {
+  bool _tapping = false;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () async {
+      if (_tapping) return;
+      setState(() => _tapping = true);
+      if (!widget.notif.read) {
+        ref.read(notificationsNotifierProvider).markRead(widget.notif.id).catchError((_) {});
       }
-      final orderId = notif.orderId;
-      if (orderId != null && orderId.isNotEmpty) {
-        onTapOrder?.call(orderId);
+      final orderId = widget.notif.orderId;
+      if (orderId != null && orderId.isNotEmpty && context.mounted) {
+        widget.onTapOrder?.call(orderId);
       }
+      if (mounted) setState(() => _tapping = false);
     },
     child: AnimatedOpacity(
       duration: const Duration(milliseconds: 150),
-      opacity: notif.read ? 0.65 : 1.0,
+      opacity: widget.notif.read ? 0.65 : 1.0,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.darkCard,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: notif.read ? AppColors.darkBorder : AppColors.primary.withOpacity(0.4),
-            width: notif.read ? 1 : 1.5,
+            color: widget.notif.read ? AppColors.darkBorder : AppColors.primary.withOpacity(0.4),
+            width: widget.notif.read ? 1 : 1.5,
           ),
         ),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
             width: 4, height: 64,
             decoration: BoxDecoration(
-              color: notif.read ? Colors.transparent : AppColors.primary,
+              color: widget.notif.read ? Colors.transparent : AppColors.primary,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(11), bottomLeft: Radius.circular(11),
               ),
@@ -93,7 +103,7 @@ class _Tile extends ConsumerWidget {
               color: AppColors.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(notif.iconEmoji, style: const TextStyle(fontSize: 20)),
+            child: Text(widget.notif.iconEmoji, style: const TextStyle(fontSize: 20)),
           ),
           const SizedBox(width: 12),
           Expanded(child: Padding(
@@ -101,21 +111,21 @@ class _Tile extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text(
-                  notif.title,
+                  widget.notif.title,
                   maxLines: 1, overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Nunito', fontSize: 14,
-                    fontWeight: notif.read ? FontWeight.w700 : FontWeight.w900,
+                    fontWeight: widget.notif.read ? FontWeight.w700 : FontWeight.w900,
                     color: AppColors.darkText,
                   ),
                 )),
                 const SizedBox(width: 6),
-                Text(notif.relativeTime,
+                Text(widget.notif.relativeTime,
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
                       fontWeight: FontWeight.w600, color: AppColors.darkSubtext)),
               ]),
               const SizedBox(height: 2),
-              Text(notif.body,
+              Text(widget.notif.body,
                 maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
                     color: AppColors.darkSubtext, height: 1.3)),

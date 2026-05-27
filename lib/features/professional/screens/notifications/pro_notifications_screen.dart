@@ -85,14 +85,23 @@ class ProNotificationsScreen extends ConsumerWidget {
 }
 
 // ── Tile une notif ──────────────────────────────────────────────────────────
-class _NotificationTile extends ConsumerWidget {
+class _NotificationTile extends ConsumerStatefulWidget {
   final AppNotification notif;
   const _NotificationTile({required this.notif});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NotificationTile> createState() => _NotificationTileState();
+}
+
+class _NotificationTileState extends ConsumerState<_NotificationTile> {
+  bool _tapping = false;
+
+  AppNotification get notif => widget.notif;
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _handleTap(context, ref),
+      onTap: () => _handleTap(context),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 150),
         opacity: notif.read ? 0.65 : 1.0,
@@ -167,21 +176,31 @@ class _NotificationTile extends ConsumerWidget {
     );
   }
 
-  /// Marque comme lu (best-effort, n'attend pas l'API pour naviguer) + deep
-  /// link si la notif référence une commande.
-  Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
+  /// Marque comme lu (best-effort) + navigation deep link.
+  Future<void> _handleTap(BuildContext context) async {
+    if (_tapping) return;
+    setState(() => _tapping = true);
+
     if (!notif.read) {
-      // Fire-and-forget — on ne bloque pas la nav sur l'API.
       ref.read(notificationsNotifierProvider).markRead(notif.id).catchError((_) {});
     }
+
+    if (!context.mounted) {
+      setState(() => _tapping = false);
+      return;
+    }
+
     final orderId = notif.orderId;
     if (orderId != null && orderId.isNotEmpty) {
+      // /pro/order/:id est hors ShellRoute → push OK.
       context.push('/pro/order/$orderId');
     } else {
-      // Fallback : si la notif n'a pas d'orderId (ancienne notif sans data),
-      // on navigue vers la liste des commandes pour que le tap ne soit jamais ignoré.
-      context.push('/pro/orders');
+      // /pro/orders est dans le ShellRoute → go() pour remplacer la stack
+      // au lieu d'empiler un 2e ShellRoute (évite la GlobalKey dupliquée).
+      context.go('/pro/orders');
     }
+
+    setState(() => _tapping = false);
   }
 }
 

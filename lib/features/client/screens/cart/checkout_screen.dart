@@ -34,6 +34,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   // Delivery fee preview
   double? _deliveryFee;
   bool _feeLoading = false;
+  bool _feeError = false;
   String? _lastFetchedAddressId;
 
   // Payment methods loaded from backend
@@ -107,7 +108,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     if (addr == null || proId == null) return;
     // Skip if same address already fetched
     if (_lastFetchedAddressId == addr.id && _deliveryFee != null) return;
-    setState(() => _feeLoading = true);
+    setState(() { _feeLoading = true; _feeError = false; });
     try {
       final res = await ApiClient.instance.get('/geo/delivery-fee', params: {
         'professionalId': proId,
@@ -119,10 +120,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (!mounted) return;
       setState(() {
         _deliveryFee = fee;
+        _feeError = false;
         _lastFetchedAddressId = addr.id;
       });
     } catch (_) {
-      if (mounted) setState(() => _deliveryFee = null);
+      if (mounted) setState(() { _deliveryFee = null; _feeError = true; });
     } finally {
       if (mounted) setState(() => _feeLoading = false);
     }
@@ -496,14 +498,28 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           ],
           const SizedBox(height: 6),
-          _feeLoading
-            ? const _SummaryRow(label: 'Livraison', value: '…')
-            : _SummaryRow(
-                label: 'Livraison',
-                value: _deliveryFee != null
-                  ? '${_deliveryFee!.toStringAsFixed(0)} F'
-                  : 'Calculée à la commande',
+          if (_feeLoading)
+            const _SummaryRow(label: 'Livraison', value: '…')
+          else if (_feeError)
+            Row(children: [
+              const Text('Livraison',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey)),
+              const Spacer(),
+              const Text('Erreur de calcul',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.error)),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () { _lastFetchedAddressId = null; _fetchDeliveryFee(); },
+                child: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
               ),
+            ])
+          else
+            _SummaryRow(
+              label: 'Livraison',
+              value: _deliveryFee != null
+                ? '${_deliveryFee!.toStringAsFixed(0)} F'
+                : 'Calculée à la commande',
+            ),
           const Divider(height: 20),
           _SummaryRow(
             label: _deliveryFee != null ? 'Total estimé' : 'À payer (hors livraison)',

@@ -370,6 +370,22 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                   color: AppColors.info,
                 ),
               ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/driver/chat/${mission.orderId}'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                  label: const Text('Envoyer un message',
+                    style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+              ),
               const SizedBox(height: 10),
               const Divider(color: AppColors.darkBorder),
               const SizedBox(height: 10),

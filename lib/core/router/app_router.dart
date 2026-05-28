@@ -81,6 +81,8 @@ import '../../features/professional/screens/promo/pro_promo_screen.dart';
 import '../../features/professional/screens/referral/pro_referral_screen.dart';
 import '../../features/professional/screens/chat/pro_chat_screen.dart';
 import '../../features/professional/screens/profile/pro_documents_screen.dart';
+import '../../shared/screens/chat_screen.dart';
+import '../../features/client/screens/messages/inbox_screen.dart';
 
 // H2: keepAlive évite la recréation du GoRouter à chaque changement d'AuthState
 final routerProvider = Provider<GoRouter>((ref) {
@@ -305,6 +307,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/notifications', builder: (_, __) => const ClientNotificationsScreen()),
       GoRoute(path: '/profile/edit',  builder: (_, __) => const ClientEditProfileScreen()),
+      GoRoute(path: '/messages/inbox', builder: (_, __) => const InboxScreen()),
+      GoRoute(path: '/chat/:orderId', builder: (_, state) =>
+          ChatScreen(orderId: state.pathParameters['orderId']!, title: 'Messagerie commande')),
 
       // ════════════════════════════════════════════════════════════════════════
       // DRIVER routes (préfixe /driver)
@@ -320,6 +325,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
       GoRoute(path: '/driver/notifications', builder: (_, __) => const DriverNotificationsScreen()),
+      GoRoute(path: '/driver/chat/:orderId', builder: (_, state) =>
+          ChatScreen(orderId: state.pathParameters['orderId']!, title: 'Messagerie client')),
       // Navigation GPS externe — NavigateRouteParams obligatoire.
       // Affiche une Google Map plein écran avec marker destination + CTA
       // pour ouvrir Google Maps en mode navigation native (deep link).

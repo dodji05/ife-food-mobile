@@ -181,13 +181,6 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
     }
   }
 
-  void _showChatComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Messagerie livreur — bientôt disponible'),
-      backgroundColor: AppColors.grey,
-    ));
-  }
-
   Future<void> _cancelOrder() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -495,7 +488,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                                     color: phone != null ? AppColors.primary : AppColors.grey),
                                 ),
                                 IconButton(
-                                  onPressed: _showChatComingSoon,
+                                  onPressed: () => context.push('/chat/${widget.orderId}'),
                                   tooltip: 'Messagerie livreur',
                                   icon: const Icon(Icons.chat_bubble_rounded,
                                     color: AppColors.primary),

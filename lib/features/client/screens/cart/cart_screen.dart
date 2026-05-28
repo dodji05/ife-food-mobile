@@ -42,7 +42,13 @@ class CartScreen extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(13)),
                     child: item.product.imageUrl != null
-                      ? Image.network(item.product.imageUrl!, width: 80, height: 80, fit: BoxFit.cover)
+                      ? Image.network(
+                          item.product.imageUrl!,
+                          width: 80, height: 80, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 80, height: 80, color: AppColors.offWhite,
+                            child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 30)))),
+                        )
                       : Container(width: 80, height: 80, color: AppColors.offWhite, child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 30)))),
                   ),
                   Expanded(child: Padding(

@@ -71,6 +71,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
 
   Future<void> _connectSocket() async {
     final token = await _storage.read(key: AppConstants.accessTokenKey);
+    if (token == null) return; // session expirée — ne pas tenter la connexion
     _socket = io.io(
       '${AppConstants.wsUrl}/tracking',
       io.OptionBuilder()

@@ -31,6 +31,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   DateTime? _scheduledDate;
   TimeOfDay? _scheduledTime;
 
+  // Delivery fee preview
+  double? _deliveryFee;
+  bool _feeLoading = false;
+  String? _lastFetchedAddressId;
+
   // Payment methods loaded from backend
   List<Map<String, String>> _paymentMethods = [];
 
@@ -52,6 +57,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       _scheduledDate  = scheduledFor;
       _scheduledTime  = TimeOfDay.fromDateTime(scheduledFor);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDeliveryFee());
   }
 
   @override
@@ -95,6 +101,33 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     {'id': 'CASH_ON_DELIVERY', 'label': 'Espèces à la livraison', 'sub': 'Payez au livreur', 'icon': '💵'},
   ];
 
+  Future<void> _fetchDeliveryFee() async {
+    final addr = _effectiveAddress();
+    final proId = ref.read(cartProvider).professionalId;
+    if (addr == null || proId == null) return;
+    // Skip if same address already fetched
+    if (_lastFetchedAddressId == addr.id && _deliveryFee != null) return;
+    setState(() => _feeLoading = true);
+    try {
+      final res = await ApiClient.instance.get('/geo/delivery-fee', params: {
+        'professionalId': proId,
+        'toLat': (addr.lat ?? AppConstants.defaultLat).toString(),
+        'toLng': (addr.lng ?? AppConstants.defaultLng).toString(),
+        if (addr.city.isNotEmpty) 'toCity': addr.city,
+      });
+      final fee = (res['data'] as num?)?.toDouble();
+      if (!mounted) return;
+      setState(() {
+        _deliveryFee = fee;
+        _lastFetchedAddressId = addr.id;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _deliveryFee = null);
+    } finally {
+      if (mounted) setState(() => _feeLoading = false);
+    }
+  }
+
   Future<void> _useGeolocation() async {
     setState(() => _geoLoading = true);
     try {
@@ -129,6 +162,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         _showManualInput = false;
         _manualAddressCtrl.clear();
       });
+      _fetchDeliveryFee();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Localisation échouée : $e'),
@@ -157,6 +191,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
       _showManualInput = false;
     });
+    _fetchDeliveryFee();
   }
 
   Future<void> _pickDate() async {
@@ -310,10 +345,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               address: effectiveAddr,
               onTap: () async {
                 final picked = await showAddressSelector(context);
-                if (picked != null) setState(() {
-                  _manuallySelectedAddress = picked;
-                  _showManualInput = false;
-                });
+                if (picked != null) {
+                  setState(() {
+                    _manuallySelectedAddress = picked;
+                    _showManualInput = false;
+                  });
+                  _fetchDeliveryFee();
+                }
               },
             ),
             const SizedBox(height: 10),
@@ -458,11 +496,20 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           ],
           const SizedBox(height: 6),
-          const _SummaryRow(label: 'Livraison', value: 'Calculée à la commande'),
+          _feeLoading
+            ? const _SummaryRow(label: 'Livraison', value: '…')
+            : _SummaryRow(
+                label: 'Livraison',
+                value: _deliveryFee != null
+                  ? '${_deliveryFee!.toStringAsFixed(0)} F'
+                  : 'Calculée à la commande',
+              ),
           const Divider(height: 20),
           _SummaryRow(
-            label: 'À payer (hors livraison)',
-            value: '${cart.totalAfterPromo.toStringAsFixed(0)} F',
+            label: _deliveryFee != null ? 'Total estimé' : 'À payer (hors livraison)',
+            value: _deliveryFee != null
+              ? '${(cart.totalAfterPromo + _deliveryFee!).toStringAsFixed(0)} F'
+              : '${cart.totalAfterPromo.toStringAsFixed(0)} F',
             isBold: true,
           ),
         ])),
@@ -518,7 +565,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           child: _loading
             ? const SizedBox(height: 20, width: 20,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text('Payer ${cart.totalAfterPromo.toStringAsFixed(0)} F + livraison'),
+            : Text(_deliveryFee != null
+              ? 'Commander — ${(cart.totalAfterPromo + _deliveryFee!).toStringAsFixed(0)} F'
+              : 'Payer ${cart.totalAfterPromo.toStringAsFixed(0)} F + livraison'),
         ),
         const SizedBox(height: 40),
       ]),

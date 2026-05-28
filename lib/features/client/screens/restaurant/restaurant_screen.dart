@@ -394,7 +394,7 @@ class _InfoSectionState extends State<_InfoSection> {
               ? 'Livraison gratuite'
               : pro.deliveryFee != null
                   ? '${pro.deliveryFee!.toStringAsFixed(0)} F'
-                  : 'Livraison'),
+                  : 'Frais variables'),
         if (pro.distance != null)
           _InfoPill(
             icon: Icons.near_me_rounded,

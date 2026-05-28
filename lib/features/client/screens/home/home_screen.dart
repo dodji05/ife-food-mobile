@@ -1028,7 +1028,7 @@ class _RestaurantCard extends StatelessWidget {
                       ? 'Livraison gratuite'
                       : pro.deliveryFee != null
                           ? '${pro.deliveryFee!.toStringAsFixed(0)} F'
-                          : 'Livraison'),
+                          : 'Frais variables'),
               ]),
             ]),
           ),

@@ -48,9 +48,9 @@ class AppConstants {
   static const String supportWhatsapp = '22990000000'; // TODO: vrai numéro WhatsApp support
   static const String websiteUrl      = 'https://www.ifefood.bj';
 
-  // Nuit auto-theme : 19h → 6h
-  static const int darkStartHour      = 19;
-  static const int darkEndHour        = 6;
+  // Nuit auto-theme : 18h UTC → 5h UTC
+  static const int darkStartHour      = 18;
+  static const int darkEndHour        = 5;
 }
 
 // Rôles utilisateur

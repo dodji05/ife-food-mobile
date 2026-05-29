@@ -23,6 +23,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/models/driver.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
+import '../../../../shared/widgets/theme_selector_tile.dart';
 import '../../providers/driver_provider.dart';
 import 'driver_zones_screen.dart';
 import 'driver_documents_screen.dart';
@@ -159,6 +160,15 @@ class DriverProfileScreen extends ConsumerWidget {
               onTap: () => showLanguagePicker(context, ref,
                   currentLang: user?.lang ?? 'fr', darkTheme: true)),
         ]),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.driverCard,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.driverBorder),
+          ),
+          child: const ThemeSelectorTile(darkSurface: true),
+        ),
         const SizedBox(height: 12),
 
         // ── Documents ─────────────────────────────────────────────────────

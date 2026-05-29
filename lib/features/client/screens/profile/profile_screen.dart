@@ -23,6 +23,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/country_currency_picker.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
+import '../../../../shared/widgets/theme_selector_tile.dart';
 
 class ClientProfileScreen extends ConsumerStatefulWidget {
   const ClientProfileScreen({super.key});
@@ -247,6 +248,16 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                 currentCountryCode: user?.countryCode ?? 'BJ', darkTheme: false),
           ),
         ]),
+        const SizedBox(height: 8),
+        // Apparence — hors _MenuSection car ConsumerWidget
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+          ),
+          child: const ThemeSelectorTile(),
+        ),
         const SizedBox(height: 12),
 
         // ── Sécurité ──────────────────────────────────────────────────────

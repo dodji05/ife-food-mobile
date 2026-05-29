@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../shared/widgets/language_picker.dart';
+import '../../../../shared/widgets/theme_selector_tile.dart';
 import '../../providers/pro_provider.dart';
 
 class ProProfileScreen extends ConsumerWidget {
@@ -91,6 +92,16 @@ class ProProfileScreen extends ConsumerWidget {
           _Item(Icons.schedule_rounded, 'Horaires d\'ouverture',
               () => context.push('/pro/schedule')),
         ]),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.darkCard,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.darkBorder),
+          ),
+          child: const ThemeSelectorTile(darkSurface: true),
+        ),
         const SizedBox(height: 12),
 
         _Section('Compte', [

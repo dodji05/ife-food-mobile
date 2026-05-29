@@ -91,14 +91,18 @@ class _PinScreenState extends ConsumerState<PinScreen> {
       }
 
       setState(() => _loading = true);
-      final ok = await ref.read(authProvider.notifier).verifyPin(phone, pin);
-      if (!mounted) return;
-      if (!ok) {
-        setState(() { _error = 'Code PIN incorrect.'; _loading = false; });
-        _ctrl.clear();
+      try {
+        final ok = await ref.read(authProvider.notifier).verifyPin(phone, pin);
+        if (!mounted) return;
+        if (!ok) {
+          setState(() => _error = 'Code PIN incorrect.');
+          _ctrl.clear();
+        }
+        // Pas de context.go : verifyPin met needsPinSetup:false, le redirect
+        // envoie vers le dashboard du rôle (ou /auth/pending si non validé).
+      } finally {
+        if (mounted) setState(() => _loading = false);
       }
-      // Pas de context.go : verifyPin met needsPinSetup:false, le redirect
-      // envoie vers le dashboard du rôle (ou /auth/pending si non validé).
     }
   }
 

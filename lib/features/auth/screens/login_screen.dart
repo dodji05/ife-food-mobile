@@ -47,21 +47,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login(String pin) async {
     if (_loading) return;
     setState(() { _loading = true; _error = null; });
-    final ok = await ref.read(authProvider.notifier).verifyPin(_phone, pin);
-    if (!mounted) return;
-    if (!ok) {
-      final err = ref.read(authProvider).error ?? 'Code PIN incorrect.';
-      setState(() {
-        _error = err.contains('PIN not set')
-            ? 'Aucun PIN défini pour ce compte.'
-            : err.contains('Invalid PIN') || err.contains('invalide')
-                ? 'Code PIN incorrect.'
-                : err.replaceAll('Exception: ', '');
-        _loading = false;
-      });
-      _pinCtrl.clear();
+    try {
+      final ok = await ref.read(authProvider.notifier).verifyPin(_phone, pin);
+      if (!mounted) return;
+      if (!ok) {
+        final err = ref.read(authProvider).error ?? 'Code PIN incorrect.';
+        setState(() {
+          _error = err.contains('PIN not set')
+              ? 'Aucun PIN défini pour ce compte.'
+              : err.contains('Invalid PIN') || err.contains('invalide')
+                  ? 'Code PIN incorrect.'
+                  : err.replaceAll('Exception: ', '');
+        });
+        _pinCtrl.clear();
+      }
+      // Succès : le redirect GoRouter prend la main (isAuthenticated → dashboard)
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    // Succès : le redirect GoRouter prend la main (isAuthenticated → dashboard)
   }
 
   /// Démarre le flow "PIN oublié" : envoie un OTP puis navigue vers OtpScreen

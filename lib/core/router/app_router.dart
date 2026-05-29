@@ -159,7 +159,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return loc.startsWith('/auth/pin') ? null : '/auth/pin';
       }
       // b) PIN OK mais profil incomplet → bloquer sur /auth/complete-profile
-      if (!authState.hasProfile) {
+      //    Uniquement pour les nouveaux utilisateurs (isNewUser=true).
+      //    Les utilisateurs de retour (verifyPin) ne sont jamais bloqués ici
+      //    même si firstName est vide — ils accèdent au dashboard directement.
+      if (authState.isNewUser && !authState.hasProfile) {
         return loc.startsWith('/auth/complete-profile')
             ? null
             : '/auth/complete-profile';

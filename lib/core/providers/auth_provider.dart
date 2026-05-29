@@ -43,20 +43,18 @@ class AuthState {
   final bool isLoading;
   final bool isAuthenticated;
   final bool splashDone;
-  /// True entre `verifyOtp()` réussi et `setPin()`/`verifyPin()` réussi.
-  /// Tant que c'est `true`, le redirect force l'utilisateur sur `/auth/pin`,
-  /// peu importe d'où il essaie de naviguer.
-  ///
-  /// Le nom couvre les 2 cas selon `isNewUser` :
-  ///   • nouveau compte → l'écran PIN est en mode "set" (création + confirm)
-  ///   • compte existant → l'écran PIN est en mode "login" (saisie simple)
-  ///
-  /// Repassé à `false` par `setPin()` ou `verifyPin()` réussi.
+  /// True entre `verifyOtp()` réussi et `setPin()` réussi.
+  /// Tant que c'est `true`, le redirect force l'utilisateur sur `/auth/pin`.
+  /// Repassé à `false` par `setPin()`.
   final bool needsPinSetup;
   /// True si l'utilisateur n'a pas encore de PIN côté backend (`!user.pinHash`).
-  /// Détermine le mode du PinScreen : `'set'` (création) vs `'login'` (saisie).
-  /// Renvoyé par `verifyOtp` comme `isNewUser`.
   final bool isNewUser;
+  /// Dernier numéro de téléphone utilisé (E.164). Persiste après logout pour
+  /// diriger l'utilisateur de retour vers /login au lieu de /onboarding.
+  final String? lastPhone;
+  /// True pendant le flow "PIN oublié" (OTP → setPin). Permet au PinScreen
+  /// de savoir qu'il doit être en mode "set" même si isNewUser=false.
+  final bool forgotPinMode;
   final String? error;
 
   const AuthState({
@@ -67,17 +65,18 @@ class AuthState {
     this.splashDone = false,
     this.needsPinSetup = false,
     this.isNewUser = false,
+    this.lastPhone,
+    this.forgotPinMode = false,
     this.error,
   });
 
   UserRole? get role => user?.role;
   bool get isPending => user?.status == 'PENDING';
+  /// True si le dernier téléphone utilisé est connu (pour rediriger vers /login).
+  bool get hasLastPhone => lastPhone != null && lastPhone!.isNotEmpty;
   /// True si l'utilisateur a complété son identité (prénom renseigné).
-  /// Utilisé par le redirect pour décider entre `/auth/complete-profile`
-  /// et le dashboard.
   bool get hasProfile => (user?.firstName ?? '').trim().isNotEmpty;
 
-  // C2 — clearError permet de remettre error à null explicitement
   AuthState copyWith({
     AppUser? user,
     String? accessToken,
@@ -86,6 +85,8 @@ class AuthState {
     bool? splashDone,
     bool? needsPinSetup,
     bool? isNewUser,
+    String? lastPhone,
+    bool? forgotPinMode,
     String? error,
     bool clearError = false,
   }) => AuthState(
@@ -96,6 +97,8 @@ class AuthState {
     splashDone: splashDone ?? this.splashDone,
     needsPinSetup: needsPinSetup ?? this.needsPinSetup,
     isNewUser: isNewUser ?? this.isNewUser,
+    lastPhone: lastPhone ?? this.lastPhone,
+    forgotPinMode: forgotPinMode ?? this.forgotPinMode,
     error: clearError ? null : (error ?? this.error),
   );
 }
@@ -152,18 +155,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _bootstrapImpl() async {
+    // Toujours lire le dernier numéro de téléphone (persiste après logout)
+    final lastPhone = await _storage.read(key: AppConstants.lastPhoneKey);
+
     final tokenKey = await _storage.read(key: AppConstants.accessTokenKey);
     final userRaw  = await _storage.read(key: AppConstants.userKey);
-    if (tokenKey == null || userRaw == null) return;
+    if (tokenKey == null || userRaw == null) {
+      // Pas de session active — on préserve lastPhone pour diriger vers /login
+      if (lastPhone != null) state = state.copyWith(lastPhone: lastPhone);
+      return;
+    }
 
     // Restaure la session depuis le stockage local sans appel réseau.
-    // Le premier appel API expiration 401 se chargera de déconnecter si besoin.
     final user = AppUser.fromJson(json.decode(userRaw));
 
-    // CRITIQUE — needsPinSetup doit être dérivé de la persistence pour
-    // éviter qu'un crash entre verifyOtp() et setPin() laisse l'utilisateur
-    // avec un token valide mais sans PIN backend. pinKey est mis à 'true'
-    // par setPin() une fois l'API serveur appelée avec succès.
+    // needsPinSetup dérivé de pinKey pour survivre aux crashs entre
+    // verifyOtp() et setPin().
     final pinSet = await _storage.read(key: AppConstants.pinKey);
     final needsPin = pinSet != 'true';
 
@@ -173,14 +180,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isAuthenticated: true,
       isLoading: false,
       needsPinSetup: needsPin,
+      lastPhone: user.phone.isNotEmpty ? user.phone : lastPhone,
     );
-    debugPrint('[Auth] Session locale restaurée (needsPinSetup=$needsPin, hasProfile=${(user.firstName ?? '').trim().isNotEmpty})');
+    debugPrint('[Auth] Session restaurée (needsPinSetup=$needsPin, hasProfile=${(user.firstName ?? '').trim().isNotEmpty})');
 
-    // Si firstName est absent du cache local, on rafraîchit depuis /users/me
-    // avant que le router décide du routage (évite un redirect inutile vers
-    // /auth/complete-profile pour un compte déjà complet côté serveur).
     if (!needsPin && (user.firstName ?? '').trim().isEmpty) {
-      debugPrint('[Auth] firstName manquant en cache — refresh silencieux…');
+      debugPrint('[Auth] firstName manquant — refresh silencieux…');
       await refreshProfile();
     }
   }
@@ -237,15 +242,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── PIN ───────────────────────────────────────────────────────────────────
-  // C1 — setPin() retourne UserRole? et gère les erreurs.
-  // Met `needsPinSetup: false` → le redirect bascule vers /auth/complete-profile
-  // (si pas de prénom) ou directement le dashboard.
+  // setPin() crée ou réinitialise le PIN (modes : nouvelle inscription, reset).
+  // Met needsPinSetup:false et forgotPinMode:false → redirect vers dashboard.
   Future<UserRole?> setPin(String pin) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await _api.post('/auth/pin/set', data: {'pin': pin});
       await _storage.write(key: AppConstants.pinKey, value: 'true');
-      state = state.copyWith(isLoading: false, needsPinSetup: false);
+      state = state.copyWith(isLoading: false, needsPinSetup: false, forgotPinMode: false);
       return state.role;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
@@ -253,15 +257,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // verifyPin (mode login). Idem : fixe `needsPinSetup:false`, le redirect
-  // gère la navigation suivante (dashboard du rôle si profil complet).
+  // verifyPin — connexion directe téléphone+PIN (utilisateurs de retour).
+  // needsPinSetup:false → redirect vers le dashboard.
   Future<bool> verifyPin(String phone, String pin) async {
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
       final res = await _api.post('/auth/pin/verify',
           data: {'phone': phone, 'pin': pin});
       await _persistSession(res['data'] as Map<String, dynamic>, needsPinSetup: false);
       return true;
-    } catch (_) { return false; }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  /// Démarre le flow "PIN oublié" : envoie un OTP et arme forgotPinMode.
+  /// Après verifyOtp() + setPin(), forgotPinMode repasse à false.
+  Future<({String sessionId, String? otp})> startForgotPin(
+      String phone, String countryCode) async {
+    state = state.copyWith(forgotPinMode: true, clearError: true);
+    return sendOtp(phone, countryCode);
   }
 
   // ── Profil ────────────────────────────────────────────────────────────────
@@ -334,12 +353,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── Logout global ─────────────────────────────────────────────────────────
-  // Pas d'endpoint backend /auth/logout — révocation purement locale.
-  // À ajouter côté serveur si on veut invalider le refresh token (blacklist).
+  // lastPhone est PRÉSERVÉ après logout pour diriger l'utilisateur vers
+  // /login (téléphone+PIN) plutôt que vers /onboarding.
   Future<void> logout() async {
+    final lastPhone = state.user?.phone.isNotEmpty == true
+        ? state.user!.phone
+        : state.lastPhone;
     await _api.clearAuth();
     await _storage.deleteAll();
-    state = const AuthState(splashDone: true);
+    // Re-écriture du dernier téléphone pour la prochaine ouverture
+    if (lastPhone != null && lastPhone.isNotEmpty) {
+      await _storage.write(key: AppConstants.lastPhoneKey, value: lastPhone);
+    }
+    state = AuthState(splashDone: true, lastPhone: lastPhone);
   }
 
   // ── Interne ───────────────────────────────────────────────────────────────
@@ -366,6 +392,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
     final user = AppUser.fromJson(userData);
     await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
+    // Persiste le dernier téléphone pour survivre au logout
+    if (user.phone.isNotEmpty) {
+      await _storage.write(key: AppConstants.lastPhoneKey, value: user.phone);
+    }
     state = state.copyWith(
       user: user,
       accessToken: accessToken,
@@ -373,6 +403,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isLoading: false,
       needsPinSetup: needsPinSetup,
       isNewUser: isNewUser,
+      lastPhone: user.phone.isNotEmpty ? user.phone : state.lastPhone,
       clearError: true,
     );
   }

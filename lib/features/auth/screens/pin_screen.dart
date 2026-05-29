@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/router/route_params.dart';
 import '../../../core/theme/app_theme.dart';
 
 class PinScreen extends ConsumerStatefulWidget {
@@ -23,10 +24,11 @@ class _PinScreenState extends ConsumerState<PinScreen> {
   bool _loading = false;
   String? _error;
 
-  /// Mode dérivé de l'AuthState (isNewUser). Fallback sur la prop `mode`
-  /// si on est arrivé ici sans passer par verifyOtp (peu probable).
+  /// Mode dérivé de needsPinSetup (vrai après verifyOtp, qu'il s'agisse d'une
+  /// nouvelle inscription ou d'un reset via "PIN oublié") ou du paramètre explicite
+  /// mode='set' (changement de PIN depuis le profil).
   bool get _isSetting =>
-      ref.read(authProvider).isNewUser || widget.mode == 'set';
+      ref.read(authProvider).needsPinSetup || widget.mode == 'set';
 
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
@@ -140,16 +142,36 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               fontFamily: 'Nunito', fontSize: 13))],
         const Spacer(),
         if (!_isSetting) TextButton(
-          onPressed: () async {
-            // Bug fix : sans logout préalable, le redirect renvoie immédiatement
-            // sur /auth/pin (needsPinSetup:true). On purge la session pour
-            // rebasculer en flow non-authentifié.
-            final role = ref.read(authProvider).role;
-            await ref.read(authProvider.notifier).logout();
-            if (context.mounted) context.go('/auth/phone', extra: role);
+          onPressed: _loading ? null : () async {
+            final auth  = ref.read(authProvider);
+            final phone = auth.user?.phone ?? auth.lastPhone ?? '';
+            if (phone.isEmpty) {
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) context.go('/onboarding');
+              return;
+            }
+            final countryCode = auth.user?.countryCode ?? 'BJ';
+            setState(() => _loading = true);
+            try {
+              final result = await ref.read(authProvider.notifier)
+                  .startForgotPin(phone, countryCode);
+              if (!context.mounted) return;
+              context.push('/auth/otp', extra: OtpRouteParams(
+                phone: phone,
+                sessionId: result.sessionId,
+                countryCode: countryCode,
+                prefillOtp: result.otp,
+              ));
+            } catch (e) {
+              if (context.mounted) {
+                setState(() => _error = 'Impossible d\'envoyer le code. Réessayez.');
+              }
+            } finally {
+              if (mounted) setState(() => _loading = false);
+            }
           },
-          child: const Text('Me connecter avec OTP', style: TextStyle(
-              fontFamily: 'Nunito', fontWeight: FontWeight.w600, color: AppColors.lightSubtext))),
+          child: const Text('PIN oublié ?', style: TextStyle(
+              fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.primary))),
         if (_loading) const CircularProgressIndicator(color: AppColors.primary),
       ]))),
     );

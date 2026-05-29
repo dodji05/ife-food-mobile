@@ -19,6 +19,7 @@ import '../splash/splash_config.dart';
 import 'route_params.dart';
 
 // Auth screens (partagés)
+import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/phone_screen.dart';
@@ -119,20 +120,25 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Splash terminé → on calcule la destination en fonction de l'état
       // d'auth (la suite du redirect gère tous les cas).
       if (loc == '/splash') {
-        if (!authState.isAuthenticated) return '/onboarding';
-        if (authState.needsPinSetup)        return '/auth/pin';
-        if (!authState.hasProfile)       return '/auth/complete-profile';
+        if (!authState.isAuthenticated) {
+          return authState.hasLastPhone ? '/login' : '/onboarding';
+        }
+        if (authState.needsPinSetup)  return '/auth/pin';
+        if (!authState.hasProfile)    return '/auth/complete-profile';
         return _homeForRole(authState.role);
       }
 
       // ─── 2. NON AUTHENTIFIÉ ────────────────────────────────────────────
       // Routes ouvertes au public (avant verifyOtp réussi).
       const publicRoutes = ['/onboarding', '/auth/role', '/auth/phone',
-          '/auth/otp', '/legal/'];
+          '/auth/otp', '/legal/', '/login'];
       final isPublic = publicRoutes.any((r) => loc.startsWith(r));
 
       if (!authState.isAuthenticated) {
-        return isPublic ? null : '/onboarding';
+        if (isPublic) return null;
+        // Utilisateur de retour (a déjà eu un compte) → /login (téléphone+PIN)
+        // Nouvel utilisateur → /onboarding
+        return authState.hasLastPhone ? '/login' : '/onboarding';
       }
 
       // ─── 3. AUTH FLOW EN COURS (source unique de vérité) ───────────────
@@ -223,6 +229,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         builder: (_, __) => const SplashScreen(),
       ),
+
+      // ── Login rapide (utilisateurs de retour — téléphone + PIN) ────────────
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
 
       // ── Auth partagé ────────────────────────────────────────────────────────
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
@@ -468,9 +477,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
         || prev.isPending       != next.isPending
         || prev.needsPinSetup   != next.needsPinSetup
         || prev.hasProfile      != next.hasProfile
-        // user.status peut changer via refreshProfile() depuis /auth/pending
-        // (admin valide un compte PENDING → ACTIVE). Comparaison directe car
-        // isPending est un getter dérivé qui ne se mémorise pas.
+        || prev.hasLastPhone    != next.hasLastPhone
         ;
   }
 

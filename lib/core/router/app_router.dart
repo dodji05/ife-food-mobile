@@ -174,7 +174,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       //    /auth/pin avec PinRouteParams(mode: 'set'). On laisse passer
       //    pour permettre le changement de PIN sans créer une route dédiée.
       const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
-          '/auth/otp', '/auth/pin', '/auth/complete-profile'];
+          '/auth/otp', '/auth/pin', '/auth/complete-profile',
+          '/login', '/login/phone'];
       if (authRoutes.any((r) => loc.startsWith(r))) {
         final extra = state.extra;
         final isChangePin = loc.startsWith('/auth/pin')

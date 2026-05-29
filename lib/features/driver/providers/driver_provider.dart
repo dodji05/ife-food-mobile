@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
@@ -124,7 +125,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
       if (driver.isOnline) {
         _startLocationUpdates();
-        _connectSocket();
+        await _connectSocket();
         await loadActiveMissions();
       }
     } catch (e) {
@@ -158,7 +159,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
       if (goingOnline) {
         _startLocationUpdates();
-        _connectSocket();
+        await _connectSocket();
         await loadActiveMissions();
       } else {
         _stopLocationUpdates();
@@ -205,12 +206,15 @@ class DriverNotifier extends StateNotifier<DriverState> {
     _locationSub = null;
   }
 
-  void _connectSocket() {
-    _socket?.disconnect(); // FIX: ferme le socket existant avant d'en créer un nouveau
+  Future<void> _connectSocket() async {
+    _socket?.disconnect();
+    const storage = FlutterSecureStorage();
+    final token = await storage.read(key: AppConstants.accessTokenKey) ?? '';
     _socket = io.io(
       '${AppConstants.wsUrl}/tracking',
       io.OptionBuilder()
           .setTransports(['websocket'])
+          .setAuth({'token': token})
           .enableReconnection()
           .setReconnectionAttempts(10)
           .setReconnectionDelay(2000)

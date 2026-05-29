@@ -399,6 +399,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
     final user = AppUser.fromJson(userData);
     await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
+    // Si le PIN est déjà configuré, on le marque dans le stockage pour que
+    // _bootstrapImpl le retrouve au prochain démarrage (évite la redirection
+    // vers /auth/pin alors que l'utilisateur a déjà un PIN).
+    if (needsPinSetup == false) {
+      await _storage.write(key: AppConstants.pinKey, value: 'true');
+    }
     // Persiste le dernier téléphone pour survivre au logout
     if (user.phone.isNotEmpty) {
       await _storage.write(key: AppConstants.lastPhoneKey, value: user.phone);

@@ -9,9 +9,11 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/location_utils.dart';
 import '../../providers/pro_provider.dart';
 
 class EditBusinessInfoScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,9 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
   bool _initialized = false;
   bool _uploadingLogo  = false;
   bool _uploadingCover = false;
+  bool _geoLoading = false;
+  double? _lat;
+  double? _lng;
 
   @override
   void didChangeDependencies() {
@@ -48,6 +53,8 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
     _radius.text       = pro.deliveryRadiusKm != null
         ? pro.deliveryRadiusKm!.toStringAsFixed(pro.deliveryRadiusKm! % 1 == 0 ? 0 : 1)
         : '';
+    _lat = pro.lat;
+    _lng = pro.lng;
     _initialized = true;
   }
 
@@ -98,6 +105,10 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       delta['deliveryRadiusKm'] = newRadius;
     }
 
+    // Coordonnées GPS (optionnelles — on envoie uniquement si changées)
+    if (_lat != pro?.lat) delta['lat'] = _lat;
+    if (_lng != pro?.lng) delta['lng'] = _lng;
+
     if (delta.isEmpty) {
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -123,6 +134,43 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       ));
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _useGps() async {
+    setState(() => _geoLoading = true);
+    try {
+      final granted = await ensureLocationPermission();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Permission de localisation refusée'),
+            backgroundColor: AppColors.danger,
+          ));
+        }
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+      setState(() { _lat = pos.latitude; _lng = pos.longitude; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Position GPS capturée ✓'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 2),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Localisation impossible : ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    } finally {
+      if (mounted) { setState(() => _geoLoading = false); }
     }
   }
 
@@ -244,6 +292,42 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       const SizedBox(height: 16),
       _Label('Rayon de livraison (km)'),
       _TF(_radius, 'Ex: 5', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+      const SizedBox(height: 16),
+
+      _Label('Coordonnées GPS (optionnel)'),
+      const SizedBox(height: 8),
+      Row(children: [
+        OutlinedButton.icon(
+          onPressed: _geoLoading ? null : _useGps,
+          icon: _geoLoading
+              ? const SizedBox(width: 14, height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+              : const Icon(Icons.my_location_rounded, size: 16),
+          label: Text(
+            _lat != null ? 'GPS enregistré ✓' : 'Utiliser ma position actuelle',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _lat != null ? AppColors.success : AppColors.primary,
+            side: BorderSide(color: _lat != null ? AppColors.success : AppColors.darkBorder),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        if (_lat != null) ...[
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext),
+            overflow: TextOverflow.ellipsis,
+          )),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.darkSubtext),
+            tooltip: 'Effacer les coordonnées',
+            onPressed: () => setState(() { _lat = null; _lng = null; }),
+          ),
+        ],
+      ]),
       const SizedBox(height: 24),
 
       const _Section('Contact'),

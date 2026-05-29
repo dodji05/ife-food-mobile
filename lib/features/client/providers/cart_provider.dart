@@ -16,6 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../shared/models/cart_item.dart';
 import '../../../shared/models/product.dart';
 
@@ -61,7 +62,8 @@ class CartState {
 }
 
 class CartNotifier extends StateNotifier<CartState> {
-  CartNotifier() : super(const CartState());
+  final Ref _ref;
+  CartNotifier(this._ref) : super(const CartState());
 
   void addItem(Product product, String professionalId, {int quantity = 1}) {
     if (state.professionalId != null && state.professionalId != professionalId) {
@@ -127,7 +129,7 @@ class CartNotifier extends StateNotifier<CartState> {
     final res = await ApiClient.instance.post('/promo/validate', data: {
       'code':     code.trim().toUpperCase(),
       'subtotal': state.subtotal,
-      'currency': 'XOF',
+      'currency': _ref.read(authProvider).user?.currency ?? 'XOF',
     });
     final data = res['data'] as Map<String, dynamic>?;
     final valid = data?['valid'] as bool? ?? false;
@@ -200,4 +202,4 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) => CartNotifier());
+final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) => CartNotifier(ref));

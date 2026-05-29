@@ -8,6 +8,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/addresses_provider.dart';
 import '../../widgets/address_selector_modal.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/user_address.dart';
@@ -286,7 +287,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         'deliveryLng': addr.lng ?? AppConstants.defaultLng,
         'deliveryCity': addr.city,
         'deliveryCountry': addr.country,
-        'currency': 'XOF',
+        'currency': ref.read(authProvider).user?.currency ?? 'XOF',
         'paymentMethod': _selectedPayment,
         'specialInstructions': _composeInstructions(addr.instructions, _noteCtrl.text),
         if (cart.promoCode != null) 'promoCode': cart.promoCode,

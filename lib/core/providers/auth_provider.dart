@@ -352,6 +352,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Persiste le numéro de téléphone comme `lastPhone` sans déclencher d'OTP.
+  /// Utilisé par le flow "J'ai déjà un compte" (onboarding → phone → PIN).
+  Future<void> savePhone(String phone, String countryCode) async {
+    await _storage.write(key: AppConstants.lastPhoneKey, value: phone);
+    state = state.copyWith(lastPhone: phone);
+  }
+
   // ── Logout global ─────────────────────────────────────────────────────────
   // lastPhone est PRÉSERVÉ après logout pour diriger l'utilisateur vers
   // /login (téléphone+PIN) plutôt que vers /onboarding.

@@ -20,6 +20,7 @@ import 'route_params.dart';
 
 // Auth screens (partagés)
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/login_phone_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/role_selection_screen.dart';
 import '../../features/auth/screens/phone_screen.dart';
@@ -131,7 +132,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ─── 2. NON AUTHENTIFIÉ ────────────────────────────────────────────
       // Routes ouvertes au public (avant verifyOtp réussi).
       const publicRoutes = ['/onboarding', '/auth/role', '/auth/phone',
-          '/auth/otp', '/legal/', '/login'];
+          '/auth/otp', '/legal/', '/login', '/login/phone'];
       final isPublic = publicRoutes.any((r) => loc.startsWith(r));
 
       if (!authState.isAuthenticated) {
@@ -231,7 +232,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Login rapide (utilisateurs de retour — téléphone + PIN) ────────────
-      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/login',       builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/login/phone', builder: (_, __) => const LoginPhoneScreen()),
 
       // ── Auth partagé ────────────────────────────────────────────────────────
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),

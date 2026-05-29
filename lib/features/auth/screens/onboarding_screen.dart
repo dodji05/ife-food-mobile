@@ -72,7 +72,7 @@ class _State extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 10),
         TextButton(
-          onPressed: () => context.go('/auth/role'),
+          onPressed: () => context.go('/login/phone'),
           child: const Text('J\'ai déjà un compte',
             style: TextStyle(fontFamily: 'Nunito', color: AppColors.lightSubtext,
                 fontWeight: FontWeight.w600, fontSize: 14)),

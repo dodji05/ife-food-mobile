@@ -57,17 +57,26 @@ class FcmService {
       _wireTokenRefreshListener(ref);
       _wireTapListeners(ref);
 
-      // Auto-register du token courant + à chaque login (auth state change).
-      // .listen retourne une fonction de cleanup mais on ne l'unwire jamais —
-      // FcmService est singleton process-wide.
-      await _registerCurrentToken(ref);
+      // Écoute chaque changement de l'auth state.
+      // On ne filtre PAS sur la transition prev→next pour éviter la race
+      // condition entre FcmService.init() (build frame 0) et _bootstrapImpl()
+      // (post-frame callback) : si _bootstrapImpl se termine avant que le
+      // listener soit en place, la transition est ratée et le token n'est
+      // jamais enregistré.
+      // L'appel est idempotent (PATCH /users/me/fcm-token), le léger surplus
+      // de requêtes est négligeable.
       ref.listen(authProvider, (prev, next) {
-        // Re-register seulement si on PASSE à l'état authentifié
-        // (évite spam à chaque tick du state qui ne change pas le statut auth).
-        if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) {
+        if (next.isAuthenticated) {
           _registerCurrentToken(ref);
         }
       });
+
+      // Tente aussi immédiatement si l'utilisateur est déjà authentifié
+      // (session persistée depuis la dernière ouverture).
+      final alreadyAuth = ref.read(authProvider).isAuthenticated;
+      if (alreadyAuth) {
+        await _registerCurrentToken(ref);
+      }
     } catch (e, st) {
       debugPrint('[FCM] init failed: $e\n$st');
     }

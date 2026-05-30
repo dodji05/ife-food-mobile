@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/widgets/notifications_list_widget.dart';
 
 class ClientNotificationsScreen extends ConsumerWidget {
@@ -16,7 +17,7 @@ class ClientNotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final unread = ref.watch(unreadCountProvider);
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Notifications'),
         actions: [

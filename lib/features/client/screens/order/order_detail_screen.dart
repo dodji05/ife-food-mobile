@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
 
 final orderDetailProvider = FutureProvider.autoDispose.family<Order, String>((ref, id) async {
@@ -72,7 +73,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
     final order = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Détail de la commande'), leading: const BackButton()),
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -258,11 +259,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
 
           // Delivery info
           _Card(title: '📍 Livraison', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(o.deliveryAddress, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkGrey)),
+            Text(o.deliveryAddress, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
             if (o.estimatedDeliveryMin != null) ...[
               const SizedBox(height: 8),
               Text('Estimation : ${o.estimatedDeliveryMin}-${o.estimatedDeliveryMin! + 15} min',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
             ],
           ])),
           const SizedBox(height: 40),
@@ -279,9 +280,9 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor.withOpacity(0.8))),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.grey, letterSpacing: 0.5)),
+      Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800, color: context.textMuted, letterSpacing: 0.5)),
       const SizedBox(height: 12), child,
     ]),
   );
@@ -294,9 +295,9 @@ class _Row extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(children: [
-      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
       const Spacer(),
-      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: bold ? 16 : 14, fontWeight: bold ? FontWeight.w800 : FontWeight.w600, color: color ?? (bold ? AppColors.nearBlack : AppColors.darkGrey))),
+      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: bold ? 16 : 14, fontWeight: bold ? FontWeight.w800 : FontWeight.w600, color: color ?? (bold ? context.textPrimary : context.textSecondary))),
     ]),
   );
 }

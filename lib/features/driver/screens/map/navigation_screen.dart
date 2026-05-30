@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/driver_provider.dart';
 
 class DriverNavigationScreen extends ConsumerStatefulWidget {
@@ -74,7 +75,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
     final isOSM    = provider == 'OPENSTREETMAP';
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -85,7 +86,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
             margin: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
                 color: AppColors.darkSurface, shape: BoxShape.circle),
-            child: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
+            child: Icon(Icons.arrow_back_rounded, color: context.textPrimary),
           ),
         ),
         title: Container(
@@ -94,8 +95,8 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
             color: AppColors.darkSurface.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20)),
           child: Text(widget.label,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+              fontWeight: FontWeight.w700, color: context.textPrimary)),
         ),
       ),
       body: Stack(children: [
@@ -129,7 +130,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 36, height: 4,
               decoration: BoxDecoration(
-                  color: AppColors.darkBorder,
+                  color: AppColors.darkSurface,
                   borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             Row(children: [
@@ -143,15 +144,15 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
               ),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Destination',
+                Text('Destination',
                   style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                    color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+                    color: context.textSecondary, fontWeight: FontWeight.w600)),
                 Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                    fontWeight: FontWeight.w700, color: AppColors.darkText)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                    fontWeight: FontWeight.w700, color: context.textPrimary)),
                 Text('${widget.lat.toStringAsFixed(4)}, ${widget.lng.toStringAsFixed(4)}',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                    color: AppColors.darkMuted)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                    color: context.textMuted)),
               ])),
             ]),
             const SizedBox(height: 16),
@@ -173,12 +174,12 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
               icon: Icon(
                 isOSM ? Icons.navigation_rounded : Icons.map_rounded,
                 size: 16,
-                color: AppColors.darkSubtext,
+                color: context.textSecondary,
               ),
               label: Text(
                 isOSM ? 'Ouvrir dans Google Maps' : 'Ouvrir dans OpenStreetMap',
-                style: const TextStyle(
-                    fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+                style: TextStyle(
+                    fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary),
               ),
             ),
           ]),

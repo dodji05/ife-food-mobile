@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 
 class ProPromoScreen extends ConsumerWidget {
@@ -18,7 +19,7 @@ class ProPromoScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncPromos = ref.watch(promoCodesProvider);
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Codes promo')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateSheet(context, ref),
@@ -61,7 +62,7 @@ class ProPromoScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _PromoFormSheet(
@@ -78,7 +79,7 @@ class ProPromoScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _PromoFormSheet(
@@ -95,18 +96,18 @@ class ProPromoScreen extends ConsumerWidget {
   void _confirmDelete(BuildContext context, WidgetRef ref, PromoCode promo) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
-        title: const Text('Supprimer ce code ?',
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: dialogCtx.cardColor,
+        title: Text('Supprimer ce code ?',
           style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900,
-              color: AppColors.darkText, fontSize: 16)),
+              color: dialogCtx.textPrimary, fontSize: 16)),
         content: Text(
           'Le code "${promo.code}" sera définitivement supprimé.',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: dialogCtx.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+            child: Text('Annuler', style: TextStyle(color: dialogCtx.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -139,10 +140,10 @@ class _PromoCard extends StatelessWidget {
     final fmt = DateFormat('dd/MM/yyyy', 'fr');
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: promo.isActive ? AppColors.primary.withOpacity(0.4) : AppColors.darkBorder),
+          color: promo.isActive ? AppColors.primary.withOpacity(0.4) : context.borderColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── En-tête code + badge actif ────────────────────────────────────
@@ -196,7 +197,7 @@ class _PromoCard extends StatelessWidget {
               onPressed: onEdit,
               icon: const Icon(Icons.edit_outlined, size: 16),
               label: const Text('Modifier'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.darkSubtext),
+              style: TextButton.styleFrom(foregroundColor: context.textSecondary),
             ),
             TextButton.icon(
               onPressed: onDelete,
@@ -218,13 +219,13 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(
-      color: (active ? AppColors.success : AppColors.darkMuted).withOpacity(0.18),
+      color: (active ? AppColors.success : context.textMuted).withOpacity(0.18),
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(active ? 'Actif' : 'Inactif',
       style: TextStyle(
         fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w700,
-        color: active ? AppColors.success : AppColors.darkMuted)),
+        color: active ? AppColors.success : context.textMuted)),
   );
 }
 
@@ -235,11 +236,11 @@ class _Chip extends StatelessWidget {
   const _Chip(this.icon, this.label, {this.danger = false});
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-    Icon(icon, size: 13, color: danger ? AppColors.danger : AppColors.darkSubtext),
+    Icon(icon, size: 13, color: danger ? AppColors.danger : context.textSecondary),
     const SizedBox(width: 4),
     Text(label, style: TextStyle(
       fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w600,
-      color: danger ? AppColors.danger : AppColors.darkSubtext)),
+      color: danger ? AppColors.danger : context.textSecondary)),
   ]);
 }
 
@@ -316,8 +317,8 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(_isEdit ? 'Modifier le code' : 'Nouveau code promo',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                fontWeight: FontWeight.w900, color: context.textPrimary)),
           const SizedBox(height: 20),
 
           _FL('Code promo *'),
@@ -348,7 +349,7 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
               TextField(
                 controller: _value,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textPrimary),
                 decoration: InputDecoration(
                   hintText: _type == 'PERCENTAGE' ? '20' : '1000',
                   suffixText: _type == 'PERCENTAGE' ? '%' : 'F',
@@ -362,7 +363,7 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
               TextField(
                 controller: _min,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textPrimary),
                 decoration: const InputDecoration(hintText: '2000', suffixText: 'F'),
               ),
             ])),
@@ -376,7 +377,7 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
               TextField(
                 controller: _maxUses,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textPrimary),
                 decoration: const InputDecoration(hintText: '∞'),
               ),
             ])),
@@ -390,13 +391,13 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
                   height: 52,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.darkCard,
+                    color: context.cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.darkBorder),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.calendar_month_outlined,
-                      size: 16, color: AppColors.darkSubtext),
+                    Icon(Icons.calendar_month_outlined,
+                      size: 16, color: context.textSecondary),
                     const SizedBox(width: 8),
                     Text(
                       _expires != null
@@ -404,7 +405,7 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
                           : 'Aucune',
                       style: TextStyle(
                         fontFamily: 'Nunito', fontSize: 13,
-                        color: _expires != null ? AppColors.darkText : AppColors.darkSubtext),
+                        color: _expires != null ? context.textPrimary : context.textSecondary),
                     ),
                   ]),
                 ),
@@ -415,9 +416,9 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
 
           // Toggle actif / inactif
           Row(children: [
-            const Expanded(child: Text('Activer immédiatement',
+            Expanded(child: Text('Activer immédiatement',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                  fontWeight: FontWeight.w700, color: AppColors.darkText))),
+                  fontWeight: FontWeight.w700, color: context.textPrimary))),
             Switch(
               value: _active,
               onChanged: (v) => setState(() => _active = v),
@@ -466,8 +467,8 @@ class _PromoFormSheetState extends State<_PromoFormSheet> {
   }
 
   Widget _FL(String t) => Text(t,
-    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-        fontWeight: FontWeight.w700, color: AppColors.darkSubtext, letterSpacing: 0.3));
+    style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+        fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.3));
 }
 
 class _TypeChip extends StatelessWidget {

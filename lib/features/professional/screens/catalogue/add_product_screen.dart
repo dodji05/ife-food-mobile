@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/pro_provider.dart';
 
@@ -142,18 +143,18 @@ class _State extends ConsumerState<AddProductScreen> {
   Future<void> _pickImage() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: const Text('Choisir depuis la galerie',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Choisir depuis la galerie',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.gallery),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: const Text('Prendre une photo',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Prendre une photo',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.camera),
         ),
         const SizedBox(height: 8),
@@ -278,7 +279,7 @@ class _State extends ConsumerState<AddProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(_isEdit ? 'Modifier le produit' : 'Nouveau produit'),
         leading: const BackButton(),
@@ -321,9 +322,9 @@ class _State extends ConsumerState<AddProductScreen> {
           child: Container(
             height: 180,
             decoration: BoxDecoration(
-              color: AppColors.darkCard,
+              color: context.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: context.borderColor),
             ),
             clipBehavior: Clip.antiAlias,
             child: _buildImagePreview(),
@@ -500,20 +501,20 @@ class _State extends ConsumerState<AddProductScreen> {
           placeholder: (_, __) => const Center(
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
           ),
-          errorWidget: (_, __, ___) => const Center(
-            child: Icon(Icons.broken_image_rounded, color: AppColors.darkMuted, size: 36),
+          errorWidget: (_, __, ___) => Center(
+            child: Icon(Icons.broken_image_rounded, color: context.textMuted, size: 36),
           ),
         ),
         _imageOverlayHint('Toucher pour changer'),
       ]);
     }
-    return Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
-      Icon(Icons.add_photo_alternate_rounded, color: AppColors.darkMuted, size: 36),
-      SizedBox(height: 8),
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.add_photo_alternate_rounded, color: context.textMuted, size: 36),
+      const SizedBox(height: 8),
       Text('Ajouter une photo',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary, fontWeight: FontWeight.w600)),
       Text('JPEG, PNG • Max 5 Mo',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkMuted)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
     ]);
   }
 
@@ -532,7 +533,7 @@ class _State extends ConsumerState<AddProductScreen> {
   );
 
   Widget _Label(String t) => Text(t,
-    style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.darkSubtext, letterSpacing: 0.3));
+    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.3));
 
   Widget _TF(TextEditingController ctrl, String hint,
       {TextInputType? keyboardType, int? maxLines, void Function(String)? onChanged}) => TextField(
@@ -540,7 +541,7 @@ class _State extends ConsumerState<AddProductScreen> {
     keyboardType: keyboardType,
     maxLines: maxLines ?? 1,
     onChanged: onChanged,
-    style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.darkText),
+    style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w600, color: context.textPrimary),
     decoration: InputDecoration(hintText: hint),
   );
 }
@@ -560,18 +561,18 @@ class _ToggleRow extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.darkBorder),
+      border: Border.all(color: context.borderColor),
     ),
     child: Row(children: [
-      Icon(icon, color: AppColors.darkSubtext, size: 20),
+      Icon(icon, color: context.textSecondary, size: 20),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(
-          fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
-        Text(subtitle, style: const TextStyle(
-          fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+        Text(title, style: TextStyle(
+          fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
+        Text(subtitle, style: TextStyle(
+          fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
       ])),
       Switch(value: value, onChanged: onChanged, activeColor: AppColors.primary),
     ]),
@@ -585,12 +586,12 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.title, this.subtitle);
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(title, style: const TextStyle(
+    Text(title, style: TextStyle(
       fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-      color: AppColors.darkSubtext, letterSpacing: 0.3)),
+      color: context.textSecondary, letterSpacing: 0.3)),
     const SizedBox(height: 2),
-    Text(subtitle, style: const TextStyle(
-      fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkMuted)),
+    Text(subtitle, style: TextStyle(
+      fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
   ]);
 }
 
@@ -615,7 +616,7 @@ class _VariantOptionRow extends StatelessWidget {
     child: Row(children: [
       Expanded(flex: 3, child: TextField(
         controller: nameCtrl,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary),
         decoration: InputDecoration(
           hintText: nameHint,
           isDense: true,
@@ -626,7 +627,7 @@ class _VariantOptionRow extends StatelessWidget {
       Expanded(flex: 2, child: TextField(
         controller: priceCtrl,
         keyboardType: TextInputType.number,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary),
         decoration: InputDecoration(
           hintText: priceHint,
           suffixText: 'F',
@@ -682,25 +683,25 @@ class _CategoryPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncCats = ref.watch(categoriesProvider);
     return asyncCats.when(
-      loading: () => Container(
+      loading: () => Builder(builder: (ctx) => Container(
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.darkBorder),
+          color: ctx.cardColor, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: ctx.borderColor),
         ),
         alignment: Alignment.center,
         child: const SizedBox(width: 18, height: 18,
           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
-      ),
+      )),
       error: (_, __) => const _EmptyCategories(),
       data: (cats) {
         if (cats.isEmpty) return const _EmptyCategories();
         final validId = cats.any((c) => c.id == selectedId) ? selectedId : null;
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
+            color: context.cardColor, borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: validId != null ? AppColors.primary.withOpacity(0.5) : AppColors.darkBorder,
+              color: validId != null ? AppColors.primary.withOpacity(0.5) : context.borderColor,
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -708,12 +709,12 @@ class _CategoryPicker extends ConsumerWidget {
             child: DropdownButton<String?>(
               value: validId,
               isExpanded: true,
-              hint: const Text('Sélectionner une catégorie',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext)),
-              dropdownColor: AppColors.darkCard,
-              icon: const Icon(Icons.expand_more_rounded, color: AppColors.darkSubtext),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w600, color: AppColors.darkText),
+              hint: Text('Sélectionner une catégorie',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
+              dropdownColor: context.cardColor,
+              icon: Icon(Icons.expand_more_rounded, color: context.textSecondary),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w600, color: context.textPrimary),
               items: cats.map((c) => DropdownMenuItem<String?>(
                 value: c.id,
                 child: Row(children: [
@@ -740,7 +741,7 @@ class _EmptyCategories extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: AppColors.warning.withOpacity(0.5)),
     ),

@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 
 class FavoriteDriversScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _FavoriteDriversScreenState extends ConsumerState<FavoriteDriversScreen> {
     final async = ref.watch(favoriteDriversProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Livreurs favoris'),
         actions: [
@@ -104,7 +105,7 @@ Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppColors.darkCard,
+    backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -178,13 +179,13 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Handle
         Center(child: Container(width: 40, height: 4,
-          decoration: BoxDecoration(color: AppColors.darkBorder, borderRadius: BorderRadius.circular(2)))),
+          decoration: BoxDecoration(color: context.borderColor, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
-        const Text('Ajouter un livreur',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.darkText)),
+        Text('Ajouter un livreur',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 4),
-        const Text('Recherchez par numéro de téléphone',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        Text('Recherchez par numéro de téléphone',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
         const SizedBox(height: 16),
         Row(children: [
           Expanded(
@@ -192,10 +193,10 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 16, color: AppColors.darkText),
-              decoration: const InputDecoration(
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 16, color: context.textPrimary),
+              decoration: InputDecoration(
                 hintText: 'Ex: 22961234567',
-                prefixIcon: Icon(Icons.phone_rounded, color: AppColors.darkSubtext, size: 20),
+                prefixIcon: Icon(Icons.phone_rounded, color: context.textSecondary, size: 20),
               ),
               onSubmitted: (_) => _search(),
             ),
@@ -232,6 +233,7 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
               Expanded(child: Text(_error!,
                 style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.danger))),
             ]),
+
           ),
         ],
         if (_found != null) ...[
@@ -248,11 +250,11 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(_found!.userName,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                      fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                      fontWeight: FontWeight.w800, color: context.textPrimary)),
                 const SizedBox(height: 2),
                 Text(_vehicleLabel(_found!.vehicleType),
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
               ])),
               _StatusDot(_found!.isAvailable),
             ]),
@@ -264,15 +266,15 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
                 ? ElevatedButton.icon(
                     onPressed: null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.darkBorder,
+                      backgroundColor: context.borderColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      disabledBackgroundColor: AppColors.darkBorder,
+                      disabledBackgroundColor: context.borderColor,
                     ),
-                    icon: const Icon(Icons.check_circle_rounded, color: AppColors.darkSubtext),
-                    label: const Text('Déjà dans vos favoris',
+                    icon: Icon(Icons.check_circle_rounded, color: context.textSecondary),
+                    label: Text('Déjà dans vos favoris',
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                          fontWeight: FontWeight.w800, color: AppColors.darkSubtext)),
+                          fontWeight: FontWeight.w800, color: context.textSecondary)),
                   )
                 : ElevatedButton.icon(
                     onPressed: _adding ? null : _addToFavorites,
@@ -337,15 +339,15 @@ class _DriverCardState extends ConsumerState<_DriverCard> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.cardColor,
         title: Text('Retirer ${widget.driver.userName} ?',
-          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800,
-              color: AppColors.darkText, fontSize: 16)),
-        content: const Text('Ce livreur sera retiré de vos favoris.',
-          style: TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext, fontSize: 13)),
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800,
+              color: context.textPrimary, fontSize: 16)),
+        content: Text('Ce livreur sera retiré de vos favoris.',
+          style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary, fontSize: 13)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext))),
+            child: Text('Annuler', style: TextStyle(color: context.textSecondary))),
           TextButton(onPressed: () => Navigator.pop(context, true),
             child: const Text('Retirer', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800))),
         ],
@@ -373,10 +375,10 @@ class _DriverCardState extends ConsumerState<_DriverCard> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: d.isPrivate ? AppColors.primary.withOpacity(0.4) : AppColors.darkBorder,
+          color: d.isPrivate ? AppColors.primary.withOpacity(0.4) : context.borderColor,
           width: d.isPrivate ? 1.5 : 1,
         ),
       ),
@@ -387,28 +389,28 @@ class _DriverCardState extends ConsumerState<_DriverCard> {
           Row(children: [
             Expanded(child: Text(d.userName,
               maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w800, color: AppColors.darkText))),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w800, color: context.textPrimary))),
             _StatusDot(d.isAvailable),
           ]),
           const SizedBox(height: 4),
           Row(children: [
-            const Icon(Icons.two_wheeler_rounded, size: 13, color: AppColors.darkSubtext),
+            Icon(Icons.two_wheeler_rounded, size: 13, color: context.textSecondary),
             const SizedBox(width: 4),
             Text(_vehicleLabel(d.vehicleType),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
             if (d.licensePlate != null && d.licensePlate!.isNotEmpty) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
-                  color: AppColors.darkBg,
+                  color: context.bgColor,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.darkBorder),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Text(d.licensePlate!,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                      fontWeight: FontWeight.w700, color: AppColors.darkText)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
               ),
             ],
           ]),
@@ -466,8 +468,8 @@ class _SectionHeader extends StatelessWidget {
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
           fontWeight: FontWeight.w900, color: color)),
-      Text(subtitle, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          color: AppColors.darkSubtext)),
+      Text(subtitle, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          color: context.textSecondary)),
     ]),
   ]);
 }
@@ -480,14 +482,14 @@ class _StatusDot extends StatelessWidget {
     Container(
       width: 8, height: 8,
       decoration: BoxDecoration(
-        color: online ? AppColors.success : AppColors.darkMuted,
+        color: online ? AppColors.success : context.textMuted,
         shape: BoxShape.circle,
       ),
     ),
     const SizedBox(width: 4),
     Text(online ? 'Disponible' : 'Hors ligne',
       style: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w600,
-          color: online ? AppColors.success : AppColors.darkMuted)),
+          color: online ? AppColors.success : context.textMuted)),
   ]);
 }
 
@@ -567,14 +569,14 @@ class _EmptyState extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.two_wheeler_rounded, size: 64, color: AppColors.darkMuted),
+        Icon(Icons.two_wheeler_rounded, size: 64, color: context.textMuted),
         const SizedBox(height: 16),
-        const Text('Aucun livreur favori',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text('Aucun livreur favori',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text('Ajoutez des livreurs pour les retrouver rapidement ou les marquer comme exclusifs.',
+        Text('Ajoutez des livreurs pour les retrouver rapidement ou les marquer comme exclusifs.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.5)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5)),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: onAdd,
@@ -597,7 +599,7 @@ class _ErrorState extends StatelessWidget {
       const SizedBox(height: 12),
       Text(message.replaceAll('Exception: ', ''),
         textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
       const SizedBox(height: 16),
       OutlinedButton.icon(onPressed: onRetry,
         icon: const Icon(Icons.refresh_rounded),

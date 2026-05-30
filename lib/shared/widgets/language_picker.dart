@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 const supportedLanguages = <Map<String, String>>[
   {'code': 'fr', 'label': 'Français',  'flag': '🇫🇷'},
@@ -54,14 +55,12 @@ Future<void> showLanguagePicker(
   required String currentLang,
   bool? darkTheme,
 }) async {
-  final isDark = darkTheme ?? (Theme.of(context).brightness == Brightness.dark);
-  final bgColor = isDark ? AppColors.darkCard : Colors.white;
-  final textColor = isDark ? AppColors.darkText : AppColors.nearBlack;
-  final dividerColor = isDark ? AppColors.darkBorder : Colors.grey.shade300;
+  final textColor = context.textPrimary;
+  final dividerColor = context.borderColor;
 
   final picked = await showModalBottomSheet<String>(
     context: context,
-    backgroundColor: bgColor,
+    backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/widgets/notifications_list_widget.dart';
 import '../../providers/driver_provider.dart';
@@ -22,7 +23,7 @@ class DriverDashboardScreen extends ConsumerWidget {
     final isOnline = driver.isOnline;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       body: CustomScrollView(slivers: [
 
         // ── App bar ───────────────────────────────────────────────────────────
@@ -33,12 +34,12 @@ class DriverDashboardScreen extends ConsumerWidget {
             child: Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Bonjour, ${user?.firstName ?? 'Livreur'} 👋',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 22,
-                      fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 22,
+                      fontWeight: FontWeight.w900, color: context.textPrimary)),
                 const SizedBox(height: 2),
                 Row(children: [
                   Container(width: 8, height: 8, decoration: BoxDecoration(
-                    color: isOnline ? AppColors.primary : AppColors.darkMuted,
+                    color: isOnline ? AppColors.primary : context.textMuted,
                     shape: BoxShape.circle,
                     boxShadow: isOnline ? [BoxShadow(
                       color: AppColors.primary.withOpacity(0.5),
@@ -47,7 +48,7 @@ class DriverDashboardScreen extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(isOnline ? 'En ligne — Prêt pour les missions' : 'Hors ligne',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                      color: isOnline ? AppColors.primary : AppColors.darkSubtext,
+                      color: isOnline ? AppColors.primary : context.textSecondary,
                       fontWeight: FontWeight.w600)),
                 ]),
               ])),
@@ -73,14 +74,14 @@ class DriverDashboardScreen extends ConsumerWidget {
             loading: () => const _StatsShimmer(),
             error: (_, __) => Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.darkCard,
+              decoration: BoxDecoration(color: context.cardColor,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.darkBorder)),
-              child: const Row(children: [
-                Icon(Icons.wifi_off_rounded, color: AppColors.darkSubtext, size: 20),
-                SizedBox(width: 10),
+                  border: Border.all(color: context.borderColor)),
+              child: Row(children: [
+                Icon(Icons.wifi_off_rounded, color: context.textSecondary, size: 20),
+                const SizedBox(width: 10),
                 Text('Statistiques indisponibles', style: TextStyle(
-                    fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+                    fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
               ]),
             ),
             data: (data) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -89,8 +90,8 @@ class DriverDashboardScreen extends ConsumerWidget {
               _EarningsCard(data: data),
               const SizedBox(height: 16),
 
-              const Text('Activité', style: TextStyle(fontFamily: 'Nunito',
-                  fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+              Text('Activité', style: TextStyle(fontFamily: 'Nunito',
+                  fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _StatCard(
@@ -128,7 +129,7 @@ class DriverDashboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary.withOpacity(0.15), AppColors.darkCard],
+                  colors: [AppColors.primary.withOpacity(0.15), context.cardColor],
                   begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
@@ -144,11 +145,11 @@ class DriverDashboardScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${driver.missionCount} mission${driver.missionCount > 1 ? 's' : ''} active${driver.missionCount > 1 ? 's' : ''}',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                        fontWeight: FontWeight.w800, color: AppColors.darkText)),
-                  const Text('Appuyez pour gérer vos livraisons',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                        fontWeight: FontWeight.w800, color: context.textPrimary)),
+                  Text('Appuyez pour gérer vos livraisons',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                        color: AppColors.darkSubtext)),
+                        color: context.textSecondary)),
                 ])),
                 const Icon(Icons.arrow_forward_ios_rounded,
                     size: 14, color: AppColors.primary),
@@ -163,21 +164,21 @@ class DriverDashboardScreen extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.darkCard, borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.darkBorder),
+              color: context.cardColor, borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.borderColor),
             ),
-            child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Vous êtes hors ligne', style: TextStyle(fontFamily: 'Nunito',
-                  fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
-              SizedBox(height: 6),
+                  fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
+              const SizedBox(height: 6),
               Text('Passez en ligne pour commencer à recevoir des missions de livraison.',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    color: AppColors.darkSubtext, height: 1.5)),
-              SizedBox(height: 16),
+                    color: context.textSecondary, height: 1.5)),
+              const SizedBox(height: 16),
               Row(children: [
-                Icon(Icons.tips_and_updates_rounded, color: AppColors.accent, size: 16),
-                SizedBox(width: 8),
-                Expanded(child: Text(
+                const Icon(Icons.tips_and_updates_rounded, color: AppColors.accent, size: 16),
+                const SizedBox(width: 8),
+                const Expanded(child: Text(
                   'Conseils : Livrez aux heures de pointe (12h-14h, 19h-21h) pour maximiser vos gains !',
                   style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                       color: AppColors.accent, height: 1.4))),
@@ -190,8 +191,8 @@ class DriverDashboardScreen extends ConsumerWidget {
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Actions rapides', style: TextStyle(fontFamily: 'Nunito',
-                fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+            Text('Actions rapides', style: TextStyle(fontFamily: 'Nunito',
+                fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _QuickAction(
@@ -297,14 +298,14 @@ class _EarningsPeriod extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(left: isFirst ? 0 : 12, right: isFirst ? 12 : 0),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          color: context.textSecondary, fontWeight: FontWeight.w600)),
       const SizedBox(height: 4),
       Text(amount, style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
           fontWeight: FontWeight.w900, color: color)),
       const SizedBox(height: 2),
-      Text('$deliveries livr.', style: const TextStyle(fontFamily: 'Nunito',
-          fontSize: 11, color: AppColors.darkMuted)),
+      Text('$deliveries livr.', style: TextStyle(fontFamily: 'Nunito',
+          fontSize: 11, color: context.textMuted)),
     ]),
   );
 }
@@ -327,14 +328,14 @@ class _AvailabilityToggle extends StatelessWidget {
         gradient: LinearGradient(
           colors: isOnline
             ? [AppColors.primary, AppColors.primary.withOpacity(0.7)]
-            : [AppColors.darkCard, AppColors.darkSurface],
+            : [context.cardColor, AppColors.darkSurface],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOnline
             ? AppColors.primary.withOpacity(0.5)
-            : AppColors.darkBorder,
+            : context.borderColor,
           width: 1.5),
         boxShadow: isOnline
           ? [BoxShadow(color: AppColors.primary.withOpacity(0.3),
@@ -346,12 +347,12 @@ class _AvailabilityToggle extends StatelessWidget {
           Text(isOnline ? 'EN LIGNE' : 'HORS LIGNE',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: isOnline ? Colors.black : AppColors.darkMuted,
+              color: isOnline ? Colors.black : context.textMuted,
               letterSpacing: 1.5)),
           const SizedBox(height: 4),
           Text(isOnline ? 'Vous recevez des missions' : 'Appuyez pour vous mettre en ligne',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700,
-              color: isOnline ? Colors.black.withOpacity(0.8) : AppColors.darkSubtext)),
+              color: isOnline ? Colors.black.withOpacity(0.8) : context.textSecondary)),
         ])),
         const SizedBox(width: 16),
         loading
@@ -361,7 +362,7 @@ class _AvailabilityToggle extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               width: 64, height: 34,
               decoration: BoxDecoration(
-                color: isOnline ? Colors.black.withOpacity(0.25) : AppColors.darkBorder,
+                color: isOnline ? Colors.black.withOpacity(0.25) : context.borderColor,
                 borderRadius: BorderRadius.circular(17),
               ),
               child: AnimatedAlign(
@@ -370,11 +371,11 @@ class _AvailabilityToggle extends StatelessWidget {
                 child: Container(
                   width: 28, height: 28, margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
-                    color: isOnline ? Colors.black : AppColors.darkSubtext,
+                    color: isOnline ? Colors.black : context.textSecondary,
                     shape: BoxShape.circle),
                   child: Icon(
                     isOnline ? Icons.power_settings_new_rounded : Icons.power_off_rounded,
-                    color: isOnline ? AppColors.primary : AppColors.darkBg, size: 16),
+                    color: isOnline ? AppColors.primary : context.bgColor, size: 16),
                 ),
               ),
             ),
@@ -395,8 +396,8 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: AppColors.darkCard, borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.darkBorder),
+      color: context.cardColor, borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: context.borderColor),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Icon(icon, color: color, size: 22),
@@ -404,8 +405,8 @@ class _StatCard extends StatelessWidget {
       Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
           fontWeight: FontWeight.w900, color: color)),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-          color: AppColors.darkSubtext, fontWeight: FontWeight.w600, height: 1.35)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          color: context.textSecondary, fontWeight: FontWeight.w600, height: 1.35)),
     ]),
   );
 }
@@ -421,14 +422,14 @@ class _QuickAction extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.darkCard, borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder)),
+        color: context.cardColor, borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.borderColor)),
       child: Column(children: [
         Text(emoji, style: const TextStyle(fontSize: 26)),
         const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center, style: const TextStyle(
+        Text(label, textAlign: TextAlign.center, style: TextStyle(
             fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w700,
-            color: AppColors.darkSubtext)),
+            color: context.textSecondary)),
       ]),
     ),
   );
@@ -439,14 +440,14 @@ class _StatsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     Container(height: 120, decoration: BoxDecoration(
-        color: AppColors.darkCard, borderRadius: BorderRadius.circular(20))),
+        color: context.cardColor, borderRadius: BorderRadius.circular(20))),
     const SizedBox(height: 16),
     Row(children: [
       Expanded(child: Container(height: 90, decoration: BoxDecoration(
-          color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
+          color: context.cardColor, borderRadius: BorderRadius.circular(14)))),
       const SizedBox(width: 12),
       Expanded(child: Container(height: 90, decoration: BoxDecoration(
-          color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)))),
+          color: context.cardColor, borderRadius: BorderRadius.circular(14)))),
     ]),
   ]);
 }

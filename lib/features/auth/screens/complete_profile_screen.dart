@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../core/constants/app_constants.dart';
 
 class CompleteProfileScreen extends ConsumerStatefulWidget {
@@ -63,7 +64,7 @@ class _State extends ConsumerState<CompleteProfileScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
@@ -73,11 +74,11 @@ class _State extends ConsumerState<CompleteProfileScreen> {
     body: SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Votre identité', style: TextStyle(fontFamily: 'Nunito',
-            fontSize: 26, fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+        Text('Votre identité', style: TextStyle(fontFamily: 'Nunito',
+            fontSize: 26, fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text('Dernière étape avant de commencer !',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.lightSubtext)),
+        Text('Dernière étape avant de commencer !',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
         const SizedBox(height: 32),
         _TF('Prénom *', _firstName, 'Ex: Gildas'),
         const SizedBox(height: 14),
@@ -89,15 +90,15 @@ class _State extends ConsumerState<CompleteProfileScreen> {
             AnimatedContainer(duration: const Duration(milliseconds: 150),
               width: 22, height: 22,
               decoration: BoxDecoration(
-                color: _accepted ? AppColors.primary : Colors.white,
+                color: _accepted ? AppColors.primary : context.cardColor,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                    color: _accepted ? AppColors.primary : AppColors.lightBorder, width: 1.5)),
+                    color: _accepted ? AppColors.primary : context.borderColor, width: 1.5)),
               child: _accepted ? const Icon(Icons.check, color: Colors.white, size: 14) : null),
             const SizedBox(width: 10),
-            Expanded(child: const Text(
+            Expanded(child: Text(
               'J\'accepte les CGU et la Politique de confidentialité d\'ifè FOOD.',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.nearBlack, height: 1.4))),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textPrimary, height: 1.4))),
           ]),
         ),
         const Spacer(),
@@ -115,8 +116,8 @@ class _State extends ConsumerState<CompleteProfileScreen> {
 
   Widget _TF(String label, TextEditingController ctrl, String hint) => Column(
     crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-          fontWeight: FontWeight.w700, color: AppColors.lightSubtext, letterSpacing: 0.3)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.3)),
       const SizedBox(height: 6),
       TextField(controller: ctrl, onChanged: (_) => setState(() {}),
         style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700),

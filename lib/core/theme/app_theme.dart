@@ -165,5 +165,12 @@ class AppTheme {
     cardTheme: CardTheme(color: AppColors.driverCard, elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.driverBorder))),
+    dividerColor: AppColors.driverBorder,
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: AppColors.driverCard,
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.driverBorder,
+      type: BottomNavigationBarType.fixed, elevation: 0,
+    ),
   );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class ProShell extends ConsumerWidget {
   final Widget child;
@@ -19,8 +20,8 @@ class ProShell extends ConsumerWidget {
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.darkSurface,
-          border: Border(top: BorderSide(color: AppColors.darkBorder))),
+          color: context.cardColor,
+          border: Border(top: BorderSide(color: context.borderColor))),
         child: SafeArea(child: SizedBox(height: 60, child: Row(children: [
           _PNavItem(Icons.dashboard_rounded,      'Accueil',   idx == 0, () => context.go('/pro/dashboard'), badge: 0),
           _PNavItem(Icons.receipt_long_rounded,   'Commandes', idx == 1, () => context.go('/pro/orders'), badge: 3),
@@ -47,11 +48,11 @@ class _PNavItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: sel ? AppColors.primary.withOpacity(0.12) : Colors.transparent,
             borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: sel ? AppColors.primary : AppColors.darkMuted, size: 22)),
+          child: Icon(icon, color: sel ? AppColors.primary : context.textMuted, size: 22)),
         const SizedBox(height: 2),
         Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
           fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-          color: sel ? AppColors.primary : AppColors.darkMuted)),
+          color: sel ? AppColors.primary : context.textMuted)),
       ]),
       if (badge > 0) Positioned(top: 4, right: 8, child: Container(
         width: 16, height: 16,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/cart_provider.dart';
 
 class ClientMainShell extends ConsumerWidget {
@@ -17,12 +18,12 @@ class ClientMainShell extends ConsumerWidget {
     if (loc == '/profile') idx = 2;
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       body: child,
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.lightBorder))),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          border: Border(top: BorderSide(color: context.borderColor))),
         child: SafeArea(child: SizedBox(height: 60, child: Row(children: [
           _NavItem(Icons.home_rounded,         'Accueil',   idx == 0, () => context.go('/home')),
           _NavItem(Icons.receipt_long_rounded, 'Commandes', idx == 1, () => context.go('/orders')),

@@ -5,6 +5,7 @@ import 'package:pinput/pinput.dart';
 import 'dart:async';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../core/constants/app_constants.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
@@ -83,24 +84,24 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       textStyle: const TextStyle(
           fontFamily: 'Nunito', fontSize: 24, fontWeight: FontWeight.w900),
       decoration: BoxDecoration(
-          color: AppColors.lightBg,
+          color: context.bgColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightBorder, width: 1.5)));
+          border: Border.all(color: context.borderColor, width: 1.5)));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
-          backgroundColor: Colors.white, elevation: 0,
-          leading: const BackButton(color: AppColors.nearBlack)),
+          backgroundColor: context.bgColor, elevation: 0,
+          leading: BackButton(color: context.textPrimary)),
       body: SafeArea(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Code de vérification', style: TextStyle(
+          Text('Code de vérification', style: TextStyle(
               fontFamily: 'Nunito', fontSize: 26, fontWeight: FontWeight.w900,
-              color: AppColors.nearBlack)),
+              color: context.textPrimary)),
           const SizedBox(height: 6),
-          Text('Envoyé au ${widget.phone}', style: const TextStyle(
-              fontFamily: 'Nunito', fontSize: 14, color: AppColors.lightSubtext)),
+          Text('Envoyé au ${widget.phone}', style: TextStyle(
+              fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
           const SizedBox(height: 40),
           Center(child: Pinput(
             controller: _ctrl,
@@ -126,8 +127,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           ],
           const SizedBox(height: 24),
           Center(child: _countdown > 0
-            ? Text('Renvoyer dans ${_countdown}s', style: const TextStyle(
-                fontFamily: 'Nunito', fontSize: 13, color: AppColors.lightSubtext))
+            ? Text('Renvoyer dans ${_countdown}s', style: TextStyle(
+                fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary))
             : TextButton(
                 onPressed: () async {
                   _startTimer();

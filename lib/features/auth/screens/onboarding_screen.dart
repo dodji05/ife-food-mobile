@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -28,7 +29,7 @@ class _State extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: context.bgColor,
     body: SafeArea(child: Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         child: Row(children: [
@@ -42,8 +43,8 @@ class _State extends State<OnboardingScreen> {
           const Spacer(),
           TextButton(
             onPressed: () => context.go('/auth/role'),
-            child: const Text('Passer', style: TextStyle(
-                fontFamily: 'Nunito', color: AppColors.lightSubtext,
+            child: Text('Passer', style: TextStyle(
+                fontFamily: 'Nunito', color: context.textSecondary,
                 fontWeight: FontWeight.w600, fontSize: 14)),
           ),
         ]),
@@ -59,7 +60,7 @@ class _State extends State<OnboardingScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           width: i == _page ? 28 : 8, height: 8,
           decoration: BoxDecoration(
-            color: i == _page ? _slides[i].color : AppColors.lightBorder,
+            color: i == _page ? _slides[i].color : context.borderColor,
             borderRadius: BorderRadius.circular(4)),
         ))),
       const SizedBox(height: 28),
@@ -73,8 +74,8 @@ class _State extends State<OnboardingScreen> {
         const SizedBox(height: 10),
         TextButton(
           onPressed: () => context.go('/login/phone'),
-          child: const Text('J\'ai déjà un compte',
-            style: TextStyle(fontFamily: 'Nunito', color: AppColors.lightSubtext,
+          child: Text('J\'ai déjà un compte',
+            style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary,
                 fontWeight: FontWeight.w600, fontSize: 14)),
         ),
       ])),
@@ -100,12 +101,12 @@ class _SlideWidget extends StatelessWidget {
         child: Center(child: Text(slide.emoji, style: const TextStyle(fontSize: 70)))),
       const SizedBox(height: 40),
       Text(slide.title, textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 28, fontWeight: FontWeight.w900,
-            color: AppColors.nearBlack, height: 1.2)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 28, fontWeight: FontWeight.w900,
+            color: context.textPrimary, height: 1.2)),
       const SizedBox(height: 14),
       Text(slide.subtitle, textAlign: TextAlign.center,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-            color: AppColors.nearBlack.withOpacity(0.55), height: 1.6)),
+            color: context.textPrimary.withOpacity(0.55), height: 1.6)),
     ]),
   );
 }

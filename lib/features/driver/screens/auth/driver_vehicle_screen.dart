@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class DriverVehicleScreen extends ConsumerStatefulWidget {
   const DriverVehicleScreen({super.key});
@@ -78,21 +79,21 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.darkBg,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
-      backgroundColor: AppColors.darkBg, elevation: 0,
+      backgroundColor: context.bgColor, elevation: 0,
       // Pas de back : étape obligatoire avant d'accéder au dashboard.
       automaticallyImplyLeading: false,
     ),
     body: SafeArea(child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Votre véhicule',
+        Text('Votre véhicule',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
-            fontWeight: FontWeight.w900, color: AppColors.darkText)),
+            fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text('Quel type de véhicule utilisez-vous pour livrer ?',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkSubtext)),
+        Text('Quel type de véhicule utilisez-vous pour livrer ?',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
         const SizedBox(height: 28),
 
         // Liste des véhicules — sélection radio visuelle
@@ -106,10 +107,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
               decoration: BoxDecoration(
                 color: _vehicle == v['id']
                     ? AppColors.primary.withOpacity(0.12)
-                    : AppColors.darkCard,
+                    : context.cardColor,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _vehicle == v['id'] ? AppColors.primary : AppColors.darkBorder,
+                  color: _vehicle == v['id'] ? AppColors.primary : context.borderColor,
                   width: _vehicle == v['id'] ? 2 : 1),
               ),
               child: Row(children: [
@@ -118,11 +119,11 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(v['label']!,
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                      fontWeight: FontWeight.w700, color: AppColors.darkText)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
                   Text(v['sub']!,
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                      color: AppColors.darkSubtext)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                      color: context.textSecondary)),
                 ])),
                 if (_vehicle == v['id'])
                   const Icon(Icons.check_circle_rounded,
@@ -135,35 +136,35 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           // Plaque d'immatriculation (cachée pour "À pied")
           if (_vehicle != 'ON_FOOT') Column(
             crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('PLAQUE D\'IMMATRICULATION',
+              Text('PLAQUE D\'IMMATRICULATION',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.darkSubtext, letterSpacing: 0.5)),
+                  color: context.textSecondary, letterSpacing: 0.5)),
               const SizedBox(height: 8),
               TextField(
                 controller: _plate,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w600, color: AppColors.darkText),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w600, color: context.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Ex: BJ 1234 AB',
-                  hintStyle: const TextStyle(color: AppColors.darkMuted),
+                  hintStyle: TextStyle(color: context.textMuted),
                   filled: true,
-                  fillColor: AppColors.darkCard,
+                  fillColor: context.cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.darkBorder)),
+                    borderSide: BorderSide(color: context.borderColor)),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.darkBorder)),
+                    borderSide: BorderSide(color: context.borderColor)),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.primary)),
                 ),
               ),
               const SizedBox(height: 6),
-              const Text('Optionnel — pour vérification par l\'admin',
+              Text('Optionnel — pour vérification par l\'admin',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                  color: AppColors.darkMuted)),
+                  color: context.textMuted)),
             ],
           ),
         ])),
@@ -182,10 +183,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                 style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
         ),
         const SizedBox(height: 12),
-        const Center(child: Text(
+        Center(child: Text(
           'Votre dossier sera vérifié sous 24h',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-            color: AppColors.darkMuted))),
+            color: context.textMuted))),
       ]),
     )),
   );

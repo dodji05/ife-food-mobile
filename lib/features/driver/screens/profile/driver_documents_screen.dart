@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 final _driverDocsProvider = FutureProvider.autoDispose<List<_DocEntry>>((ref) async {
   final res = await ApiClient.instance.get('/drivers/me/documents');
@@ -32,21 +33,21 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
   Future<void> _upload(String docType) async {
     final choice = await showModalBottomSheet<_UploadChoice>(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: const Text('Galerie photo', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Galerie photo', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.gallery),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: const Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.camera),
         ),
         ListTile(
           leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
-          title: const Text('Fichier PDF', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Fichier PDF', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.pdf),
         ),
         const SizedBox(height: 8),
@@ -108,7 +109,7 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(_driverDocsProvider);
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mes documents'), leading: const BackButton()),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -166,9 +167,9 @@ class _DocCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: hasDoc ? AppColors.primary.withOpacity(0.25) : AppColors.darkBorder),
+        border: Border.all(color: hasDoc ? AppColors.primary.withOpacity(0.25) : context.borderColor),
       ),
       child: Row(children: [
         Container(
@@ -191,7 +192,7 @@ class _DocCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(info.label,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
           const SizedBox(height: 4),
           if (hasDoc) ...[
             Row(children: [
@@ -210,8 +211,8 @@ class _DocCard extends StatelessWidget {
               ),
             ]),
           ] else
-            const Text('Non fourni',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+            Text('Non fourni',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         ])),
         const SizedBox(width: 8),
         GestureDetector(

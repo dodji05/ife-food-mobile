@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
@@ -342,7 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // ── Catégories rapides ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Container(
-            color: AppColors.offWhite,
+            color: context.bgColor,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -356,16 +357,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
-                        color: sel ? AppColors.primary : Colors.white,
+                        color: sel ? AppColors.primary : context.cardColor,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                            color: sel ? AppColors.primary : AppColors.lightGrey)),
+                            color: sel ? AppColors.primary : context.borderColor)),
                       child: Row(children: [
                         Text(c['emoji']!, style: const TextStyle(fontSize: 15)),
                         const SizedBox(width: 5),
                         Text(c['label']!, style: TextStyle(
                           fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                          color: sel ? Colors.white : AppColors.darkGrey)),
+                          color: sel ? Colors.white : context.textSecondary)),
                       ]),
                     ),
                   );
@@ -379,7 +380,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (_filters.hasAny)
           SliverToBoxAdapter(
             child: Container(
-              color: AppColors.offWhite,
+              color: context.bgColor,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Row(children: [
@@ -427,15 +428,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ..._buildDynamicSections(professionals.value!),
 
         // ── Produits populaires ───────────────────────────────────────────────
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
             child: Row(children: [
               Text('Populaires près de vous',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
-              Spacer(),
-              Text('⭐', style: TextStyle(fontSize: 16)),
+                    fontWeight: FontWeight.w800, color: context.textPrimary)),
+              const Spacer(),
+              const Text('⭐', style: TextStyle(fontSize: 16)),
             ]),
           ),
         ),
@@ -472,9 +473,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
             child: Row(children: [
-              const Text('Établissements',
+              Text('Établissements',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+                    fontWeight: FontWeight.w800, color: context.textPrimary)),
               const Spacer(),
               if (_filters.hasAny)
                 Container(
@@ -509,16 +510,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ? 'Aucun établissement disponible'
                           : 'Aucun résultat avec ces filtres',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                          fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                          fontWeight: FontWeight.w700, color: context.textPrimary)),
                     const SizedBox(height: 6),
                     Text(
                       list.isEmpty
                           ? 'Aucun établissement validé pour le moment.'
                           : 'Modifiez vos filtres ou élargissez la zone.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                          color: AppColors.grey, height: 1.4)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          color: context.textMuted, height: 1.4)),
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: () {
@@ -558,18 +559,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.lightGrey)),
+                  color: context.cardColor, borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: context.borderColor)),
                 child: Column(children: [
                   const Text('📡', style: TextStyle(fontSize: 40)),
                   const SizedBox(height: 12),
-                  const Text('Connexion impossible',
+                  Text('Connexion impossible',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                        fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                        fontWeight: FontWeight.w700, color: context.textPrimary)),
                   const SizedBox(height: 6),
-                  const Text('Vérifiez votre connexion internet et réessayez.',
+                  Text('Vérifiez votre connexion internet et réessayez.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
                   const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () => ref.invalidate(nearbyProfessionalsProvider(_selectedRadius)),
@@ -610,8 +611,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
           child: Text(title,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                fontWeight: FontWeight.w800, color: context.textPrimary)),
         ),
       ),
       SliverToBoxAdapter(
@@ -651,19 +652,19 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    decoration: BoxDecoration(
+      color: context.cardColor,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
     padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Center(child: Container(
         width: 40, height: 4,
         decoration: BoxDecoration(
-          color: AppColors.lightGrey, borderRadius: BorderRadius.circular(2)))),
+          color: context.borderColor, borderRadius: BorderRadius.circular(2)))),
       const SizedBox(height: 20),
       Row(children: [
-        const Text('Filtres', style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
-            fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+        Text('Filtres', style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
+            fontWeight: FontWeight.w800, color: context.textPrimary)),
         const Spacer(),
         if (_local.hasAny) GestureDetector(
           onTap: () => setState(() => _local = const HomeFilters()),
@@ -684,12 +685,12 @@ class _FilterSheetState extends State<_FilterSheet> {
           activeColor: AppColors.primary,
         ),
       ),
-      const Divider(height: 24, color: AppColors.lightGrey),
+      Divider(height: 24, color: context.borderColor),
 
       // Note minimale
-      const Text('Note minimale',
+      Text('Note minimale',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 10),
       Row(children: [
         for (final r in [null, 3.0, 4.0, 4.5]) _RatingChip(
@@ -698,12 +699,12 @@ class _FilterSheetState extends State<_FilterSheet> {
           onTap: () => setState(() => _local = _local.copyWith(minRating: r)),
         ),
       ]),
-      const Divider(height: 24, color: AppColors.lightGrey),
+      Divider(height: 24, color: context.borderColor),
 
       // Temps de livraison
-      const Text('Temps de livraison',
+      Text('Temps de livraison',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 10),
       Row(children: [
         for (final t in [null, 20, 30, 45]) _RatingChip(
@@ -729,9 +730,9 @@ class _FilterSheetState extends State<_FilterSheet> {
           color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: AppColors.primary, size: 18)),
       const SizedBox(width: 12),
-      Expanded(child: Text(label, style: const TextStyle(
+      Expanded(child: Text(label, style: TextStyle(
         fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600,
-        color: AppColors.nearBlack))),
+        color: context.textPrimary))),
       child,
     ]);
 }
@@ -750,12 +751,12 @@ class _RatingChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: selected ? AppColors.primary : Colors.white,
+        color: selected ? AppColors.primary : context.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: selected ? AppColors.primary : AppColors.lightGrey)),
+        border: Border.all(color: selected ? AppColors.primary : context.borderColor)),
       child: Text(label, style: TextStyle(
         fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-        color: selected ? Colors.white : AppColors.darkGrey)),
+        color: selected ? Colors.white : context.textSecondary)),
     ),
   );
 }
@@ -799,8 +800,8 @@ class _RestaurantMiniCard extends StatelessWidget {
         width: 150,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGrey.withOpacity(0.7))),
+          color: context.cardColor, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.borderColor.withOpacity(0.7))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ClipRRect(
             borderRadius: const BorderRadius.only(
@@ -829,22 +830,22 @@ class _RestaurantMiniCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(pro.businessName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    fontWeight: FontWeight.w800, color: context.textPrimary)),
               const SizedBox(height: 3),
               Row(children: [
                 if (pro.avgRating != null && (pro.avgRating ?? 0) > 0) ...[
                   const Icon(Icons.star_rounded, color: AppColors.yellow, size: 12),
                   const SizedBox(width: 2),
                   Text(pro.avgRating!.toStringAsFixed(1),
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                        fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        fontWeight: FontWeight.w700, color: context.textPrimary)),
                   const SizedBox(width: 6),
                 ],
-                const Icon(Icons.access_time_rounded, size: 11, color: AppColors.grey),
+                Icon(Icons.access_time_rounded, size: 11, color: context.textMuted),
                 const SizedBox(width: 2),
                 Text('${pro.estimatedDeliveryMin ?? 25} min',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
               ]),
             ]),
           ),
@@ -899,8 +900,8 @@ class _ProductCard extends StatelessWidget {
       width: 140,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+        color: context.cardColor, borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.borderColor.withOpacity(0.8))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         ClipRRect(
           borderRadius: const BorderRadius.only(
@@ -922,8 +923,8 @@ class _ProductCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  fontWeight: FontWeight.w700, color: context.textPrimary)),
             const SizedBox(height: 4),
             Text(product.formattedPrice,
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
@@ -949,8 +950,8 @@ class _RestaurantCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+          color: context.cardColor, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.borderColor.withOpacity(0.8))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           ClipRRect(
             borderRadius: const BorderRadius.only(
@@ -992,30 +993,30 @@ class _RestaurantCard extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text(pro.businessName,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                      fontWeight: FontWeight.w800, color: AppColors.nearBlack))),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                      fontWeight: FontWeight.w800, color: context.textPrimary))),
                 if (pro.avgRating != null && (pro.avgRating ?? 0) > 0)
                   Row(children: [
                     const Icon(Icons.star_rounded, color: AppColors.yellow, size: 16),
                     const SizedBox(width: 2),
                     Text(pro.avgRating!.toStringAsFixed(1),
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                          fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          fontWeight: FontWeight.w700, color: context.textPrimary)),
                   ]),
               ]),
               const SizedBox(height: 6),
               Row(children: [
-                const Icon(Icons.location_on_rounded, size: 14, color: AppColors.grey),
+                Icon(Icons.location_on_rounded, size: 14, color: context.textMuted),
                 const SizedBox(width: 2),
                 Expanded(child: Text(pro.city ?? '',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                      color: AppColors.grey))),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                      color: context.textMuted))),
                 if (pro.distance != null) ...[
-                  const Icon(Icons.directions_bike_rounded, size: 14, color: AppColors.grey),
+                  Icon(Icons.directions_bike_rounded, size: 14, color: context.textMuted),
                   const SizedBox(width: 4),
                   Text('${pro.distance!.toStringAsFixed(1)} km',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                        color: AppColors.grey)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                        color: context.textMuted)),
                 ],
               ]),
               const SizedBox(height: 8),
@@ -1046,12 +1047,12 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(color: AppColors.offWhite, borderRadius: BorderRadius.circular(8)),
+    decoration: BoxDecoration(color: context.bgColor, borderRadius: BorderRadius.circular(8)),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 13, color: AppColors.grey),
+      Icon(icon, size: 13, color: context.textMuted),
       const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-          color: AppColors.darkGrey, fontWeight: FontWeight.w600)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          color: context.textSecondary, fontWeight: FontWeight.w600)),
     ]),
   );
 }
@@ -1102,7 +1103,7 @@ class _BannersCarouselState extends State<_BannersCarousel> {
           margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
           width: i == _current ? 16 : 6, height: 6,
           decoration: BoxDecoration(
-            color: i == _current ? AppColors.primary : AppColors.lightGrey,
+            color: i == _current ? AppColors.primary : context.borderColor,
             borderRadius: BorderRadius.circular(3)),
         )),
       ),
@@ -1157,7 +1158,7 @@ class _ShimmerRestaurantCard extends StatelessWidget {
   Widget build(BuildContext context) => Shimmer.fromColors(
     baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
     child: Container(margin: const EdgeInsets.only(bottom: 12), height: 260,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+      decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(16))),
   );
 }
 
@@ -1166,6 +1167,6 @@ class _ShimmerProductCard extends StatelessWidget {
   Widget build(BuildContext context) => Shimmer.fromColors(
     baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
     child: Container(width: 140, height: 184, margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+      decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(16))),
   );
 }

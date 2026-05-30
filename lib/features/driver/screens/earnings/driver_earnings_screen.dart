@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/driver_provider.dart';
 
 class DriverEarningsScreen extends ConsumerStatefulWidget {
@@ -21,13 +22,13 @@ class _State extends ConsumerState<DriverEarningsScreen> {
     final earnings = ref.watch(earningsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
-        title: const Text('Mes gains',
+        title: Text('Mes gains',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-              fontWeight: FontWeight.w800, color: AppColors.darkText)),
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
       ),
       body: stats.when(
         loading: () => const Center(
@@ -35,7 +36,7 @@ class _State extends ConsumerState<DriverEarningsScreen> {
         error: (e, _) => Center(child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(e.toString(), textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.darkSubtext, fontFamily: 'Nunito')),
+            style: TextStyle(color: context.textSecondary, fontFamily: 'Nunito')),
         )),
         data: (data) => RefreshIndicator(
           color: AppColors.primary,
@@ -78,9 +79,9 @@ class _State extends ConsumerState<DriverEarningsScreen> {
               const SizedBox(height: 24),
 
               // ── Historique transactions ───────────────────────────────────
-              const Text('Historique',
+              Text('Historique',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                    fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                    fontWeight: FontWeight.w800, color: context.textPrimary)),
               const SizedBox(height: 12),
 
               earnings.when(
@@ -89,19 +90,19 @@ class _State extends ConsumerState<DriverEarningsScreen> {
                   child: Center(child: CircularProgressIndicator(
                       color: AppColors.primary)),
                 ),
-                error: (_, __) => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                error: (_, __) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Text('Impossible de charger les transactions',
                     style: TextStyle(fontFamily: 'Nunito',
-                        color: AppColors.darkSubtext)),
+                        color: context.textSecondary)),
                 ),
                 data: (list) => list.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: Text(
                         'Aucune transaction pour l\'instant',
                         style: TextStyle(fontFamily: 'Nunito',
-                            color: AppColors.darkMuted))),
+                            color: context.textMuted))),
                     )
                   : Column(children: list.map((tx) =>
                         _TxRow(tx: tx)).toList()),
@@ -143,8 +144,8 @@ class _BalanceHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0D3320), AppColors.darkCard],
+        gradient: LinearGradient(
+          colors: [const Color(0xFF0D3320), context.cardColor],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
@@ -161,9 +162,9 @@ class _BalanceHero extends StatelessWidget {
                 color: AppColors.primary, size: 18),
           ),
           const SizedBox(width: 10),
-          const Text('Solde disponible',
+          Text('Solde disponible',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+                color: context.textSecondary, fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 10),
         Text('${balance.toStringAsFixed(0)} F CFA',
@@ -208,10 +209,10 @@ class _PeriodChip extends StatelessWidget {
       color: Colors.black.withOpacity(0.2),
       borderRadius: BorderRadius.circular(10)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-          color: AppColors.darkSubtext)),
-      Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-          fontWeight: FontWeight.w800, color: AppColors.darkText)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+          color: context.textSecondary)),
+      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+          fontWeight: FontWeight.w800, color: context.textPrimary)),
     ]),
   );
 }
@@ -262,9 +263,9 @@ class _BreakdownTile extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.darkBorder)),
+      border: Border.all(color: context.borderColor)),
     child: Row(children: [
       Container(
         width: 38, height: 38,
@@ -275,12 +276,12 @@ class _BreakdownTile extends StatelessWidget {
       ),
       const SizedBox(width: 10),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-            color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
-        Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-            fontWeight: FontWeight.w900, color: AppColors.darkText)),
-        Text(sub, style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-            color: AppColors.darkMuted)),
+        Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+            color: context.textSecondary, fontWeight: FontWeight.w600)),
+        Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+            fontWeight: FontWeight.w900, color: context.textPrimary)),
+        Text(sub, style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+            color: context.textMuted)),
       ])),
     ]),
   );
@@ -303,9 +304,9 @@ class _WithdrawalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -318,17 +319,17 @@ class _WithdrawalCard extends StatelessWidget {
                 color: AppColors.success, size: 18),
           ),
           const SizedBox(width: 10),
-          const Text('Virement',
+          Text('Virement',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                fontWeight: FontWeight.w800, color: context.textPrimary)),
         ]),
         const SizedBox(height: 10),
         Text(
           canWithdraw
             ? 'Solde disponible : ${availableBalance.toStringAsFixed(0)} F CFA'
             : 'Aucun solde disponible pour le moment.',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-              color: AppColors.darkSubtext, height: 1.4)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              color: context.textSecondary, height: 1.4)),
         if (pendingPayouts > 0) ...[
           const SizedBox(height: 6),
           Text(
@@ -386,20 +387,20 @@ class _TxRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.darkBorder)),
+        border: Border.all(color: context.borderColor)),
       child: Row(children: [
         Text(emoji, style: const TextStyle(fontSize: 20)),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              fontWeight: FontWeight.w600, color: AppColors.darkText)),
+          Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+              fontWeight: FontWeight.w600, color: context.textPrimary)),
           Text(
             '${createdAt.day.toString().padLeft(2, '0')}/${createdAt.month.toString().padLeft(2, '0')}/${createdAt.year}'
             ' · ${createdAt.hour.toString().padLeft(2, '0')}h${createdAt.minute.toString().padLeft(2, '0')}',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                color: AppColors.darkMuted)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                color: context.textMuted)),
         ])),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(amountText, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
@@ -429,9 +430,9 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 14),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.darkBorder)),
+      border: Border.all(color: context.borderColor)),
     child: Column(children: [
       Text(emoji, style: const TextStyle(fontSize: 22)),
       const SizedBox(height: 6),
@@ -439,8 +440,8 @@ class _StatTile extends StatelessWidget {
           fontWeight: FontWeight.w900, color: AppColors.primary)),
       const SizedBox(height: 2),
       Text(label, textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-            color: AppColors.darkSubtext, height: 1.3)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+            color: context.textSecondary, height: 1.3)),
     ]),
   );
 }
@@ -515,7 +516,7 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 36, height: 4,
             decoration: BoxDecoration(
-              color: AppColors.darkBorder,
+              color: context.borderColor,
               borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
 
@@ -530,12 +531,12 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
             ),
             const SizedBox(width: 12),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Demander un virement',
+              Text('Demander un virement',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-                    fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                    fontWeight: FontWeight.w900, color: context.textPrimary)),
               Text('Solde disponible : ${available.toStringAsFixed(0)} F CFA',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                    color: AppColors.darkSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    color: context.textSecondary)),
             ]),
           ]),
           const SizedBox(height: 24),
@@ -547,26 +548,26 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (_) => setState(() => _error = null),
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 24,
-                fontWeight: FontWeight.w900, color: AppColors.darkText),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
+                fontWeight: FontWeight.w900, color: context.textPrimary),
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               hintText: '0',
               hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 24,
-                  fontWeight: FontWeight.w900, color: AppColors.darkBorder),
+                  fontWeight: FontWeight.w900, color: context.borderColor),
               suffixText: 'F CFA',
-              suffixStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                  color: AppColors.darkSubtext, fontWeight: FontWeight.w700),
+              suffixStyle: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                  color: context.textSecondary, fontWeight: FontWeight.w700),
               filled: true,
-              fillColor: AppColors.darkBg,
+              fillColor: context.bgColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+                    color: overflow ? AppColors.danger : context.borderColor)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+                    color: overflow ? AppColors.danger : context.borderColor)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(

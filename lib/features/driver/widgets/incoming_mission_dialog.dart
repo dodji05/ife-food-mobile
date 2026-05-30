@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../shared/models/mission.dart';
 import '../providers/driver_provider.dart';
 
@@ -81,7 +82,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
     final missionCount  = activeMissions.length;
 
     return Dialog(
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: SingleChildScrollView(
         child: Padding(
@@ -115,7 +116,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
               SizedBox(width: 56, height: 56, child: CircularProgressIndicator(
                 value: _countdown / _initialCountdown,
                 color: _countdown > 10 ? AppColors.primary : AppColors.danger,
-                backgroundColor: AppColors.darkBorder, strokeWidth: 4,
+                backgroundColor: context.borderColor, strokeWidth: 4,
               )),
               Text('$_countdown', style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -124,8 +125,8 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
             const SizedBox(height: 20),
 
             // ── Titre ───────────────────────────────────────────────────────
-            const Text('Nouvelle mission !', style: TextStyle(fontFamily: 'Nunito',
-                fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.darkText)),
+            Text('Nouvelle mission !', style: TextStyle(fontFamily: 'Nunito',
+                fontSize: 20, fontWeight: FontWeight.w900, color: context.textPrimary)),
             const SizedBox(height: 8),
 
             // ── Badge multi-livraisons ──────────────────────────────────────
@@ -187,8 +188,8 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
               const SizedBox(height: 10),
               Text(
                 '${mission.items.length} article${mission.items.length > 1 ? 's' : ''}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                    color: AppColors.darkSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                    color: context.textSecondary)),
             ],
             const SizedBox(height: 20),
 
@@ -274,10 +275,10 @@ class _Row extends StatelessWidget {
     Icon(icon, size: 16, color: color),
     const SizedBox(width: 8),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-          color: AppColors.darkMuted, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
-      Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-          color: AppColors.darkText, fontWeight: FontWeight.w700)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+          color: context.textMuted, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+          color: context.textPrimary, fontWeight: FontWeight.w700)),
     ])),
   ]);
 }
@@ -293,10 +294,10 @@ class _Chip extends StatelessWidget {
     child: Column(children: [
       Text(emoji, style: const TextStyle(fontSize: 15)),
       const SizedBox(height: 2),
-      Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          fontWeight: FontWeight.w800, color: AppColors.darkText)),
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 9,
-          color: AppColors.darkMuted), textAlign: TextAlign.center),
+      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          fontWeight: FontWeight.w800, color: context.textPrimary)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
+          color: context.textMuted), textAlign: TextAlign.center),
     ]),
   );
 }

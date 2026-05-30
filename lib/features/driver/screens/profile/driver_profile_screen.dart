@@ -20,6 +20,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/driver.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
@@ -38,15 +39,15 @@ class DriverProfileScreen extends ConsumerWidget {
     final driver = driverState.driver;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mon profil')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         // ── Hero card ────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0D3320), AppColors.darkCard],
+            gradient: LinearGradient(
+              colors: [const Color(0xFF0D3320), context.cardColor],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
@@ -65,20 +66,20 @@ class DriverProfileScreen extends ConsumerWidget {
               Positioned(bottom: 0, right: 0, child: Container(
                 width: 22, height: 22,
                 decoration: BoxDecoration(
-                  color: driverState.isOnline ? AppColors.success : AppColors.darkMuted,
+                  color: driverState.isOnline ? AppColors.success : context.textMuted,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.darkCard, width: 2),
+                  border: Border.all(color: context.cardColor, width: 2),
                 ),
               )),
             ]),
             const SizedBox(height: 12),
             Text(user?.displayName ?? 'Livreur',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 20,
-                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
+                fontWeight: FontWeight.w900, color: context.textPrimary)),
             const SizedBox(height: 2),
             Text(user?.phone ?? '',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                color: AppColors.darkSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                color: context.textSecondary)),
             const SizedBox(height: 12),
             // Badge véhicule (lit driver.vehicleEmoji + vehicleType)
             Container(
@@ -163,9 +164,9 @@ class DriverProfileScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.driverCard,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.driverBorder),
+            border: Border.all(color: context.borderColor),
           ),
           child: const ThemeSelectorTile(darkSurface: true),
         ),
@@ -196,9 +197,9 @@ class DriverProfileScreen extends ConsumerWidget {
         // ── Logout ────────────────────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: context.borderColor),
           ),
           child: ListTile(
             leading: const Icon(Icons.logout_rounded, color: AppColors.danger),
@@ -212,8 +213,8 @@ class DriverProfileScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Center(child: Text('ifè Livreur v1.0.0 • Ets SWK FAKEYE',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkMuted))),
+        Center(child: Text('ifè Livreur v1.0.0 • Ets SWK FAKEYE',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),
     );
@@ -257,7 +258,7 @@ Future<void> _showVehicleSheet(
 Future<void> _contactSupport(BuildContext context) async {
   await showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColors.darkCard,
+    backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -267,15 +268,15 @@ Future<void> _contactSupport(BuildContext context) async {
           width: 36, height: 4,
           margin: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.darkBorder,
+            color: sheetCtx.borderColor,
             borderRadius: BorderRadius.circular(2)),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           child: Align(alignment: Alignment.centerLeft, child: Text(
             'Contacter le support',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-              fontWeight: FontWeight.w900, color: AppColors.darkText))),
+              fontWeight: FontWeight.w900, color: sheetCtx.textPrimary))),
         ),
         ListTile(
           leading: Container(
@@ -285,10 +286,10 @@ Future<void> _contactSupport(BuildContext context) async {
               borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
           ),
-          title: const Text('WhatsApp',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
-          subtitle: const Text('Réponse rapide en journée',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          title: Text('WhatsApp',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
+          subtitle: Text('Réponse rapide en journée',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
           onTap: () async {
             Navigator.pop(sheetCtx);
             await _openWhatsApp(context);
@@ -302,10 +303,10 @@ Future<void> _contactSupport(BuildContext context) async {
               borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.email_rounded, color: AppColors.primary, size: 20),
           ),
-          title: const Text('Email',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Email',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
           subtitle: Text(AppConstants.supportEmail,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
           onTap: () async {
             Navigator.pop(sheetCtx);
             await _openEmail(context);
@@ -358,16 +359,16 @@ class _Section extends StatelessWidget {
     Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(title.toUpperCase(),
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          fontWeight: FontWeight.w800, color: AppColors.darkSubtext, letterSpacing: 0.5)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          fontWeight: FontWeight.w800, color: context.textSecondary, letterSpacing: 0.5)),
     ),
     Container(
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder)),
+        border: Border.all(color: context.borderColor)),
       child: Column(children: items.asMap().entries.map((e) => Column(children: [
-        if (e.key > 0) const Divider(height: 1, color: AppColors.darkBorder, indent: 54),
+        if (e.key > 0) Divider(height: 1, color: context.borderColor, indent: 54),
         e.value,
       ])).toList()),
     ),
@@ -390,11 +391,11 @@ class _Item extends StatelessWidget {
       child: Icon(icon, color: AppColors.primary, size: 18),
     ),
     title: Text(label,
-      style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-        fontWeight: FontWeight.w600, color: AppColors.darkText)),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+        fontWeight: FontWeight.w600, color: context.textPrimary)),
     subtitle: sub != null ? Text(sub!,
-      style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)) : null,
-    trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.darkMuted, size: 18),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)) : null,
+    trailing: Icon(Icons.chevron_right_rounded, color: context.textMuted, size: 18),
     onTap: onTap,
   );
 }
@@ -483,12 +484,12 @@ class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
           // Drag handle
           Container(width: 36, height: 4,
             decoration: BoxDecoration(
-              color: AppColors.darkBorder,
+              color: context.borderColor,
               borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
-          const Text('Mon véhicule',
+          Text('Mon véhicule',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                fontWeight: FontWeight.w900, color: context.textPrimary)),
           const SizedBox(height: 20),
 
           // Sélecteur type de véhicule
@@ -507,12 +508,12 @@ class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.primary.withOpacity(0.15)
-                      : AppColors.darkBg,
+                      : context.bgColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selected
                         ? AppColors.primary
-                        : AppColors.darkBorder,
+                        : context.borderColor,
                     width: selected ? 2 : 1),
                 ),
                 child: Column(children: [
@@ -526,7 +527,7 @@ class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
                       fontWeight: FontWeight.w700,
                       color: selected
                           ? AppColors.primary
-                          : AppColors.darkSubtext)),
+                          : context.textSecondary)),
                 ]),
               ),
             ));
@@ -542,32 +543,32 @@ class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
                       controller: _plate,
                       textCapitalization: TextCapitalization.characters,
                       onChanged: (_) => setState(() {}),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontFamily: 'Nunito',
-                          color: AppColors.darkText,
+                          color: context.textPrimary,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.5),
                       decoration: InputDecoration(
                         labelText: 'Immatriculation *',
-                        labelStyle: const TextStyle(
+                        labelStyle: TextStyle(
                             fontFamily: 'Nunito',
-                            color: AppColors.darkSubtext,
+                            color: context.textSecondary,
                             fontSize: 13),
                         hintText: 'ex : AB 1234 BJ',
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                             Icons.pin_rounded,
-                            color: AppColors.darkSubtext,
+                            color: context.textSecondary,
                             size: 18),
                         filled: true,
-                        fillColor: AppColors.darkBg,
+                        fillColor: context.bgColor,
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: AppColors.darkBorder)),
+                            borderSide: BorderSide(
+                                color: context.borderColor)),
                         enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: AppColors.darkBorder)),
+                            borderSide: BorderSide(
+                                color: context.borderColor)),
                         focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(

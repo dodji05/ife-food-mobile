@@ -4,6 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class ReviewScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -38,12 +39,12 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.offWhite,
+    backgroundColor: context.bgColor,
     appBar: AppBar(title: const Text('Laisser un avis'), leading: const BackButton()),
     body: ListView(padding: const EdgeInsets.all(24), children: [
-      const Text('Votre commande a été livrée 🎉', style: TextStyle(fontFamily: 'Nunito', fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+      Text('Votre commande a été livrée 🎉', style: TextStyle(fontFamily: 'Nunito', fontSize: 22, fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 6),
-      const Text('Comment était votre expérience ?', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.grey)),
+      Text('Comment était votre expérience ?', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textMuted)),
       const SizedBox(height: 32),
 
       // Restaurant rating
@@ -76,7 +77,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       ),
       const SizedBox(height: 12),
       Center(child: TextButton(onPressed: () => context.go('/orders'),
-        child: const Text('Passer', style: TextStyle(color: AppColors.grey, fontFamily: 'Nunito')))),
+        child: Text('Passer', style: TextStyle(color: context.textMuted, fontFamily: 'Nunito')))),
     ]),
   );
 }
@@ -93,11 +94,11 @@ class _RatingBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: context.borderColor.withOpacity(0.8))),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+      Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 2),
-      Text(subtitle, style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+      Text(subtitle, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
       const SizedBox(height: 16),
       Center(child: RatingBar.builder(
         initialRating: rating, minRating: 0, itemCount: 5, itemSize: 44,
@@ -106,11 +107,11 @@ class _RatingBlock extends StatelessWidget {
       )),
       const SizedBox(height: 8),
       Center(child: Text(_ratingLabel(rating), style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700,
-        color: rating >= 4 ? AppColors.success : rating >= 2 ? AppColors.warning : AppColors.grey))),
+        color: rating >= 4 ? AppColors.success : rating >= 2 ? AppColors.warning : context.textMuted))),
       const SizedBox(height: 16),
       TextField(
         controller: commentCtrl, maxLines: 3,
-        decoration: InputDecoration(hintText: commentHint, hintStyle: const TextStyle(color: AppColors.grey, fontFamily: 'Nunito', fontSize: 14)),
+        decoration: InputDecoration(hintText: commentHint, hintStyle: TextStyle(color: context.textMuted, fontFamily: 'Nunito', fontSize: 14)),
         style: const TextStyle(fontFamily: 'Nunito', fontSize: 14),
       ),
     ]),

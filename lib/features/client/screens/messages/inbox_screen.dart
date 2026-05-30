@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
@@ -41,7 +42,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Messages'),
         leading: const BackButton(),
@@ -58,24 +59,24 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           : _error != null
               ? Center(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Text('Erreur de chargement', style: TextStyle(
-                      fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkSubtext)),
+                    Text('Erreur de chargement', style: TextStyle(
+                      fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
                     const SizedBox(height: 12),
                     ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
                   ]),
                 )
               : _conversations.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Text('💬', style: TextStyle(fontSize: 48)),
-                        SizedBox(height: 12),
+                        const Text('💬', style: TextStyle(fontSize: 48)),
+                        const SizedBox(height: 12),
                         Text('Aucune conversation', style: TextStyle(
                           fontFamily: 'Nunito', fontSize: 16,
-                          fontWeight: FontWeight.w700, color: AppColors.darkSubtext)),
-                        SizedBox(height: 6),
+                          fontWeight: FontWeight.w700, color: context.textSecondary)),
+                        const SizedBox(height: 6),
                         Text('Vos échanges avec les livreurs apparaîtront ici.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+                          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
                       ]),
                     )
                   : RefreshIndicator(
@@ -83,8 +84,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                       color: AppColors.primary,
                       child: ListView.separated(
                         itemCount: _conversations.length,
-                        separatorBuilder: (_, __) => const Divider(
-                          height: 1, indent: 72, color: AppColors.darkBorder),
+                        separatorBuilder: (_, __) => Divider(
+                          height: 1, indent: 72, color: context.borderColor),
                         itemBuilder: (_, i) => _ConversationTile(
                           conv: _conversations[i],
                           onTap: () => context.push('/chat/${_conversations[i].orderId}'),
@@ -124,12 +125,12 @@ class _ConversationTile extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Nunito', fontSize: 14,
               fontWeight: conv.unreadCount > 0 ? FontWeight.w800 : FontWeight.w600,
-              color: AppColors.darkText),
+              color: context.textPrimary),
             overflow: TextOverflow.ellipsis),
         ),
         const SizedBox(width: 8),
         Text(_formatTime(conv.lastMessageAt),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
       ]),
       subtitle: Row(children: [
         Expanded(
@@ -137,7 +138,7 @@ class _ConversationTile extends StatelessWidget {
             style: TextStyle(
               fontFamily: 'Nunito', fontSize: 13,
               fontWeight: conv.unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
-              color: conv.unreadCount > 0 ? AppColors.darkText : AppColors.darkSubtext),
+              color: conv.unreadCount > 0 ? context.textPrimary : context.textSecondary),
             overflow: TextOverflow.ellipsis,
             maxLines: 1),
         ),

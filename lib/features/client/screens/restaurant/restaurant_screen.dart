@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/cart_provider.dart';
@@ -132,7 +133,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
     final cart     = ref.watch(cartProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       floatingActionButton: cart.totalItems > 0
           ? _CartFab(cart: cart)
           : null,
@@ -239,7 +240,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
               // Bloc informations
               SliverToBoxAdapter(
                 child: Container(
-                  color: Colors.white,
+                  color: context.cardColor,
                   padding: EdgeInsets.fromLTRB(
                     20,
                     (pro.logoUrl != null && pro.logoUrl!.isNotEmpty) ? 12 : 20,
@@ -339,8 +340,8 @@ class _InfoSectionState extends State<_InfoSection> {
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(
           child: Text(pro.businessName,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 22,
-                fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 22,
+                fontWeight: FontWeight.w800, color: context.textPrimary)),
         ),
         const SizedBox(width: 8),
         Container(
@@ -362,8 +363,8 @@ class _InfoSectionState extends State<_InfoSection> {
         Text(pro.categoryEmoji, style: const TextStyle(fontSize: 14)),
         const SizedBox(width: 6),
         Text(_categoryLabel(pro.category),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-              color: AppColors.grey, fontWeight: FontWeight.w600)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              color: context.textMuted, fontWeight: FontWeight.w600)),
       ]),
       const SizedBox(height: 10),
       // Note + nombre d'avis
@@ -378,8 +379,8 @@ class _InfoSectionState extends State<_InfoSection> {
         const SizedBox(width: 6),
         Text('${(pro.avgRating ?? 0).toStringAsFixed(1)} '
             '(${pro.reviewCount} avis)',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-              color: AppColors.grey)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              color: context.textMuted)),
       ]),
       const SizedBox(height: 12),
       // Pills : délai + frais + distance
@@ -405,17 +406,17 @@ class _InfoSectionState extends State<_InfoSection> {
       if (pro.description != null && pro.description!.isNotEmpty) ...[
         const SizedBox(height: 10),
         Text(pro.description!,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              color: AppColors.grey, height: 1.5)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+              color: context.textMuted, height: 1.5)),
       ],
-      const Divider(height: 24, color: AppColors.lightBorder),
+      Divider(height: 24, color: context.borderColor),
       // Adresse
       if (pro.address != null) ...[
         _DetailRow(
           icon: Icons.location_on_rounded,
           child: Text(pro.address!,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: AppColors.nearBlack))),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                color: context.textPrimary))),
         const SizedBox(height: 10),
       ],
       // Téléphone (cliquable)
@@ -439,13 +440,13 @@ class _InfoSectionState extends State<_InfoSection> {
             icon: Icons.schedule_rounded,
             child: Row(children: [
               Expanded(child: Text(_todayHours,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                    color: AppColors.nearBlack))),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                    color: context.textPrimary))),
               Icon(
                 _hoursExpanded
                     ? Icons.keyboard_arrow_up_rounded
                     : Icons.keyboard_arrow_down_rounded,
-                color: AppColors.grey, size: 18),
+                color: context.textMuted, size: 18),
             ]),
           ),
         ),
@@ -455,7 +456,7 @@ class _InfoSectionState extends State<_InfoSection> {
             margin: const EdgeInsets.only(left: 30),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.offWhite,
+              color: context.bgColor,
               borderRadius: BorderRadius.circular(10)),
             child: Column(
               children: _dayLabels.entries.map((entry) {
@@ -481,12 +482,12 @@ class _InfoSectionState extends State<_InfoSection> {
                           fontWeight: isToday
                               ? FontWeight.w800 : FontWeight.w600,
                           color: isToday
-                              ? AppColors.primary : AppColors.grey))),
+                              ? AppColors.primary : context.textMuted))),
                     Text(label,
                       style: TextStyle(
                         fontFamily: 'Nunito', fontSize: 12,
                         color: isToday
-                            ? AppColors.nearBlack : AppColors.grey,
+                            ? context.textPrimary : context.textMuted,
                         fontWeight: isToday
                             ? FontWeight.w700 : FontWeight.w500)),
                   ]),
@@ -545,7 +546,7 @@ class _MenuTab extends ConsumerWidget {
             const SizedBox(height: 12),
             Text(e.toString(),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontFamily: 'Nunito', color: AppColors.grey)),
+              style: TextStyle(fontFamily: 'Nunito', color: context.textMuted)),
           ],
         ))),
       data: (_) {
@@ -569,16 +570,16 @@ class _MenuTab extends ConsumerWidget {
               ),
 
             if (filtered.isEmpty)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text('🍽️', style: TextStyle(fontSize: 48)),
-                    SizedBox(height: 12),
+                    const Text('🍽️', style: TextStyle(fontSize: 48)),
+                    const SizedBox(height: 12),
                     Text('Aucun produit disponible',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                          color: AppColors.grey)),
+                          color: context.textMuted)),
                   ]),
                 ),
               )
@@ -616,23 +617,23 @@ class _ReviewsTab extends StatelessWidget {
   Widget build(BuildContext context) => reviewsAsync.when(
     loading: () => const Center(
         child: CircularProgressIndicator(color: AppColors.primary)),
-    error:   (_, __) => const Center(
+    error:   (_, __) => Center(
         child: Text('Impossible de charger les avis.',
-          style: TextStyle(fontFamily: 'Nunito', color: AppColors.grey))),
+          style: TextStyle(fontFamily: 'Nunito', color: context.textMuted))),
     data: (reviews) {
       if (reviews.isEmpty) {
-        return const Center(child: Padding(
-          padding: EdgeInsets.all(32),
+        return Center(child: Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('⭐', style: TextStyle(fontSize: 56)),
-            SizedBox(height: 12),
+            const Text('⭐', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 12),
             Text('Aucun avis pour le moment',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-                  fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
-            SizedBox(height: 6),
+                  fontWeight: FontWeight.w700, color: context.textPrimary)),
+            const SizedBox(height: 6),
             Text('Soyez le premier à donner votre avis !',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: AppColors.grey)),
+                  color: context.textMuted)),
           ]),
         ));
       }
@@ -653,13 +654,13 @@ class _ReviewsTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.lightGrey)),
+              color: context.cardColor, borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: context.borderColor)),
             child: Row(children: [
               Column(children: [
                 Text((pro.avgRating ?? 0).toStringAsFixed(1),
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 40,
-                      fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 40,
+                      fontWeight: FontWeight.w900, color: context.textPrimary)),
                 RatingBarIndicator(
                   rating: pro.avgRating ?? 0,
                   itemBuilder: (_, __) =>
@@ -667,8 +668,8 @@ class _ReviewsTab extends StatelessWidget {
                   itemSize: 18, itemCount: 5),
                 const SizedBox(height: 4),
                 Text('${reviews.length} avis',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                      color: AppColors.grey)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                      color: context.textMuted)),
               ]),
               const SizedBox(width: 20),
               Expanded(
@@ -681,8 +682,8 @@ class _ReviewsTab extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(children: [
                         Text('$star',
-                          style: const TextStyle(fontFamily: 'Nunito',
-                              fontSize: 12, color: AppColors.grey)),
+                          style: TextStyle(fontFamily: 'Nunito',
+                              fontSize: 12, color: context.textMuted)),
                         const SizedBox(width: 4),
                         const Icon(Icons.star_rounded,
                             color: AppColors.yellow, size: 12),
@@ -691,7 +692,7 @@ class _ReviewsTab extends StatelessWidget {
                           borderRadius: BorderRadius.circular(3),
                           child: LinearProgressIndicator(
                             value: ratio,
-                            backgroundColor: AppColors.lightGrey,
+                            backgroundColor: context.borderColor,
                             valueColor: const AlwaysStoppedAnimation(
                                 AppColors.yellow),
                             minHeight: 6,
@@ -699,8 +700,8 @@ class _ReviewsTab extends StatelessWidget {
                         )),
                         const SizedBox(width: 6),
                         Text('$count',
-                          style: const TextStyle(fontFamily: 'Nunito',
-                              fontSize: 11, color: AppColors.grey)),
+                          style: TextStyle(fontFamily: 'Nunito',
+                              fontSize: 11, color: context.textMuted)),
                       ]),
                     );
                   }),
@@ -736,8 +737,8 @@ class _ReviewCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGrey)),
+        color: context.cardColor, borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.borderColor)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           CircleAvatar(
@@ -757,11 +758,11 @@ class _ReviewCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(review.clientName ?? 'Client anonyme',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                    fontWeight: FontWeight.w700, color: context.textPrimary)),
               Text(dateStr,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                    color: AppColors.grey)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    color: context.textMuted)),
             ],
           )),
           RatingBarIndicator(
@@ -773,8 +774,8 @@ class _ReviewCard extends StatelessWidget {
         if (review.comment != null && review.comment!.isNotEmpty) ...[
           const SizedBox(height: 10),
           Text(review.comment!,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: AppColors.nearBlack, height: 1.5)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                color: context.textPrimary, height: 1.5)),
         ],
         // Réponse du pro
         if (review.reply != null && review.reply!.isNotEmpty) ...[
@@ -888,8 +889,8 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+            color: context.cardColor, borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.borderColor.withOpacity(0.8))),
           child: Row(children: [
           // Vignette produit
           Stack(children: [
@@ -924,25 +925,25 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(product.localizedName('fr'),
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                      fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
                 if (product.localizedDescription('fr') != null &&
                     product.localizedDescription('fr')!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(product.localizedDescription('fr')!,
                     maxLines: 2, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                        color: AppColors.grey, height: 1.4)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                        color: context.textMuted, height: 1.4)),
                 ],
                 if (product.preparationTimeMin != null) ...[
                   const SizedBox(height: 4),
                   Row(children: [
-                    const Icon(Icons.timer_outlined,
-                        size: 11, color: AppColors.grey),
+                    Icon(Icons.timer_outlined,
+                        size: 11, color: context.textMuted),
                     const SizedBox(width: 3),
                     Text('${product.preparationTimeMin} min',
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                          color: AppColors.grey)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                          color: context.textMuted)),
                   ]),
                 ],
                 const SizedBox(height: 8),
@@ -971,10 +972,10 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
                           child: Container(
                             padding: const EdgeInsets.all(5),
                             decoration: BoxDecoration(
-                              color: AppColors.lightGrey,
+                              color: context.borderColor,
                               borderRadius: BorderRadius.circular(6)),
-                            child: const Icon(Icons.remove_rounded,
-                                size: 15, color: AppColors.nearBlack))),
+                            child: Icon(Icons.remove_rounded,
+                                size: 15, color: context.textPrimary))),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text('$qty',
@@ -1005,7 +1006,7 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
 class _ProductPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    width: 100, height: 100, color: AppColors.offWhite,
+    width: 100, height: 100, color: context.bgColor,
     child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 34))));
 }
 
@@ -1071,10 +1072,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
       Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           border: Border(bottom: BorderSide(
             color: overlapsContent || innerBoxIsScrolled
-                ? AppColors.lightBorder : Colors.transparent))),
+                ? context.borderColor : Colors.transparent))),
         child: TabBar(
           controller: tabController,
           labelStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
@@ -1111,7 +1112,7 @@ class _CatChipsDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
       Container(
-        color: AppColors.offWhite,
+        color: context.bgColor,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1126,13 +1127,13 @@ class _CatChipsDelegate extends SliverPersistentHeaderDelegate {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: sel ? AppColors.primary : Colors.white,
+                    color: sel ? AppColors.primary : context.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: sel ? AppColors.primary : AppColors.lightGrey)),
+                      color: sel ? AppColors.primary : context.borderColor)),
                   child: Text(label, style: TextStyle(
                     fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-                    color: sel ? Colors.white : AppColors.darkGrey)),
+                    color: sel ? Colors.white : context.textSecondary)),
                 ),
               );
             }).toList(),
@@ -1152,12 +1153,12 @@ class _InfoPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: AppColors.offWhite, borderRadius: BorderRadius.circular(10)),
+      color: context.bgColor, borderRadius: BorderRadius.circular(10)),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 14, color: AppColors.primary),
       const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-          fontWeight: FontWeight.w700, color: AppColors.darkGrey)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          fontWeight: FontWeight.w700, color: context.textSecondary)),
     ]),
   );
 }
@@ -1202,7 +1203,7 @@ class _ShimmerProductCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       height: 100,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: context.borderColor,
         borderRadius: BorderRadius.circular(14)));
   }
 }

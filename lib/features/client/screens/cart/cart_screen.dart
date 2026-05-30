@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/cart_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -13,7 +14,7 @@ class CartScreen extends ConsumerWidget {
     final cart = ref.watch(cartProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Mon Panier'),
         leading: const BackButton(),
@@ -25,9 +26,9 @@ class CartScreen extends ConsumerWidget {
         ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Text('🛒', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
-            const Text('Votre panier est vide', style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            Text('Votre panier est vide', style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w800, color: context.textPrimary)),
             const SizedBox(height: 8),
-            const Text('Ajoutez des produits depuis un établissement', style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey), textAlign: TextAlign.center),
+            Text('Ajoutez des produits depuis un établissement', style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted), textAlign: TextAlign.center),
             const SizedBox(height: 24),
             ElevatedButton.icon(onPressed: () => context.go('/home'), icon: const Icon(Icons.explore_rounded), label: const Text('Explorer'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(180, 48))),
@@ -37,7 +38,7 @@ class CartScreen extends ConsumerWidget {
               // Items
               ...cart.items.map((item) => Container(
                 margin: const EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+                decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor.withOpacity(0.8))),
                 child: Row(children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(13)),
@@ -46,24 +47,24 @@ class CartScreen extends ConsumerWidget {
                           item.product.imageUrl!,
                           width: 80, height: 80, fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            width: 80, height: 80, color: AppColors.offWhite,
+                            width: 80, height: 80, color: context.bgColor,
                             child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 30)))),
                         )
-                      : Container(width: 80, height: 80, color: AppColors.offWhite, child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 30)))),
+                      : Container(width: 80, height: 80, color: context.bgColor, child: const Center(child: Text('🍽️', style: TextStyle(fontSize: 30)))),
                   ),
                   Expanded(child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(item.product.localizedName('fr'), style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.nearBlack), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(item.product.localizedName('fr'), style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
                       Text('${item.product.price.toStringAsFixed(0)} F / unité',
-                        style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                        style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
                       const SizedBox(height: 8),
                       Row(children: [
                         // Qty controls
                         Row(children: [
                           GestureDetector(onTap: () => ref.read(cartProvider.notifier).updateQuantity(item.product.id, item.quantity - 1),
-                            child: Container(width: 28, height: 28, decoration: BoxDecoration(color: AppColors.lightGrey, borderRadius: BorderRadius.circular(8)),
+                            child: Container(width: 28, height: 28, decoration: BoxDecoration(color: context.borderColor, borderRadius: BorderRadius.circular(8)),
                               child: const Icon(Icons.remove_rounded, size: 16))),
                           Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: Text('${item.quantity}', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15))),
@@ -90,7 +91,7 @@ class CartScreen extends ConsumerWidget {
               // Summary
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.lightGrey.withOpacity(0.8))),
+                decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor.withOpacity(0.8))),
                 child: Column(children: [
                   _SummaryRow(label: 'Sous-total', value: '${cart.subtotal.toStringAsFixed(0)} F'),
                   const SizedBox(height: 8),
@@ -116,10 +117,10 @@ class CartScreen extends ConsumerWidget {
                     isBold: true,
                   ),
                   const SizedBox(height: 4),
-                  const Align(
+                  Align(
                     alignment: Alignment.centerRight,
                     child: Text('+ frais de livraison',
-                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
                   ),
                 ]),
               ),
@@ -128,7 +129,7 @@ class CartScreen extends ConsumerWidget {
             // Checkout button
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -4))]),
+              decoration: BoxDecoration(color: context.cardColor, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -4))]),
               child: SafeArea(top: false, child: ElevatedButton(
                 onPressed: () => context.push('/checkout'),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -201,14 +202,14 @@ class _PromoCodeRowState extends ConsumerState<_PromoCodeRow> {
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
                   fontWeight: FontWeight.w900, color: AppColors.success)),
             Text('-${cart.promoDiscount.toStringAsFixed(0)} F sur votre commande',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkGrey)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ])),
           IconButton(
             onPressed: () {
               ref.read(cartProvider.notifier).clearPromo();
               _ctrl.clear();
             },
-            icon: const Icon(Icons.close_rounded, color: AppColors.grey, size: 18),
+            icon: Icon(Icons.close_rounded, color: context.textMuted, size: 18),
             tooltip: 'Retirer le code',
           ),
         ]),
@@ -218,9 +219,9 @@ class _PromoCodeRowState extends ConsumerState<_PromoCodeRow> {
     // Sinon : input + bouton Appliquer.
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+        border: Border.all(color: context.borderColor.withOpacity(0.8)),
       ),
       child: Row(children: [
         const SizedBox(width: 16),
@@ -254,9 +255,9 @@ class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.label, required this.value, this.isBold = false, this.valueColor});
   @override
   Widget build(BuildContext context) => Row(children: [
-    Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500)),
+    Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500)),
     const Spacer(),
     Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: isBold ? 16 : 14, fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-      color: valueColor ?? (isBold ? AppColors.nearBlack : AppColors.darkGrey))),
+      color: valueColor ?? (isBold ? context.textPrimary : context.textSecondary))),
   ]);
 }

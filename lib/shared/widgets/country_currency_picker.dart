@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 /// Map countryCode ISO-2 -> devise ISO-3. Couvre principalement zone CFA
 /// + grandes devises internationales. Pour les autres pays : fallback USD.
@@ -54,21 +55,19 @@ Future<void> showCountryCurrencyPicker(
   required String currentCountryCode,
   bool? darkTheme,
 }) async {
-  final isDark = darkTheme ?? (Theme.of(context).brightness == Brightness.dark);
-
   showCountryPicker(
     context: context,
     showPhoneCode: false,
     favorite: const ['BJ', 'CI', 'SN', 'TG', 'FR', 'CA'], // épinglés en haut
     countryListTheme: CountryListThemeData(
-      backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+      backgroundColor: context.cardColor,
       textStyle: TextStyle(
         fontFamily: 'Nunito', fontSize: 14,
-        color: isDark ? AppColors.darkText : AppColors.nearBlack,
+        color: context.textPrimary,
       ),
       searchTextStyle: TextStyle(
         fontFamily: 'Nunito', fontSize: 14,
-        color: isDark ? AppColors.darkText : AppColors.nearBlack,
+        color: context.textPrimary,
       ),
       bottomSheetHeight: 500,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -76,7 +75,7 @@ Future<void> showCountryCurrencyPicker(
         labelText: 'Rechercher',
         hintText: 'Tapez le nom du pays',
         prefixIcon: const Icon(Icons.search),
-        labelStyle: TextStyle(color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext),
+        labelStyle: TextStyle(color: context.textSecondary),
       ),
     ),
     onSelect: (Country country) async {

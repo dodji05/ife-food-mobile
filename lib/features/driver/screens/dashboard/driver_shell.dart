@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/driver_provider.dart';
 
 class DriverShell extends ConsumerWidget {
@@ -33,8 +34,8 @@ class DriverShell extends ConsumerWidget {
         : null,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.driverBg,
-          border: Border(top: BorderSide(color: AppColors.driverBorder))),
+          color: context.bgColor,
+          border: Border(top: BorderSide(color: context.borderColor))),
         child: SafeArea(child: SizedBox(height: 60, child: Row(children: [
           _DNavItem(Icons.dashboard_rounded,               'Dashboard', idx == 0, () => context.go('/driver/dashboard')),
           _DNavItem(Icons.map_rounded,                     'Missions',  idx == 1, () => context.go('/driver/missions')),
@@ -52,10 +53,10 @@ class _DNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(child: InkWell(onTap: onTap, child: Column(
     mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, color: sel ? AppColors.driverGreen : AppColors.darkMuted, size: 22),
+      Icon(icon, color: sel ? AppColors.driverGreen : context.textMuted, size: 22),
       const SizedBox(height: 2),
       Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
         fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-        color: sel ? AppColors.driverGreen : AppColors.darkMuted)),
+        color: sel ? AppColors.driverGreen : context.textMuted)),
     ])));
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
 import '../../providers/cart_provider.dart';
 
@@ -51,7 +52,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
   Widget build(BuildContext context) {
     final orders = ref.watch(ordersProvider);
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Mes commandes'),
         bottom: TabBar(
@@ -60,7 +61,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
           tabAlignment: TabAlignment.start,
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.darkGrey,
+          unselectedLabelColor: context.textSecondary,
           labelStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13),
           unselectedLabelStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600, fontSize: 13),
           tabs: orders.maybeWhen(
@@ -104,12 +105,12 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const Text('📦', style: TextStyle(fontSize: 56)),
       const SizedBox(height: 12),
-      const Text('Aucune commande',
+      Text('Aucune commande',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 8),
-      const Text('Vos commandes apparaîtront ici',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey)),
+      Text('Vos commandes apparaîtront ici',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted)),
       const SizedBox(height: 24),
       ElevatedButton.icon(
         onPressed: () => context.go('/home'),
@@ -125,11 +126,11 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(_iconForEmptyFilter(f), size: 56, color: AppColors.grey),
+        Icon(_iconForEmptyFilter(f), size: 56, color: context.textMuted),
         const SizedBox(height: 12),
         Text('Aucune commande ${f.label.toLowerCase()}',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+              fontWeight: FontWeight.w700, color: context.textPrimary)),
       ]),
     ),
   );
@@ -216,9 +217,9 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+          border: Border.all(color: context.borderColor.withOpacity(0.8)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -227,7 +228,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
               width: 44, height: 44,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: AppColors.lightGrey,
+                color: context.borderColor,
                 borderRadius: BorderRadius.circular(10),
                 image: order.professionalLogoUrl != null
                     ? DecorationImage(
@@ -236,15 +237,15 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                     : null,
               ),
               child: order.professionalLogoUrl == null
-                  ? const Icon(Icons.storefront_rounded, color: AppColors.grey, size: 22)
+                  ? Icon(Icons.storefront_rounded, color: context.textMuted, size: 22)
                   : null,
             ),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text(
                   order.professionalName.isNotEmpty ? order.professionalName : 'Restaurant',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                      fontWeight: FontWeight.w800, color: AppColors.nearBlack))),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                      fontWeight: FontWeight.w800, color: context.textPrimary))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: _statusColor.withOpacity(0.12),
@@ -257,11 +258,11 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
               const SizedBox(height: 4),
               Text(
                 '${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.totalAmount.toStringAsFixed(0)} F',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
               const SizedBox(height: 2),
               Text(
                 '${order.createdAt.day.toString().padLeft(2, '0')}/${order.createdAt.month.toString().padLeft(2, '0')}/${order.createdAt.year}  ${order.createdAt.hour.toString().padLeft(2, '0')}h${order.createdAt.minute.toString().padLeft(2, '0')}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
             ])),
           ]),
           const SizedBox(height: 10),

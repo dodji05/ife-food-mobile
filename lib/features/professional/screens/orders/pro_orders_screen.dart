@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/services/pro_socket_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../providers/pro_provider.dart';
@@ -77,7 +78,7 @@ class _State extends ConsumerState<ProOrdersScreen> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.darkBg,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
       title: const Text('Commandes'),
       actions: [
@@ -132,16 +133,16 @@ class _OrdersList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(liveOrdersProvider(status));
     return RefreshIndicator(
-      color: AppColors.primary, backgroundColor: AppColors.darkCard,
+      color: AppColors.primary, backgroundColor: context.cardColor,
       onRefresh: () async => ref.invalidate(liveOrdersProvider(status)),
       child: orders.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (e, _) => Center(child: Text(e.toString(), style: const TextStyle(color: AppColors.darkSubtext))),
+        error: (e, _) => Center(child: Text(e.toString(), style: TextStyle(color: context.textSecondary))),
         data: (list) => list.isEmpty
           ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Text('📭', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 12),
-              Text('Aucune commande ${_statusLabel(status).toLowerCase()}', style: const TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              Text('Aucune commande ${_statusLabel(status).toLowerCase()}', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: context.textPrimary)),
             ]))
           : ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -167,9 +168,9 @@ class _OrderCard extends ConsumerWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: isNew ? AppColors.accent.withOpacity(0.08) : AppColors.darkCard,
+          color: isNew ? AppColors.accent.withOpacity(0.08) : context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isNew ? AppColors.accent.withOpacity(0.5) : AppColors.darkBorder, width: isNew ? 2 : 1),
+          border: Border.all(color: isNew ? AppColors.accent.withOpacity(0.5) : context.borderColor, width: isNew ? 2 : 1),
         ),
         child: Column(children: [
           Padding(
@@ -177,7 +178,7 @@ class _OrderCard extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text('#${order.id.substring(0, 8).toUpperCase()}',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.darkSubtext))),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w800, color: context.textSecondary))),
                 _StatusBadge(order.status),
               ]),
               const SizedBox(height: 8),
@@ -188,7 +189,7 @@ class _OrderCard extends ConsumerWidget {
                 Expanded(child: Text(
                   order.clientName,
                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary),
                 )),
                 if (order.clientPhone != null && order.clientPhone!.isNotEmpty)
                   _CallButton(phone: order.clientPhone!),
@@ -202,7 +203,7 @@ class _OrderCard extends ConsumerWidget {
               Row(children: [
                 Text(
                   '${order.items.length} article${order.items.length > 1 ? 's' : ''} • ${order.createdAt.hour.toString().padLeft(2,'0')}h${order.createdAt.minute.toString().padLeft(2,'0')}',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary),
                 ),
                 if (order.estimatedDeliveryMin != null) ...[
                   const SizedBox(width: 8),
@@ -247,7 +248,7 @@ class _OrderCard extends ConsumerWidget {
           ),
           // Quick action buttons for new orders
           if (isNew) Container(
-            decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.darkBorder))),
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: context.borderColor))),
             child: Row(children: [
               Expanded(child: TextButton.icon(
                 onPressed: () => _showRejectDialog(context, ref, order),
@@ -265,7 +266,7 @@ class _OrderCard extends ConsumerWidget {
               )),
             ]),
           ) else if (order.status == 'ACCEPTED') Container(
-            decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.darkBorder))),
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: context.borderColor))),
             child: TextButton.icon(
               onPressed: () async {
                 await ref.read(proProvider.notifier).markInPreparation(order.id);
@@ -275,7 +276,7 @@ class _OrderCard extends ConsumerWidget {
               label: const Text('Démarrer la préparation', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
             ),
           ) else if (order.status == 'IN_PREPARATION') Container(
-            decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.darkBorder))),
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: context.borderColor))),
             child: TextButton.icon(
               onPressed: () async {
                 await ref.read(proProvider.notifier).markReady(order.id);

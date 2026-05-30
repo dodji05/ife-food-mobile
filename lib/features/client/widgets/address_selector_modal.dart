@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../shared/models/user_address.dart';
 import '../providers/addresses_provider.dart';
 
@@ -22,7 +23,7 @@ Future<UserAddress?> showAddressSelector(BuildContext context) {
   return showModalBottomSheet<UserAddress>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -44,22 +45,26 @@ class _Sheet extends ConsumerWidget {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.75,
       ),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         // Handle drag
         Container(
           width: 40, height: 4,
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: context.borderColor,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
         const SizedBox(height: 16),
         Row(children: [
-          const Expanded(child: Text(
+          Expanded(child: Text(
             'Choisir l\'adresse de livraison',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                fontWeight: FontWeight.w900, color: AppColors.nearBlack),
+                fontWeight: FontWeight.w900, color: context.textPrimary),
           )),
           IconButton(
             onPressed: () => Navigator.pop(context),
@@ -80,7 +85,7 @@ class _Sheet extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(e.toString().replaceAll('Exception: ', ''),
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
             ]),
           ),
           data: (list) => list.isEmpty
@@ -134,12 +139,12 @@ class _AddressOption extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.offWhite,
+        color: context.bgColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: address.isDefault
               ? AppColors.primary.withOpacity(0.4)
-              : Colors.grey.shade200,
+              : context.borderColor,
         ),
       ),
       child: Row(children: [
@@ -156,8 +161,8 @@ class _AddressOption extends StatelessWidget {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Text(address.label,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                  fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                  fontWeight: FontWeight.w800, color: context.textPrimary)),
             if (address.isDefault) ...[
               const SizedBox(width: 6),
               const Icon(Icons.star_rounded, color: AppColors.primary, size: 14),
@@ -166,9 +171,9 @@ class _AddressOption extends StatelessWidget {
           const SizedBox(height: 2),
           Text('${address.address}, ${address.city}',
             maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         ])),
-        const Icon(Icons.chevron_right_rounded, color: AppColors.lightSubtext),
+        Icon(Icons.chevron_right_rounded, color: context.textSecondary),
       ]),
     ),
   );
@@ -181,15 +186,15 @@ class _EmptyInline extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.all(24),
     child: Column(children: [
-      const Icon(Icons.location_off_rounded, size: 48, color: AppColors.lightSubtext),
+      Icon(Icons.location_off_rounded, size: 48, color: context.textSecondary),
       const SizedBox(height: 12),
-      const Text('Aucune adresse sauvegardée',
+      Text('Aucune adresse sauvegardée',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-            fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+            fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 4),
-      const Text('Ajoutez votre 1ère adresse pour passer commande.',
+      Text('Ajoutez votre 1ère adresse pour passer commande.',
         textAlign: TextAlign.center,
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
     ]),
   );
 }

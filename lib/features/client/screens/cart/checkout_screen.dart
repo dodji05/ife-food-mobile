@@ -10,6 +10,7 @@ import '../../widgets/address_selector_modal.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/user_address.dart';
 
@@ -336,7 +337,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final effectiveAddr = _manuallySelectedAddress ?? defaultAddr;
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Confirmer la commande'), leading: const BackButton()),
       body: ListView(padding: const EdgeInsets.all(16), children: [
 
@@ -378,8 +379,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 icon: Icon(_showManualInput ? Icons.close_rounded : Icons.edit_location_alt_rounded, size: 16),
                 label: const Text('Saisir manuellement', style: TextStyle(fontFamily: 'Nunito', fontSize: 12)),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.grey,
-                  side: BorderSide(color: _showManualInput ? AppColors.primary : AppColors.lightGrey),
+                  foregroundColor: context.textMuted,
+                  side: BorderSide(color: _showManualInput ? AppColors.primary : context.borderColor),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               )),
@@ -482,7 +483,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Text(item.product.localizedName('fr'),
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 14)),
                 Text('${item.product.price.toStringAsFixed(0)} F / unité',
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
               ])),
               Text('${item.total.toStringAsFixed(0)} F',
                 style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700)),
@@ -503,8 +504,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             const _SummaryRow(label: 'Livraison', value: '…')
           else if (_feeError)
             Row(children: [
-              const Text('Livraison',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey)),
+              Text('Livraison',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted)),
               const Spacer(),
               const Text('Erreur de calcul',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.error)),
@@ -546,10 +547,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: _selectedPayment == pm['id'] ? AppColors.primary.withOpacity(0.08) : AppColors.offWhite,
+                  color: _selectedPayment == pm['id'] ? AppColors.primary.withOpacity(0.08) : context.bgColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _selectedPayment == pm['id'] ? AppColors.primary : AppColors.lightGrey,
+                    color: _selectedPayment == pm['id'] ? AppColors.primary : context.borderColor,
                     width: _selectedPayment == pm['id'] ? 2 : 1,
                   ),
                 ),
@@ -558,7 +559,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(pm['label']!, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700)),
-                    Text(pm['sub']!, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+                    Text(pm['sub']!, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
                   ])),
                   if (_selectedPayment == pm['id'])
                     const Icon(Icons.check_circle_rounded, color: AppColors.primary),
@@ -608,15 +609,15 @@ class _DeliveryTypeCard extends StatelessWidget {
       duration: const Duration(milliseconds: 150),
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: selected ? AppColors.primary : Colors.white,
+        color: selected ? AppColors.primary : context.cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: selected ? AppColors.primary : AppColors.lightGrey),
+        border: Border.all(color: selected ? AppColors.primary : context.borderColor),
       ),
       child: Column(children: [
-        Icon(icon, size: 20, color: selected ? Colors.white : AppColors.nearBlack),
+        Icon(icon, size: 20, color: selected ? Colors.white : context.textPrimary),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : AppColors.nearBlack)),
+            color: selected ? Colors.white : context.textPrimary)),
       ]),
     ),
   );
@@ -639,17 +640,17 @@ class _DateTimePicker extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: active ? AppColors.primary : AppColors.lightGrey),
+        border: Border.all(color: active ? AppColors.primary : context.borderColor),
         color: !enabled
-          ? AppColors.lightGrey.withOpacity(0.3)
-          : active ? AppColors.primary.withOpacity(0.06) : AppColors.offWhite,
+          ? context.borderColor.withOpacity(0.3)
+          : active ? AppColors.primary.withOpacity(0.06) : context.bgColor,
       ),
       child: Row(children: [
-        Icon(icon, size: 16, color: active ? AppColors.primary : AppColors.grey),
+        Icon(icon, size: 16, color: active ? AppColors.primary : context.textMuted),
         const SizedBox(width: 8),
         Expanded(child: Text(label,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-            color: active ? AppColors.nearBlack : AppColors.lightSubtext),
+            color: active ? context.textPrimary : context.textSecondary),
         )),
       ]),
     ),
@@ -669,9 +670,9 @@ class _AddressTile extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.offWhite,
+        color: context.bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGrey),
+        border: Border.all(color: context.borderColor),
       ),
       child: Row(children: [
         if (address == null) ...[
@@ -682,9 +683,9 @@ class _AddressTile extends StatelessWidget {
             child: const Icon(Icons.add_location_alt_rounded, color: AppColors.danger, size: 20),
           ),
           const SizedBox(width: 12),
-          const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Aucune adresse', style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
-            Text('Toucher pour ajouter une adresse de livraison', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Aucune adresse', style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
+            Text('Toucher pour ajouter une adresse de livraison', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ])),
         ] else ...[
           Container(
@@ -695,13 +696,13 @@ class _AddressTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(address!.label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            Text(address!.label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
             const SizedBox(height: 2),
             Text('${address!.address}, ${address!.city}', maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ])),
         ],
-        const Icon(Icons.chevron_right_rounded, color: AppColors.lightSubtext),
+        Icon(Icons.chevron_right_rounded, color: context.textSecondary),
       ]),
     ),
   );
@@ -716,12 +717,12 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+      border: Border.all(color: context.borderColor.withOpacity(0.8)),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+      Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 12),
       child,
     ]),
@@ -737,11 +738,11 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(children: [
     Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-        color: AppColors.grey, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500)),
+        color: context.textMuted, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500)),
     const Spacer(),
     Text(value, style: TextStyle(fontFamily: 'Nunito',
         fontSize: isBold ? 16 : 14,
         fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-        color: valueColor ?? (isBold ? AppColors.nearBlack : AppColors.darkGrey))),
+        color: valueColor ?? (isBold ? context.textPrimary : context.textSecondary))),
   ]);
 }

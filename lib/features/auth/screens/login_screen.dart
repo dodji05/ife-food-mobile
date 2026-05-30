@@ -20,6 +20,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/route_params.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -97,13 +98,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       textStyle: const TextStyle(
           fontFamily: 'Nunito', fontSize: 28, fontWeight: FontWeight.w900),
       decoration: BoxDecoration(
-          color: AppColors.lightBg,
+          color: context.bgColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.lightBorder, width: 1.5)),
+          border: Border.all(color: context.borderColor, width: 1.5)),
     );
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bgColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
@@ -127,25 +128,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 28),
 
-              const Text('Bon retour !', style: TextStyle(
+              Text('Bon retour !', style: TextStyle(
                   fontFamily: 'Nunito', fontSize: 28,
-                  fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+                  fontWeight: FontWeight.w900, color: context.textPrimary)),
               const SizedBox(height: 8),
 
               // Numéro de téléphone affiché
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.lightBg,
+                  color: context.bgColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.lightBorder),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.phone_rounded, size: 16, color: AppColors.lightSubtext),
+                  Icon(Icons.phone_rounded, size: 16, color: context.textSecondary),
                   const SizedBox(width: 8),
-                  Text(_phone, style: const TextStyle(
+                  Text(_phone, style: TextStyle(
                       fontFamily: 'Nunito', fontSize: 16,
-                      fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
                 ]),
               ),
               const SizedBox(height: 6),
@@ -154,15 +155,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                child: const Text('Utiliser un autre compte',
+                child: Text('Utiliser un autre compte',
                   style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                      fontWeight: FontWeight.w600, color: AppColors.lightSubtext)),
+                      fontWeight: FontWeight.w600, color: context.textSecondary)),
               ),
               const SizedBox(height: 36),
 
-              const Text('Entrez votre code PIN', style: TextStyle(
+              Text('Entrez votre code PIN', style: TextStyle(
                   fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                  fontWeight: FontWeight.w700, color: context.textPrimary)),
               const SizedBox(height: 20),
 
               // Saisie PIN

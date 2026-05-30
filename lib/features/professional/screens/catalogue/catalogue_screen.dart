@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/pro_provider.dart';
 
@@ -24,13 +25,13 @@ class CatalogueScreen extends ConsumerWidget {
     final commissionRate  = ref.watch(proProvider).professional?.commissionRate;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Mon catalogue'),
         actions: [
           IconButton(
             onPressed: () => context.push('/pro/categories'),
-            icon: const Icon(Icons.folder_outlined, color: AppColors.darkText),
+            icon: Icon(Icons.folder_outlined, color: context.textPrimary),
             tooltip: 'Gérer les catégories',
           ),
           IconButton(
@@ -38,7 +39,7 @@ class CatalogueScreen extends ConsumerWidget {
               ref.invalidate(productsProvider);
               ref.invalidate(categoriesProvider);
             },
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.darkText),
+            icon: Icon(Icons.refresh_rounded, color: context.textPrimary),
             tooltip: 'Actualiser',
           ),
         ],
@@ -163,9 +164,9 @@ class _GroupedCatalogueState extends State<_GroupedCatalogue> {
                 ],
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900,
-                    color: AppColors.darkText, letterSpacing: 0.2,
+                    color: context.textPrimary, letterSpacing: 0.2,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -186,7 +187,7 @@ class _GroupedCatalogueState extends State<_GroupedCatalogue> {
                 const Spacer(),
                 Icon(
                   isCollapsed ? Icons.expand_more_rounded : Icons.expand_less_rounded,
-                  color: AppColors.darkSubtext, size: 22,
+                  color: context.textSecondary, size: 22,
                 ),
               ]),
             ),
@@ -236,15 +237,15 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.cardColor,
         title: Text('Supprimer "${widget.product.localizedName('fr')}" ?',
-          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: AppColors.darkText, fontSize: 16)),
-        content: const Text('Cette action est irréversible. Le produit sera retiré de votre catalogue.',
-          style: TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext, fontSize: 14)),
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: context.textPrimary, fontSize: 16)),
+        content: Text('Cette action est irréversible. Le produit sera retiré de votre catalogue.',
+          style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary, fontSize: 14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+            child: Text('Annuler', style: TextStyle(color: context.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -285,9 +286,9 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: context.borderColor),
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── Thumbnail ────────────────────────────────────────────────────
@@ -300,17 +301,17 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
                     imageUrl: p.imageUrl!,
                     fit: BoxFit.cover,
                     placeholder: (_, __) => Container(
-                      color: AppColors.darkBg,
-                      child: const Icon(Icons.image_rounded, color: AppColors.darkMuted, size: 24),
+                      color: context.bgColor,
+                      child: Icon(Icons.image_rounded, color: context.textMuted, size: 24),
                     ),
                     errorWidget: (_, __, ___) => Container(
-                      color: AppColors.darkBg,
-                      child: const Icon(Icons.broken_image_rounded, color: AppColors.darkMuted, size: 24),
+                      color: context.bgColor,
+                      child: Icon(Icons.broken_image_rounded, color: context.textMuted, size: 24),
                     ),
                   )
                 : Container(
-                    color: AppColors.darkBg,
-                    child: const Icon(Icons.fastfood_rounded, color: AppColors.darkMuted, size: 28),
+                    color: context.bgColor,
+                    child: Icon(Icons.fastfood_rounded, color: context.textMuted, size: 28),
                   ),
           ),
         ),
@@ -323,7 +324,7 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
               maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800,
-                color: unavailable ? AppColors.darkMuted : AppColors.darkText,
+                color: unavailable ? context.textMuted : context.textPrimary,
                 decoration: unavailable ? TextDecoration.lineThrough : null,
               ),
             )),
@@ -338,7 +339,7 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
             Text(
               p.localizedDescription('fr') ?? '',
               maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext, height: 1.3),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, height: 1.3),
             ),
           const SizedBox(height: 6),
           Row(children: [
@@ -347,7 +348,7 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
             if (p.stock != null) ...[
               const SizedBox(width: 10),
               Text('Stock : ${p.stock}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
             ],
           ]),
         ])),
@@ -364,20 +365,20 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
             ),
           ),
           PopupMenuButton<String>(
-            color: AppColors.darkCard,
-            icon: const Icon(Icons.more_vert_rounded, color: AppColors.darkSubtext, size: 20),
+            color: context.cardColor,
+            icon: Icon(Icons.more_vert_rounded, color: context.textSecondary, size: 20),
             onSelected: (v) {
               if (v == 'edit') _edit();
               if (v == 'delete') _delete();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
-                child: Row(children: [
-                  Icon(Icons.edit_rounded, size: 16, color: AppColors.darkText),
-                  SizedBox(width: 8),
-                  Text('Modifier', style: TextStyle(fontFamily: 'Nunito', color: AppColors.darkText)),
-                ]),
+                child: Builder(builder: (ctx) => Row(children: [
+                  Icon(Icons.edit_rounded, size: 16, color: ctx.textPrimary),
+                  const SizedBox(width: 8),
+                  Text('Modifier', style: TextStyle(fontFamily: 'Nunito', color: ctx.textPrimary)),
+                ])),
               ),
               const PopupMenuItem(
                 value: 'delete',
@@ -402,15 +403,15 @@ class _EmptyState extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.restaurant_menu_rounded, size: 64, color: AppColors.darkMuted),
+        Icon(Icons.restaurant_menu_rounded, size: 64, color: context.textMuted),
         const SizedBox(height: 16),
-        const Text('Aucun produit dans votre catalogue',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text('Aucun produit dans votre catalogue',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Ajoutez votre premier produit pour commencer à recevoir des commandes.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.5),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5),
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
@@ -436,12 +437,12 @@ class _ErrorState extends StatelessWidget {
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         const Icon(Icons.cloud_off_rounded, size: 56, color: AppColors.danger),
         const SizedBox(height: 12),
-        const Text('Impossible de charger le catalogue',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text('Impossible de charger le catalogue',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 6),
         Text(message.replaceAll('Exception: ', ''),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRetry,

@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/product.dart';
 import '../../providers/pro_provider.dart';
 
@@ -33,7 +34,7 @@ class _State extends ConsumerState<ManageCategoriesScreen> {
     final asyncCats = ref.watch(categoriesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Gérer les catégories'),
         actions: [
@@ -169,15 +170,15 @@ class _State extends ConsumerState<ManageCategoriesScreen> {
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) {
         bool busy = false;
         return AlertDialog(
-          backgroundColor: AppColors.darkCard,
+          backgroundColor: ctx.cardColor,
           title: Text(title,
-            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: AppColors.darkText, fontSize: 16)),
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: ctx.textPrimary, fontSize: 16)),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(
               controller: nameCtrl,
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(hintText: 'Nom de la catégorie'),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: ctx.textPrimary),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -187,13 +188,13 @@ class _State extends ConsumerState<ManageCategoriesScreen> {
                 hintText: 'Emoji (optionnel) — ex: 🥗',
                 counterText: '',
               ),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, color: AppColors.darkText),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: ctx.textPrimary),
             ),
           ]),
           actions: [
             TextButton(
               onPressed: busy ? null : () => Navigator.pop(ctx, false),
-              child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+              child: Text('Annuler', style: TextStyle(color: ctx.textSecondary)),
             ),
             ElevatedButton(
               onPressed: busy ? null : () async {
@@ -229,18 +230,18 @@ class _State extends ConsumerState<ManageCategoriesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.cardColor,
         title: Text('Supprimer "${cat.localizedName('fr')}" ?',
-          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: AppColors.darkText, fontSize: 16)),
-        content: const Text(
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: context.textPrimary, fontSize: 16)),
+        content: Text(
           'Les produits dans cette catégorie ne seront PAS supprimés, '
           'ils apparaîtront sous "Sans catégorie" dans le catalogue.',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.4),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+            child: Text('Annuler', style: TextStyle(color: context.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -288,16 +289,16 @@ class _CategoryTile extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppColors.darkBorder),
+      border: Border.all(color: context.borderColor),
     ),
     child: Row(children: [
       // Icône drag : indicateur visuel uniquement — ReorderableListView gère
       // le drag par long-press n'importe où sur la tile (par défaut Flutter).
-      const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6),
-        child: Icon(Icons.drag_indicator_rounded, color: AppColors.darkMuted, size: 22),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Icon(Icons.drag_indicator_rounded, color: context.textMuted, size: 22),
       ),
       const SizedBox(width: 6),
       Container(
@@ -316,14 +317,14 @@ class _CategoryTile extends StatelessWidget {
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(category.localizedName('fr'),
           maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary)),
         Text('Ordre : ${category.sortOrder}',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
       ])),
       IconButton(
         onPressed: onRename,
         tooltip: 'Modifier',
-        icon: const Icon(Icons.edit_outlined, color: AppColors.darkSubtext, size: 20),
+        icon: Icon(Icons.edit_outlined, color: context.textSecondary, size: 20),
       ),
       IconButton(
         onPressed: onDelete,
@@ -340,16 +341,16 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
-        Icon(Icons.folder_outlined, size: 64, color: AppColors.darkMuted),
-        SizedBox(height: 16),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.folder_outlined, size: 64, color: context.textMuted),
+        const SizedBox(height: 16),
         Text('Aucune catégorie',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
-        SizedBox(height: 6),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
+        const SizedBox(height: 6),
         Text(
           'Créez des catégories pour grouper vos produits dans le catalogue.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.5),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5),
         ),
       ]),
     ),
@@ -369,7 +370,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: 12),
         Text(message.replaceAll('Exception: ', ''),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRetry,

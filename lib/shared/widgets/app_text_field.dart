@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -23,7 +23,7 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     if (label != null) Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(label!, style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.darkGrey)),
+      child: Text(label!, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: context.textSecondary)),
     ),
     TextField(
       controller: controller, obscureText: obscure, autofocus: autofocus,
@@ -32,8 +32,8 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         errorText: error,
-        prefixIcon: prefix != null ? Icon(prefix, color: AppColors.grey, size: 20) : null,
-        suffixIcon: suffix != null ? IconButton(icon: Icon(suffix, color: AppColors.grey, size: 20), onPressed: onSuffixTap) : null,
+        prefixIcon: prefix != null ? Icon(prefix, color: context.textMuted, size: 20) : null,
+        suffixIcon: suffix != null ? IconButton(icon: Icon(suffix, color: context.textMuted, size: 20), onPressed: onSuffixTap) : null,
       ),
     ),
   ]);

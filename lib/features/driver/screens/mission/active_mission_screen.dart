@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/driver_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/mission.dart';
 
 class ActiveMissionScreen extends ConsumerStatefulWidget {
@@ -123,13 +124,13 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
 
     if (missions.isEmpty) {
       return Scaffold(
-        backgroundColor: AppColors.darkBg,
+        backgroundColor: context.bgColor,
         body: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           const Text('📭', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 16),
-          const Text('Aucune mission active', style: TextStyle(
+          Text('Aucune mission active', style: TextStyle(
               fontFamily: 'Nunito', fontSize: 20,
-              fontWeight: FontWeight.w800, color: AppColors.darkText)),
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => context.go('/driver/dashboard'),
@@ -141,7 +142,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     // FIX: selectedMission peut être null même si missions n'est pas vide
     if (mission == null) {
       return Scaffold(
-        backgroundColor: AppColors.darkBg,
+        backgroundColor: context.bgColor,
         body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
@@ -153,7 +154,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     final targetLabel   = isPickupPhase ? mission.professionalName : 'Client';
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       body: Column(children: [
 
         // ── Sélecteur de missions ─────────────────────────────────────────────
@@ -172,9 +173,9 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                     style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
                         fontWeight: FontWeight.w800, color: AppColors.primary)),
                   const Spacer(),
-                  const Text('Appuyez pour changer',
+                  Text('Appuyez pour changer',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                        color: AppColors.darkSubtext)),
+                        color: context.textSecondary)),
                 ]),
               ),
               SizedBox(height: 64, child: ListView.separated(
@@ -193,10 +194,10 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.primary.withOpacity(0.15)
-                            : AppColors.darkCard,
+                            : context.cardColor,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isActive ? AppColors.primary : AppColors.darkBorder,
+                          color: isActive ? AppColors.primary : context.borderColor,
                           width: isActive ? 2 : 1),
                       ),
                       child: Column(
@@ -208,13 +209,13 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                               m.isPickupPhase
                                 ? Icons.store_rounded
                                 : Icons.location_on_rounded,
-                              color: isActive ? AppColors.primary : AppColors.darkSubtext,
+                              color: isActive ? AppColors.primary : context.textSecondary,
                               size: 14),
                             const SizedBox(width: 5),
                             Text(m.professionalName,
                               style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: isActive ? AppColors.primary : AppColors.darkText),
+                                color: isActive ? AppColors.primary : context.textPrimary),
                               overflow: TextOverflow.ellipsis),
                           ]),
                           const SizedBox(height: 2),
@@ -222,7 +223,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                             style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
                               color: isActive
                                 ? AppColors.primary.withOpacity(0.7)
-                                : AppColors.darkSubtext)),
+                                : context.textSecondary)),
                         ],
                       ),
                     ),
@@ -292,15 +293,15 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.darkCard, borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.darkBorder)),
-                child: const Row(children: [
-                  Icon(Icons.map_rounded, color: AppColors.primary, size: 18),
-                  SizedBox(width: 8),
-                  Text('Afficher la carte', style: TextStyle(fontFamily: 'Nunito',
+                  color: context.cardColor, borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.borderColor)),
+                child: Row(children: [
+                  const Icon(Icons.map_rounded, color: AppColors.primary, size: 18),
+                  const SizedBox(width: 8),
+                  const Text('Afficher la carte', style: TextStyle(fontFamily: 'Nunito',
                       fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                  Spacer(),
-                  Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.darkSubtext),
+                  const Spacer(),
+                  Icon(Icons.keyboard_arrow_down_rounded, color: context.textSecondary),
                 ]),
               ),
             ),
@@ -329,11 +330,11 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                 child: Icon(step.icon, color: AppColors.primary, size: 24)),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(step.title, style: const TextStyle(fontFamily: 'Nunito',
-                    fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                Text(step.title, style: TextStyle(fontFamily: 'Nunito',
+                    fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
                 const SizedBox(height: 2),
-                Text(step.description, style: const TextStyle(fontFamily: 'Nunito',
-                    fontSize: 12, color: AppColors.darkSubtext, height: 1.4)),
+                Text(step.description, style: TextStyle(fontFamily: 'Nunito',
+                    fontSize: 12, color: context.textSecondary, height: 1.4)),
               ])),
             ]),
           ),
@@ -341,9 +342,9 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
 
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.darkCard,
+            decoration: BoxDecoration(color: context.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.darkBorder)),
+                border: Border.all(color: context.borderColor)),
             child: Column(children: [
               _InfoRow(icon: Icons.store_rounded, color: AppColors.yellow,
                   label: 'Établissement', value: mission.professionalName),
@@ -356,7 +357,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                 ),
               ],
               const SizedBox(height: 10),
-              const Divider(color: AppColors.darkBorder),
+              Divider(color: context.borderColor),
               const SizedBox(height: 10),
               _InfoRow(icon: Icons.location_on_rounded, color: AppColors.danger,
                   label: 'Livraison', value: mission.clientAddress),
@@ -387,15 +388,15 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                 ),
               ),
               const SizedBox(height: 10),
-              const Divider(color: AppColors.darkBorder),
+              Divider(color: context.borderColor),
               const SizedBox(height: 10),
               Row(children: [
                 Expanded(child: _MiniStat('💰',
                     '${mission.deliveryFee.toStringAsFixed(0)} F', 'Gains')),
-                Container(width: 1, height: 38, color: AppColors.darkBorder),
+                Container(width: 1, height: 38, color: context.borderColor),
                 Expanded(child: _MiniStat('📦',
                     '${mission.items.length}', 'Articles')),
-                Container(width: 1, height: 38, color: AppColors.darkBorder),
+                Container(width: 1, height: 38, color: context.borderColor),
                 Expanded(child: _MiniStat('📏',
                     '${mission.distanceKm.toStringAsFixed(1)} km', 'Distance')),
               ]),
@@ -406,13 +407,13 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
           // Progress steps
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.darkCard,
+            decoration: BoxDecoration(color: context.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.darkBorder)),
+                border: Border.all(color: context.borderColor)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('#${mission.orderId.substring(0, 8).toUpperCase()}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                    fontWeight: FontWeight.w700, color: AppColors.darkSubtext,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                    fontWeight: FontWeight.w700, color: context.textSecondary,
                     letterSpacing: 0.5)),
               const SizedBox(height: 10),
               ..._steps.asMap().entries.map((e) {
@@ -428,18 +429,18 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                           ? AppColors.primary
                           : isActive
                             ? AppColors.primary.withOpacity(0.2)
-                            : AppColors.darkBorder,
+                            : context.borderColor,
                         shape: BoxShape.circle),
                       child: isDone
                           ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
                           : Icon(s.icon,
-                              color: isActive ? AppColors.primary : AppColors.darkMuted,
+                              color: isActive ? AppColors.primary : context.textMuted,
                               size: 13)),
                     const SizedBox(width: 10),
                     Text(s.title, style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
                       color: isDone
                         ? AppColors.primary
-                        : isActive ? AppColors.darkText : AppColors.darkMuted,
+                        : isActive ? context.textPrimary : context.textMuted,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
                   ]),
                 );
@@ -462,7 +463,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: m.orderId == mission.orderId
-                      ? AppColors.primary : AppColors.darkBorder,
+                      ? AppColors.primary : context.borderColor,
                     shape: BoxShape.circle),
                 )),
               ]),
@@ -522,10 +523,10 @@ class _InfoRow extends StatelessWidget {
     Icon(icon, color: color, size: 18),
     const SizedBox(width: 10),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          color: AppColors.darkMuted, fontWeight: FontWeight.w600)),
-      Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-          color: AppColors.darkText, fontWeight: FontWeight.w700)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+          color: context.textMuted, fontWeight: FontWeight.w600)),
+      Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+          color: context.textPrimary, fontWeight: FontWeight.w700)),
     ])),
   ]);
 }
@@ -537,10 +538,10 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) => Column(children: [
     Text(emoji, style: const TextStyle(fontSize: 18)),
     const SizedBox(height: 2),
-    Text(value, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-        fontWeight: FontWeight.w800, color: AppColors.darkText)),
-    Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-        color: AppColors.darkMuted)),
+    Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+        fontWeight: FontWeight.w800, color: context.textPrimary)),
+    Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+        color: context.textMuted)),
   ]);
 }
 
@@ -580,7 +581,7 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -595,15 +596,15 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
                 color: AppColors.success, size: 32),
           ),
           const SizedBox(height: 16),
-          const Text('Code de confirmation',
+          Text('Code de confirmation',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                fontWeight: FontWeight.w900, color: context.textPrimary)),
           const SizedBox(height: 8),
           Text(
             'Demandez le code à ${widget.digits} chiffres au client\npour confirmer la livraison.',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: AppColors.darkSubtext, height: 1.4),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                color: context.textSecondary, height: 1.4),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -613,9 +614,9 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
             keyboardType: TextInputType.number,
             maxLength: widget.digits,
             obscureText: _obscure,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Nunito', fontSize: 28,
-              fontWeight: FontWeight.w900, color: AppColors.darkText,
+              fontWeight: FontWeight.w900, color: context.textPrimary,
               letterSpacing: 12,
             ),
             decoration: InputDecoration(
@@ -623,22 +624,22 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
               hintText: '·' * widget.digits,
               hintStyle: TextStyle(
                 fontSize: 28, letterSpacing: 12,
-                color: AppColors.darkBorder),
+                color: context.borderColor),
               filled: true,
               fillColor: AppColors.darkSurface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.darkBorder)),
+                borderSide: BorderSide(color: context.borderColor)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.darkBorder)),
+                borderSide: BorderSide(color: context.borderColor)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.success, width: 2)),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                  color: AppColors.darkSubtext, size: 20),
+                  color: context.textSecondary, size: 20),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
@@ -648,8 +649,8 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
             Expanded(child: OutlinedButton(
               onPressed: () => Navigator.pop(context, null),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.darkBorder),
-                foregroundColor: AppColors.darkSubtext,
+                side: BorderSide(color: context.borderColor),
+                foregroundColor: context.textSecondary,
                 minimumSize: const Size(0, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),

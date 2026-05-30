@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 class EditableAvatar extends ConsumerStatefulWidget {
   final String? currentUrl;
@@ -43,18 +44,18 @@ class _State extends ConsumerState<EditableAvatar> {
   Future<void> _pickAndUpload() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: const Text('Choisir depuis la galerie',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Choisir depuis la galerie',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.gallery),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: const Text('Prendre une photo',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Prendre une photo',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.camera),
         ),
         const SizedBox(height: 8),

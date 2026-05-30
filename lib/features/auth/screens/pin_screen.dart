@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/route_params.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 
 class PinScreen extends ConsumerStatefulWidget {
   /// `mode` et `phone` sont OPTIONNELS et conservés pour rétro-compat.
@@ -113,27 +114,26 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         : 'Votre PIN';
     final pt = PinTheme(width: 60, height: 64,
       textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 26, fontWeight: FontWeight.w900),
-      decoration: BoxDecoration(color: AppColors.lightBg, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightBorder, width: 1.5)));
+      decoration: BoxDecoration(color: context.bgColor, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.borderColor, width: 1.5)));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bgColor,
       body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(children: [
         const SizedBox(height: 32),
         Container(width: 68, height: 68,
           decoration: BoxDecoration(
-              // F: withValues() remplace withOpacity() déprécié
               color: AppColors.primary.withOpacity(0.10),
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2)),
           child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32)),
         const SizedBox(height: 20),
-        Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 24,
-            fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+        Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
+            fontWeight: FontWeight.w900, color: context.textPrimary)),
         if (!_isSetting) ...[
           const SizedBox(height: 6),
           Text('Bonjour ${ref.watch(authProvider).user?.firstName ?? ''} !',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.lightSubtext)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
         ],
         const SizedBox(height: 40),
         Pinput(controller: _ctrl, length: 4, obscureText: true, autofocus: true,

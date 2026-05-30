@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../shared/models/product.dart';
 import '../providers/cart_provider.dart';
 import 'scheduled_delivery_dialog.dart';
@@ -149,9 +150,9 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
 
     return Container(
       constraints: BoxConstraints(maxHeight: screenH * 0.9),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -162,7 +163,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: context.borderColor,
                 borderRadius: BorderRadius.circular(2)),
             ),
           ),
@@ -189,10 +190,10 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                             Expanded(
                               child: Text(
                                 product.localizedName('fr'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'Nunito', fontSize: 20,
                                   fontWeight: FontWeight.w900,
-                                  color: AppColors.nearBlack),
+                                  color: context.textPrimary),
                               ),
                             ),
                             if (!product.isAvailable || product.isOutOfStock)
@@ -227,14 +228,14 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                         if (product.preparationTimeMin != null) ...[
                           const SizedBox(height: 6),
                           Row(children: [
-                            const Icon(Icons.timer_outlined,
-                                size: 14, color: AppColors.grey),
+                            Icon(Icons.timer_outlined,
+                                size: 14, color: context.textMuted),
                             const SizedBox(width: 4),
                             Text(
                               '${product.preparationTimeMin} min de préparation',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Nunito', fontSize: 12,
-                                color: AppColors.grey)),
+                                color: context.textMuted)),
                           ]),
                         ],
 
@@ -244,20 +245,20 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                           const SizedBox(height: 12),
                           Text(
                             product.localizedDescription('fr')!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Nunito', fontSize: 14,
-                              color: AppColors.grey, height: 1.5),
+                              color: context.textMuted, height: 1.5),
                           ),
                         ],
 
                         // Variantes
                         if (variants.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          const Text('Choisir une taille',
+                          Text('Choisir une taille',
                             style: TextStyle(
                               fontFamily: 'Nunito', fontSize: 14,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.nearBlack)),
+                              color: context.textPrimary)),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -277,12 +278,12 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                   decoration: BoxDecoration(
                                     color: sel
                                         ? AppColors.primary
-                                        : AppColors.offWhite,
+                                        : context.bgColor,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: sel
                                           ? AppColors.primary
-                                          : AppColors.lightBorder),
+                                          : context.borderColor),
                                   ),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -294,7 +295,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                           fontWeight: FontWeight.w700,
                                           color: sel
                                               ? Colors.white
-                                              : AppColors.nearBlack)),
+                                              : context.textPrimary)),
                                       if (price != null)
                                         Text(
                                           '${price.toStringAsFixed(0)} F',
@@ -303,7 +304,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                             fontSize: 11,
                                             color: sel
                                                 ? Colors.white.withOpacity(0.85)
-                                                : AppColors.grey)),
+                                                : context.textMuted)),
                                     ],
                                   ),
                                 ),
@@ -419,8 +420,8 @@ class _Placeholder extends StatelessWidget {
         const SizedBox(height: 8),
         Text(product.localizedName('fr'),
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontFamily: 'Nunito', fontSize: 13, color: AppColors.grey)),
+          style: TextStyle(
+            fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
       ]),
     ),
   );

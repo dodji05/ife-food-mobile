@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../providers/admin_provider.dart';
 
 class AdminPendingScreen extends ConsumerStatefulWidget {
@@ -39,7 +40,7 @@ class _State extends ConsumerState<AdminPendingScreen> with SingleTickerProvider
     final driversCount = drivers.maybeWhen(data: (l) => l.length, orElse: () => 0);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Comptes en attente'),
         actions: [
@@ -61,7 +62,7 @@ class _State extends ConsumerState<AdminPendingScreen> with SingleTickerProvider
           controller: _tabs,
           indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.darkSubtext,
+          unselectedLabelColor: context.textSecondary,
           labelStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13),
           tabs: [
             Tab(text: 'Pros ($prosCount)'),
@@ -114,7 +115,7 @@ class _PendingList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(e.toString().replaceAll('Exception: ', ''),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ),
           const SizedBox(height: 16),
           Center(child: OutlinedButton.icon(
@@ -136,8 +137,8 @@ class _PendingList extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(emptyLabel,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                      fontWeight: FontWeight.w700, color: AppColors.darkText)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
               ),
             ],
           );
@@ -259,9 +260,9 @@ Future<String?> _promptRejectReason(BuildContext context) async {
   return showDialog<String>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.darkCard,
-      title: const Text('Raison du refus',
-        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: AppColors.darkText, fontSize: 16)),
+      backgroundColor: ctx.cardColor,
+      title: Text('Raison du refus',
+        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900, color: ctx.textPrimary, fontSize: 16)),
       content: TextField(
         controller: ctrl,
         maxLines: 4,
@@ -271,12 +272,12 @@ Future<String?> _promptRejectReason(BuildContext context) async {
         decoration: const InputDecoration(
           hintText: 'Précisez pourquoi le compte est refusé (visible par le user)',
         ),
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: ctx.textPrimary),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Annuler', style: TextStyle(color: AppColors.darkSubtext)),
+          child: Text('Annuler', style: TextStyle(color: ctx.textSecondary)),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -324,7 +325,7 @@ class _BaseValidationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: AppColors.warning.withOpacity(0.3)),
     ),
@@ -342,15 +343,15 @@ class _BaseValidationCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.darkText)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w900, color: context.textPrimary)),
             Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.darkBg, borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: context.bgColor, borderRadius: BorderRadius.circular(6)),
             child: Text(_formatDate(createdAt),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
           ),
         ]),
       ),
@@ -371,7 +372,7 @@ class _BaseValidationCard extends StatelessWidget {
         ]),
       ),
       // Actions
-      const Divider(color: AppColors.darkBorder, height: 1),
+      Divider(color: context.borderColor, height: 1),
       Row(children: [
         Expanded(child: TextButton.icon(
           onPressed: onReject,
@@ -379,7 +380,7 @@ class _BaseValidationCard extends StatelessWidget {
           label: const Text('Refuser',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.danger)),
         )),
-        Container(width: 1, height: 40, color: AppColors.darkBorder),
+        Container(width: 1, height: 40, color: context.borderColor),
         Expanded(child: TextButton.icon(
           onPressed: onApprove,
           icon: const Icon(Icons.check_rounded, size: 16, color: AppColors.success),
@@ -390,20 +391,22 @@ class _BaseValidationCard extends StatelessWidget {
     ]),
   );
 
-  Widget _row(IconData icon, String label, String value, {bool warn = false}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, size: 13, color: warn ? AppColors.warning : AppColors.darkSubtext),
-      const SizedBox(width: 6),
-      Expanded(child: Text.rich(TextSpan(children: [
-        TextSpan(text: '$label : ',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
-        TextSpan(text: value,
-          style: TextStyle(
-            fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
-            color: warn ? AppColors.warning : AppColors.darkText,
-          )),
-      ]))),
-    ]),
+  Widget _row(IconData icon, String label, String value, {bool warn = false}) => Builder(
+    builder: (context) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, size: 13, color: warn ? AppColors.warning : context.textSecondary),
+        const SizedBox(width: 6),
+        Expanded(child: Text.rich(TextSpan(children: [
+          TextSpan(text: '$label : ',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
+          TextSpan(text: value,
+            style: TextStyle(
+              fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
+              color: warn ? AppColors.warning : context.textPrimary,
+            )),
+        ]))),
+      ]),
+    ),
   );
 }

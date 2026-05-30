@@ -6,6 +6,7 @@ import '../../core/api/api_client.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 /// Écran de chat générique utilisé par le client, le livreur et le professionnel.
 /// [title] : titre affiché dans l'AppBar (ex: "Messagerie commande").
@@ -115,7 +116,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final myId = ref.read(authProvider).user?.id;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(widget.title),
         leading: const BackButton(),
@@ -125,10 +126,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: _loadingHistory
               ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
               : _messages.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Aucun message pour cette commande.',
-                        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext),
+                        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary),
                       ),
                     )
                   : ListView.builder(
@@ -193,14 +194,14 @@ class _MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isMine ? AppColors.primary : AppColors.darkCard,
+          color: isMine ? AppColors.primary : context.cardColor,
           borderRadius: BorderRadius.only(
             topLeft:     const Radius.circular(16),
             topRight:    const Radius.circular(16),
             bottomLeft:  Radius.circular(isMine ? 16 : 4),
             bottomRight: Radius.circular(isMine ? 4 : 16),
           ),
-          border: isMine ? null : Border.all(color: AppColors.darkBorder),
+          border: isMine ? null : Border.all(color: context.borderColor),
         ),
         child: Column(
           crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -219,7 +220,7 @@ class _MessageBubble extends StatelessWidget {
               msg.content,
               style: TextStyle(
                 fontFamily: 'Nunito', fontSize: 14,
-                color: isMine ? Colors.white : AppColors.darkText,
+                color: isMine ? Colors.white : context.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
@@ -227,7 +228,7 @@ class _MessageBubble extends StatelessWidget {
               _formatTime(msg.createdAt),
               style: TextStyle(
                 fontFamily: 'Nunito', fontSize: 10,
-                color: isMine ? Colors.white60 : AppColors.darkSubtext,
+                color: isMine ? Colors.white60 : context.textSecondary,
               ),
             ),
           ],
@@ -256,9 +257,9 @@ class _InputBar extends StatelessWidget {
         left: 12, right: 8, top: 8,
         bottom: 8 + MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.darkCard,
-        border: Border(top: BorderSide(color: AppColors.darkBorder)),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        border: Border(top: BorderSide(color: context.borderColor)),
       ),
       child: SafeArea(
         top: false,
@@ -266,12 +267,12 @@ class _InputBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: ctrl,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Votre message…',
-                hintStyle: const TextStyle(fontFamily: 'Nunito', color: AppColors.darkSubtext),
+                hintStyle: TextStyle(fontFamily: 'Nunito', color: context.textSecondary),
                 filled: true,
-                fillColor: AppColors.darkBg,
+                fillColor: context.bgColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -290,7 +291,7 @@ class _InputBar extends StatelessWidget {
             child: Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                color: sending ? AppColors.darkBorder : AppColors.primary,
+                color: sending ? context.borderColor : AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: sending

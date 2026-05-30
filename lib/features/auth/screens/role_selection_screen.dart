@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../core/constants/app_constants.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
@@ -37,22 +38,22 @@ class _State extends State<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bgColor,
       elevation: 0,
-      leading: const BackButton(color: AppColors.nearBlack),
+      leading: BackButton(color: context.textPrimary),
     ),
     body: SafeArea(child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Qui êtes-vous ?',
+        Text('Qui êtes-vous ?',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
-              fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+              fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text('Choisissez votre profil pour personnaliser votre expérience.',
+        Text('Choisissez votre profil pour personnaliser votre expérience.',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              color: AppColors.lightSubtext, height: 1.5)),
+              color: context.textSecondary, height: 1.5)),
         const SizedBox(height: 32),
         ..._roles.map((card) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -63,10 +64,10 @@ class _State extends State<RoleSelectionScreen> {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: _selected == card.role
-                    ? card.color.withOpacity(0.06) : Colors.white,
+                    ? card.color.withOpacity(0.06) : context.cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _selected == card.role ? card.color : AppColors.lightBorder,
+                  color: _selected == card.role ? card.color : context.borderColor,
                   width: _selected == card.role ? 2 : 1,
                 ),
               ),
@@ -80,12 +81,12 @@ class _State extends State<RoleSelectionScreen> {
                 const SizedBox(width: 14),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(card.title,
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                        fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                        fontWeight: FontWeight.w800, color: context.textPrimary)),
                   const SizedBox(height: 2),
                   Text(card.description,
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                        color: AppColors.nearBlack.withOpacity(0.5), height: 1.4)),
+                        color: context.textPrimary.withOpacity(0.5), height: 1.4)),
                 ])),
                 if (_selected == card.role)
                   Icon(Icons.check_circle_rounded, color: card.color, size: 22),

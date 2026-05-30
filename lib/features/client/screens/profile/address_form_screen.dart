@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/utils/location_utils.dart';
 import '../../providers/addresses_provider.dart';
 
@@ -168,7 +169,7 @@ class _State extends ConsumerState<AddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(_isEdit ? 'Modifier l\'adresse' : 'Nouvelle adresse'),
         leading: const BackButton(),
@@ -208,7 +209,7 @@ class _State extends ConsumerState<AddressFormScreen> {
         const SizedBox(height: 8),
         _TF(_label, 'Ex: Maison, Bureau…', onChanged: (_) => setState(() {})),
         const SizedBox(height: 8),
-        Wrap(spacing: 6, children: const ['Maison', 'Bureau', 'Autre'].map((sug) =>
+        Wrap(spacing: 6, children: ['Maison', 'Bureau', 'Autre'].map((sug) =>
           ActionChip(
             label: Text(sug, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12)),
             backgroundColor: AppColors.primary.withOpacity(0.08),
@@ -246,8 +247,8 @@ class _State extends ConsumerState<AddressFormScreen> {
             const SizedBox(width: 8),
             Expanded(child: Text(
               '${_lat!.toStringAsFixed(4)}, ${_lng!.toStringAsFixed(4)}',
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                  color: AppColors.grey),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                  color: context.textMuted),
               overflow: TextOverflow.ellipsis,
             )),
           ],
@@ -269,19 +270,19 @@ class _State extends ConsumerState<AddressFormScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: context.borderColor),
           ),
           child: Row(children: [
             const Icon(Icons.star_rounded, color: AppColors.primary, size: 20),
             const SizedBox(width: 12),
-            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Adresse par défaut',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                    fontWeight: FontWeight.w700, color: context.textPrimary)),
               Text('Sélectionnée automatiquement au checkout',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
             ])),
             Switch(
               value: _isDefault,

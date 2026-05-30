@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/user_address.dart';
 import '../../providers/addresses_provider.dart';
 
@@ -23,7 +24,7 @@ class AddressesScreen extends ConsumerWidget {
     final async = ref.watch(addressesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mes adresses')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/addresses/new'),
@@ -68,12 +69,12 @@ class _AddressCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: address.isDefault
                 ? AppColors.primary.withOpacity(0.45)
-                : Colors.grey.shade200,
+                : context.borderColor,
             width: address.isDefault ? 1.5 : 1,
           ),
           boxShadow: [
@@ -97,8 +98,8 @@ class _AddressCard extends ConsumerWidget {
               Expanded(child: Text(
                 address.label,
                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                    fontWeight: FontWeight.w900, color: AppColors.nearBlack),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                    fontWeight: FontWeight.w900, color: context.textPrimary),
               )),
               if (address.isDefault) ...[
                 const SizedBox(width: 6),
@@ -118,25 +119,25 @@ class _AddressCard extends ConsumerWidget {
             Text(
               '${address.address}, ${address.city}',
               maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: AppColors.lightSubtext, height: 1.3),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textSecondary, height: 1.3),
             ),
             if (address.instructions != null && address.instructions!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Row(children: [
-                const Icon(Icons.note_outlined, size: 12, color: AppColors.lightSubtext),
+                Icon(Icons.note_outlined, size: 12, color: context.textSecondary),
                 const SizedBox(width: 4),
                 Expanded(child: Text(
                   address.instructions!,
                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                      color: AppColors.lightSubtext, fontStyle: FontStyle.italic),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                      color: context.textSecondary, fontStyle: FontStyle.italic),
                 )),
               ]),
             ],
           ])),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded, color: AppColors.lightSubtext, size: 20),
+            icon: Icon(Icons.more_vert_rounded, color: context.textSecondary, size: 20),
             onSelected: (v) => _handleAction(context, ref, v),
             itemBuilder: (_) => [
               if (!address.isDefault)
@@ -245,17 +246,17 @@ class _EmptyState extends StatelessWidget {
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.location_off_rounded, size: 64, color: AppColors.lightSubtext),
+        Icon(Icons.location_off_rounded, size: 64, color: context.textSecondary),
         const SizedBox(height: 16),
-        const Text('Aucune adresse sauvegardée',
+        Text('Aucune adresse sauvegardée',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-              fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Ajoutez une adresse pour passer commande plus rapidement.',
           textAlign: TextAlign.center,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-              color: AppColors.lightSubtext, height: 1.5),
+              color: context.textSecondary, height: 1.5),
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
@@ -281,7 +282,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: 12),
         Text(message.replaceAll('Exception: ', ''),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.lightSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRetry,

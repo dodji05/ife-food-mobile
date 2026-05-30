@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../shared/models/product.dart';
@@ -45,7 +46,7 @@ class ProDashboardScreen extends ConsumerWidget {
     final pro  = proState.professional;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async {
@@ -62,12 +63,12 @@ class ProDashboardScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                 child: Row(children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Bonjour 👋', style: TextStyle(
-                        fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+                    Text('Bonjour 👋', style: TextStyle(
+                        fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
                     const SizedBox(height: 2),
                     Text(pro?.businessName ?? user?.displayName ?? 'Mon établissement',
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 20,
-                          fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
+                          fontWeight: FontWeight.w900, color: context.textPrimary)),
                   ])),
                   // Cloche notifs avec badge non-lus
                   _NotifBell(unread: ref.watch(unreadCountProvider)),
@@ -80,22 +81,22 @@ class ProDashboardScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: (pro?.isOpen ?? false)
                             ? AppColors.success.withOpacity(0.15)
-                            : AppColors.darkCard,
+                            : context.cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: (pro?.isOpen ?? false)
                               ? AppColors.success.withOpacity(0.4)
-                              : AppColors.darkBorder),
+                              : context.borderColor),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Container(width: 7, height: 7, decoration: BoxDecoration(
-                          color: (pro?.isOpen ?? false) ? AppColors.success : AppColors.darkMuted,
+                          color: (pro?.isOpen ?? false) ? AppColors.success : context.textMuted,
                           shape: BoxShape.circle)),
                         const SizedBox(width: 6),
                         Text((pro?.isOpen ?? false) ? 'Ouvert' : 'Fermé',
                           style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: (pro?.isOpen ?? false) ? AppColors.success : AppColors.darkSubtext)),
+                              color: (pro?.isOpen ?? false) ? AppColors.success : context.textSecondary)),
                       ]),
                     ),
                   ),
@@ -125,9 +126,9 @@ class ProDashboardScreen extends ConsumerWidget {
                         Text('${list.length} nouvelle${list.length > 1 ? 's' : ''} commande${list.length > 1 ? 's' : ''}',
                           style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
                               fontWeight: FontWeight.w800, color: AppColors.accent)),
-                        const Text('Appuyez pour accepter ou refuser',
+                        Text('Appuyez pour accepter ou refuser',
                           style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                              color: AppColors.darkSubtext)),
+                              color: context.textSecondary)),
                       ])),
                       const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.accent),
                     ]),
@@ -144,10 +145,10 @@ class ProDashboardScreen extends ConsumerWidget {
             )),
 
             // ── Actions rapides ───────────────────────────────────────────────
-            const SliverToBoxAdapter(child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+            SliverToBoxAdapter(child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
               child: Text('Actions rapides', style: TextStyle(fontFamily: 'Nunito',
-                  fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                  fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
             )),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -198,8 +199,8 @@ class _DashboardBody extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text("Aujourd'hui", style: TextStyle(fontFamily: 'Nunito',
-            fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text("Aujourd'hui", style: TextStyle(fontFamily: 'Nunito',
+            fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 12),
 
         // 4 KPI cards en 2x2
@@ -242,37 +243,37 @@ class _DashboardBody extends StatelessWidget {
         const SizedBox(height: 24),
 
         // LineChart 7 derniers jours
-        const Text('Revenus — 7 derniers jours',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text('Revenus — 7 derniers jours',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 12),
         _RevenueChart(revenueByDay: revenueByDay.cast<Map>().toList()),
 
         const SizedBox(height: 24),
 
         // Top produits
-        const Text('Top produits',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+        Text('Top produits',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         const SizedBox(height: 12),
         if (topProducts.isEmpty)
-          Container(
+          Builder(builder: (ctx) => Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.darkCard,
-                borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
-            child: const Row(children: [
-              Icon(Icons.bar_chart_rounded, color: AppColors.darkSubtext, size: 20),
-              SizedBox(width: 10),
+            decoration: BoxDecoration(color: ctx.cardColor,
+                borderRadius: BorderRadius.circular(14), border: Border.all(color: ctx.borderColor)),
+            child: Row(children: [
+              Icon(Icons.bar_chart_rounded, color: ctx.textSecondary, size: 20),
+              const SizedBox(width: 10),
               Expanded(child: Text('Pas encore de produit vendu',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext))),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: ctx.textSecondary))),
             ]),
-          )
+          ))
         else
           ...topProducts.cast<Map<String, dynamic>>().map((t) => _TopProductRow(entry: t)),
 
         // ── Avis récents ──────────────────────────────────────────────────
         if (recentReviews.isNotEmpty) ...[
           const SizedBox(height: 24),
-          const Text('Avis récents',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+          Text('Avis récents',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
           const SizedBox(height: 12),
           ...recentReviews.cast<Map<String, dynamic>>().map((r) => _ReviewRow(review: r)),
         ],
@@ -293,9 +294,9 @@ class _KpiCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: AppColors.darkCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.darkBorder),
+      border: Border.all(color: context.borderColor),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -303,15 +304,15 @@ class _KpiCard extends StatelessWidget {
         const Spacer(),
         Flexible(child: Text(label,
           textAlign: TextAlign.end, maxLines: 1, overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-              fontWeight: FontWeight.w600, color: AppColors.darkSubtext))),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+              fontWeight: FontWeight.w600, color: context.textSecondary))),
       ]),
       const SizedBox(height: 12),
       Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
           fontWeight: FontWeight.w900, color: color)),
       const SizedBox(height: 2),
       Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
     ]),
   );
 }
@@ -327,11 +328,11 @@ class _RevenueChart extends StatelessWidget {
     if (revenueByDay.isEmpty) {
       return Container(
         height: 180,
-        decoration: BoxDecoration(color: AppColors.darkCard,
-            borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+        decoration: BoxDecoration(color: context.cardColor,
+            borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
         alignment: Alignment.center,
-        child: const Text('Aucune donnée',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        child: Text('Aucune donnée',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
       );
     }
 
@@ -349,15 +350,15 @@ class _RevenueChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
       height: 200,
-      decoration: BoxDecoration(color: AppColors.darkCard,
-          borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+      decoration: BoxDecoration(color: context.cardColor,
+          borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
       child: LineChart(LineChartData(
         minY: 0, maxY: maxY * 1.2, // 20% headroom au-dessus du max
         gridData: FlGridData(
           show: true, drawVerticalLine: false,
           horizontalInterval: maxY / 4,
-          getDrawingHorizontalLine: (_) => const FlLine(
-            color: AppColors.darkBorder, strokeWidth: 0.5, dashArray: [4, 4],
+          getDrawingHorizontalLine: (_) => FlLine(
+            color: context.borderColor, strokeWidth: 0.5, dashArray: [4, 4],
           ),
         ),
         titlesData: FlTitlesData(
@@ -369,7 +370,7 @@ class _RevenueChart extends StatelessWidget {
             interval: maxY / 2,
             getTitlesWidget: (v, _) => Text(
               _shortAmount(v),
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 10, color: AppColors.darkSubtext),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 10, color: context.textSecondary),
             ),
           )),
           bottomTitles: AxisTitles(sideTitles: SideTitles(
@@ -381,7 +382,7 @@ class _RevenueChart extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(_dayLabel(date),
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 10, color: AppColors.darkSubtext)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 10, color: context.textSecondary)),
               );
             },
           )),
@@ -389,7 +390,7 @@ class _RevenueChart extends StatelessWidget {
         borderData: FlBorderData(show: false),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.darkBg,
+            getTooltipColor: (_) => context.bgColor,
             tooltipBorder: const BorderSide(color: AppColors.primary),
             getTooltipItems: (touched) => touched.map((t) {
               final i = t.x.toInt();
@@ -400,7 +401,7 @@ class _RevenueChart extends StatelessWidget {
                 '${t.y.toStringAsFixed(0)} F\n',
                 const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
                 children: [TextSpan(text: _dayLabel(date),
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.darkSubtext))],
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 10, fontWeight: FontWeight.w500, color: context.textSecondary))],
               );
             }).toList(),
           ),
@@ -416,7 +417,7 @@ class _RevenueChart extends StatelessWidget {
               show: true,
               getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
                 radius: 3.5, color: AppColors.primary,
-                strokeWidth: 1.5, strokeColor: AppColors.darkBg,
+                strokeWidth: 1.5, strokeColor: context.bgColor,
               ),
             ),
             belowBarData: BarAreaData(
@@ -453,14 +454,14 @@ class _TopProductRow extends StatelessWidget {
       return Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppColors.darkCard,
-            borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.darkBorder)),
+        decoration: BoxDecoration(color: context.cardColor,
+            borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
         child: Row(children: [
-          const Icon(Icons.delete_outline_rounded, color: AppColors.darkMuted, size: 20),
+          Icon(Icons.delete_outline_rounded, color: context.textMuted, size: 20),
           const SizedBox(width: 10),
-          const Expanded(child: Text('Produit supprimé',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted))),
-          Text('× $qty', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+          Expanded(child: Text('Produit supprimé',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted))),
+          Text('× $qty', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
         ]),
       );
     }
@@ -468,8 +469,8 @@ class _TopProductRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: AppColors.darkCard,
-          borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.darkBorder)),
+      decoration: BoxDecoration(color: context.cardColor,
+          borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
       child: Row(children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -479,15 +480,15 @@ class _TopProductRow extends StatelessWidget {
                 ? CachedNetworkImage(
                     imageUrl: product.imageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: AppColors.darkBg),
+                    placeholder: (_, __) => Container(color: context.bgColor),
                     errorWidget: (_, __, ___) => Container(
-                      color: AppColors.darkBg,
-                      child: const Icon(Icons.fastfood_rounded, color: AppColors.darkMuted, size: 18),
+                      color: context.bgColor,
+                      child: Icon(Icons.fastfood_rounded, color: context.textMuted, size: 18),
                     ),
                   )
                 : Container(
-                    color: AppColors.darkBg,
-                    child: const Icon(Icons.fastfood_rounded, color: AppColors.darkMuted, size: 18),
+                    color: context.bgColor,
+                    child: Icon(Icons.fastfood_rounded, color: context.textMuted, size: 18),
                   ),
           ),
         ),
@@ -495,7 +496,7 @@ class _TopProductRow extends StatelessWidget {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(product.localizedName('fr'),
             maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
           const SizedBox(height: 2),
           Text(product.formattedPrice,
             style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
@@ -538,9 +539,9 @@ class _ReviewRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -552,17 +553,17 @@ class _ReviewRow extends StatelessWidget {
           ))),
           const SizedBox(width: 8),
           Expanded(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                fontWeight: FontWeight.w700, color: AppColors.darkText))),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                fontWeight: FontWeight.w700, color: context.textPrimary))),
           if (dateStr.isNotEmpty)
-            Text(dateStr, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                color: AppColors.darkMuted)),
+            Text(dateStr, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                color: context.textMuted)),
         ]),
         if (comment != null && comment.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(comment, maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: AppColors.darkSubtext, height: 1.4)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textSecondary, height: 1.4)),
         ],
       ]),
     );
@@ -578,13 +579,13 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      decoration: BoxDecoration(color: AppColors.darkCard,
-          borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+      decoration: BoxDecoration(color: context.cardColor,
+          borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Text(emoji, style: const TextStyle(fontSize: 24)),
         const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-            fontWeight: FontWeight.w700, color: AppColors.darkSubtext)),
+        Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+            fontWeight: FontWeight.w700, color: context.textSecondary)),
       ]),
     ),
   );
@@ -606,7 +607,7 @@ class _NotifBell extends StatelessWidget {
           padding: const EdgeInsets.all(6),
           child: Icon(
             unread > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
-            color: unread > 0 ? AppColors.accent : AppColors.darkSubtext,
+            color: unread > 0 ? AppColors.accent : context.textSecondary,
             size: 26,
           ),
         ),
@@ -620,7 +621,7 @@ class _NotifBell extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.danger,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.darkSurface, width: 1.5),
+          border: Border.all(color: context.bgColor, width: 1.5),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -642,26 +643,26 @@ class _DashboardShimmer extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Container(width: 120, height: 18, decoration: BoxDecoration(
-          color: AppColors.darkCard, borderRadius: BorderRadius.circular(8))),
+          color: context.cardColor, borderRadius: BorderRadius.circular(8))),
       const SizedBox(height: 12),
       Row(children: [
-        Expanded(child: _shimmerBox(90)),
+        Expanded(child: _shimmerBox(context, 90)),
         const SizedBox(width: 10),
-        Expanded(child: _shimmerBox(90)),
+        Expanded(child: _shimmerBox(context, 90)),
       ]),
       const SizedBox(height: 10),
       Row(children: [
-        Expanded(child: _shimmerBox(90)),
+        Expanded(child: _shimmerBox(context, 90)),
         const SizedBox(width: 10),
-        Expanded(child: _shimmerBox(90)),
+        Expanded(child: _shimmerBox(context, 90)),
       ]),
       const SizedBox(height: 24),
-      _shimmerBox(200),
+      _shimmerBox(context, 200),
     ]),
   );
 
-  Widget _shimmerBox(double h) => Container(height: h, decoration: BoxDecoration(
-      color: AppColors.darkCard, borderRadius: BorderRadius.circular(14)));
+  Widget _shimmerBox(BuildContext context, double h) => Container(height: h, decoration: BoxDecoration(
+      color: context.cardColor, borderRadius: BorderRadius.circular(14)));
 }
 
 // ── Error block (avec bouton réessayer) ─────────────────────────────────────
@@ -674,18 +675,18 @@ class _ErrorBlock extends StatelessWidget {
     padding: const EdgeInsets.all(16),
     child: Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppColors.darkCard,
+      decoration: BoxDecoration(color: context.cardColor,
           borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.danger.withOpacity(0.5))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.cloud_off_rounded, color: AppColors.danger, size: 20),
-          SizedBox(width: 10),
+        Row(children: [
+          const Icon(Icons.cloud_off_rounded, color: AppColors.danger, size: 20),
+          const SizedBox(width: 10),
           Text('Impossible de charger les statistiques',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary)),
         ]),
         const SizedBox(height: 8),
         Text(message.replaceAll('Exception: ', ''),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onRetry,

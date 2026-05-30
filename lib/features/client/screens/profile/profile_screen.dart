@@ -20,6 +20,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/widgets/country_currency_picker.dart';
 import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
@@ -140,7 +141,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mon Profil')),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         // ── User card ──────────────────────────────────────────────────────
@@ -252,9 +253,9 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         // Apparence — hors _MenuSection car ConsumerWidget
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+            border: Border.all(color: context.borderColor.withOpacity(0.8)),
           ),
           child: const ThemeSelectorTile(),
         ),
@@ -332,7 +333,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         const SizedBox(height: 24),
         Center(child: Text(
           'ifè FOOD v${AppConstants.appVersion} • Ets SWK FAKEYE',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted),
         )),
         const SizedBox(height: 20),
       ]),
@@ -354,14 +355,14 @@ class _MenuSection extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.only(bottom: 8, left: 4),
         child: Text(title,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                fontWeight: FontWeight.w700, color: AppColors.grey, letterSpacing: 0.5)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                fontWeight: FontWeight.w700, color: context.textMuted, letterSpacing: 0.5)),
       ),
       Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.lightGrey.withOpacity(0.8)),
+          border: Border.all(color: context.borderColor.withOpacity(0.8)),
         ),
         child: Column(
           children: items.asMap().entries.map((e) => Column(children: [
@@ -399,14 +400,14 @@ class _MenuItem extends StatelessWidget {
     title: Text(label,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: danger ? AppColors.error : AppColors.nearBlack)),
+            color: danger ? AppColors.error : context.textPrimary)),
     subtitle: sub != null
         ? Text(sub!,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: AppColors.grey))
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textMuted))
         : null,
-    trailing: const Icon(Icons.chevron_right_rounded,
-        color: AppColors.lightGrey, size: 20),
+    trailing: Icon(Icons.chevron_right_rounded,
+        color: context.borderColor, size: 20),
     onTap: onTap,
   );
 }
@@ -434,12 +435,12 @@ class _MenuToggle extends StatelessWidget {
       child: Icon(icon, color: AppColors.primary, size: 18),
     ),
     title: Text(label,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-            fontWeight: FontWeight.w600, color: AppColors.nearBlack)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+            fontWeight: FontWeight.w600, color: context.textPrimary)),
     subtitle: sub != null
         ? Text(sub!,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: AppColors.grey))
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textMuted))
         : null,
     trailing: loading
         ? const SizedBox(width: 20, height: 20,

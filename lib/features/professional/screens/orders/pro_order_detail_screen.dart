@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
 import '../../providers/pro_provider.dart';
 
@@ -21,7 +22,7 @@ class ProOrderDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final order = ref.watch(orderDetailProvider(orderId));
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: Text('Commande #${orderId.substring(0, 8).toUpperCase()}'), leading: const BackButton()),
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -31,7 +32,7 @@ class ProOrderDetailScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [AppColors.primary.withOpacity(0.3), AppColors.darkCard], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(colors: [AppColors.primary.withOpacity(0.3), context.cardColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.primary.withOpacity(0.3)),
             ),
@@ -39,8 +40,8 @@ class ProOrderDetailScreen extends ConsumerWidget {
               const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 28),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(o.statusLabel, style: const TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.darkText)),
-                Text('Total client : ${o.formattedTotal}', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+                Text(o.statusLabel, style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: context.textPrimary)),
+                Text('Total client : ${o.formattedTotal}', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
               ])),
             ]),
           ),
@@ -94,8 +95,8 @@ class ProOrderDetailScreen extends ConsumerWidget {
               Container(width: 24, height: 24, decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
                 child: Center(child: Text('${item.quantity}', style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary)))),
               const SizedBox(width: 10),
-              Expanded(child: Text(item.productName, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText))),
-              Text('${item.totalPrice.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              Expanded(child: Text(item.productName, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary))),
+              Text('${item.totalPrice.toStringAsFixed(0)} F', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: context.textPrimary)),
             ]),
           )).toList())),
           const SizedBox(height: 10),
@@ -106,15 +107,15 @@ class ProOrderDetailScreen extends ConsumerWidget {
             if (o.promoCode != null)
               _Row('Code promo (${o.promoCode})', 'appliqué', accent: true),
             _Row('Commission plateforme', '-${o.commissionAmount.toStringAsFixed(0)} F', danger: true),
-            const Divider(color: AppColors.darkBorder, height: 20),
+            Divider(color: context.borderColor, height: 20),
             _Row('Vos revenus nets', '${o.netRevenue.toStringAsFixed(0)} F', bold: true, green: true),
           ])),
           const SizedBox(height: 10),
           // Delivery
           _Card('Livraison', Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Adresse', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+            Text('Adresse', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            Text(o.deliveryAddress, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText, fontWeight: FontWeight.w600)),
+            Text(o.deliveryAddress, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w600)),
             if (o.estimatedDeliveryMin != null) ...[
               const SizedBox(height: 10),
               Row(children: [
@@ -146,9 +147,9 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.darkSubtext, letterSpacing: 0.5)),
+      Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w800, color: context.textSecondary, letterSpacing: 0.5)),
       const SizedBox(height: 12), child,
     ]),
   );
@@ -163,7 +164,7 @@ class _Row extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(children: [
-      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, fontWeight: bold ? FontWeight.w700 : FontWeight.w500)),
       const Spacer(),
       Text(value, style: TextStyle(
         fontFamily: 'Nunito',
@@ -172,7 +173,7 @@ class _Row extends StatelessWidget {
         color: green  ? AppColors.success
              : danger ? AppColors.danger
              : accent ? AppColors.accent
-             : AppColors.darkText,
+             : context.textPrimary,
       )),
     ]),
   );
@@ -238,14 +239,14 @@ class _PersonRow extends StatelessWidget {
           Expanded(child: Text(
             name,
             maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.darkText),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary),
           )),
         ]),
         if (phone != null && phone!.isNotEmpty) ...[
           const SizedBox(height: 2),
           Text(
             phone!,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary),
           ),
         ],
       ])),
@@ -330,18 +331,18 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
       ));
     }
     if (_drivers!.isEmpty) {
-      return _Card('Assigner un livreur', const Text(
+      return _Card('Assigner un livreur', Builder(builder: (ctx) => Text(
         'Aucun livreur favori disponible actuellement.\n'
         'Un livreur sera assigné automatiquement.',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext),
-      ));
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: ctx.textSecondary),
+      )));
     }
     return _Card('Assigner un livreur favori', Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Livreurs disponibles',
+        Text('Livreurs disponibles',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-              color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+              color: context.textSecondary, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         ..._drivers!.map((d) => Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -354,10 +355,10 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
             ),
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(d.userName, style: const TextStyle(
-                fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              Text(d.userName, style: TextStyle(
+                fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
               Text(_vehicleLabel(d.vehicleType),
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
             ])),
             TextButton(
               onPressed: _loading ? null : () => _assign(d),

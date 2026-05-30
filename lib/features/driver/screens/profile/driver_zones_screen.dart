@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/driver_zone.dart';
 import '../../providers/driver_provider.dart';
 
@@ -13,7 +14,7 @@ class DriverZonesScreen extends ConsumerWidget {
     final zonesAsync = ref.watch(driverZonesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
@@ -21,14 +22,14 @@ class DriverZonesScreen extends ConsumerWidget {
           onTap: () => Navigator.pop(context),
           child: Container(
             margin: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-                color: AppColors.darkBg, shape: BoxShape.circle),
-            child: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
+            decoration: BoxDecoration(
+                color: context.bgColor, shape: BoxShape.circle),
+            child: Icon(Icons.arrow_back_rounded, color: context.textPrimary),
           ),
         ),
-        title: const Text('Zones de livraison',
+        title: Text('Zones de livraison',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-              fontWeight: FontWeight.w800, color: AppColors.darkText)),
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
       ),
       body: zonesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -113,7 +114,7 @@ class _ZoneTile extends StatelessWidget {
           border: Border.all(
             color: zone.selected
                 ? AppColors.primary.withOpacity(0.5)
-                : AppColors.darkBorder,
+                : context.borderColor,
             width: zone.selected ? 1.5 : 1,
           ),
         ),
@@ -138,13 +139,13 @@ class _ZoneTile extends StatelessWidget {
             Text(zone.name,
               style: TextStyle(
                 fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800,
-                color: zone.selected ? AppColors.primary : AppColors.darkText,
+                color: zone.selected ? AppColors.primary : context.textPrimary,
               )),
             const SizedBox(height: 3),
             Text(
               _subtitle(zone),
-              style: const TextStyle(
-                  fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext),
+              style: TextStyle(
+                  fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary),
             ),
           ])),
           // Toggle
@@ -154,7 +155,7 @@ class _ZoneTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: zone.selected ? AppColors.primary : Colors.transparent,
               border: Border.all(
-                color: zone.selected ? AppColors.primary : AppColors.darkBorder,
+                color: zone.selected ? AppColors.primary : context.borderColor,
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -194,13 +195,13 @@ class _EmptyState extends StatelessWidget {
         child: const Icon(Icons.place_rounded, color: AppColors.primary, size: 34),
       ),
       const SizedBox(height: 16),
-      const Text('Aucune zone disponible',
+      Text('Aucune zone disponible',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-            fontWeight: FontWeight.w800, color: AppColors.darkText)),
+            fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 6),
-      const Text('L\'administrateur n\'a pas encore créé\nde zones de livraison.',
+      Text('L\'administrateur n\'a pas encore créé\nde zones de livraison.',
         textAlign: TextAlign.center,
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
     ]),
   );
 }

@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import 'order_detail_screen.dart' show orderDetailProvider;
 
 const _presets = [200, 500, 1000, 2000];
@@ -78,7 +79,7 @@ class _TipScreenState extends ConsumerState<TipScreen> {
     final orderAsync = ref.watch(orderDetailProvider(widget.orderId));
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Laisser un pourboire'),
         leading: BackButton(onPressed: _skip),
@@ -99,9 +100,9 @@ class _TipScreenState extends ConsumerState<TipScreen> {
               ),
               const SizedBox(height: 32),
 
-              const Text('Montant du pourboire',
+              Text('Montant du pourboire',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+                    fontWeight: FontWeight.w800, color: context.textPrimary)),
               const SizedBox(height: 12),
 
               // Grille des montants prédéfinis
@@ -122,10 +123,10 @@ class _TipScreenState extends ConsumerState<TipScreen> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.primary : Colors.white,
+                        color: selected ? AppColors.primary : context.cardColor,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: selected ? AppColors.primary : AppColors.lightGrey,
+                          color: selected ? AppColors.primary : context.borderColor,
                           width: selected ? 2 : 1,
                         ),
                       ),
@@ -135,7 +136,7 @@ class _TipScreenState extends ConsumerState<TipScreen> {
                           fontFamily: 'Nunito',
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: selected ? Colors.white : AppColors.nearBlack,
+                          color: selected ? Colors.white : context.textPrimary,
                         )),
                     ),
                   );
@@ -153,15 +154,15 @@ class _TipScreenState extends ConsumerState<TipScreen> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.cardColor,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: _useCustom ? AppColors.primary : AppColors.lightGrey,
+                      color: _useCustom ? AppColors.primary : context.borderColor,
                       width: _useCustom ? 2 : 1,
                     ),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.edit_rounded, size: 18, color: AppColors.grey),
+                    Icon(Icons.edit_rounded, size: 18, color: context.textMuted),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
@@ -219,9 +220,9 @@ class _TipScreenState extends ConsumerState<TipScreen> {
               Center(
                 child: TextButton(
                   onPressed: _skip,
-                  child: const Text('Passer pour l\'instant',
+                  child: Text('Passer pour l\'instant',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                        color: AppColors.grey, fontWeight: FontWeight.w600)),
+                        color: context.textMuted, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -249,13 +250,13 @@ class _DriverHeader extends StatelessWidget {
     ),
     const SizedBox(width: 16),
     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Votre commande est livrée ! 🎉',
+      Text('Votre commande est livrée ! 🎉',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-            fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+            fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 4),
       Text('Souhaitez-vous laisser un pourboire à $name ?',
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-            color: AppColors.grey)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+            color: context.textMuted)),
     ])),
   ]);
 }

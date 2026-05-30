@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 class ClientEditProfileScreen extends ConsumerStatefulWidget {
   const ClientEditProfileScreen({super.key});
@@ -99,7 +100,7 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Modifier mon profil'),
         leading: const BackButton(),
@@ -133,32 +134,32 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.lightBg,
+            color: context.bgColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.lightBorder),
+            border: Border.all(color: context.borderColor),
           ),
           child: Row(children: [
-            const Icon(Icons.phone_rounded, color: AppColors.grey, size: 20),
+            Icon(Icons.phone_rounded, color: context.textMuted, size: 20),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Téléphone',
+              Text('Téléphone',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                    fontWeight: FontWeight.w700, color: AppColors.lightSubtext)),
+                    fontWeight: FontWeight.w700, color: context.textSecondary)),
               const SizedBox(height: 2),
               Text(user?.phone ?? '—',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                    fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                    fontWeight: FontWeight.w700, color: context.textPrimary)),
             ])),
-            const Icon(Icons.lock_rounded, color: AppColors.lightSubtext, size: 16),
+            Icon(Icons.lock_rounded, color: context.textSecondary, size: 16),
           ]),
         ),
         const SizedBox(height: 6),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             'Pour changer votre téléphone, contactez le support.',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                color: AppColors.lightSubtext, fontStyle: FontStyle.italic),
+                color: context.textSecondary, fontStyle: FontStyle.italic),
           ),
         ),
         const SizedBox(height: 20),
@@ -170,8 +171,8 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
           textCapitalization: TextCapitalization.words,
           onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(hintText: 'Ex: Aïcha'),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+              fontWeight: FontWeight.w600, color: context.textPrimary),
         ),
         const SizedBox(height: 16),
 
@@ -182,8 +183,8 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
           textCapitalization: TextCapitalization.words,
           onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(hintText: 'Ex: DOSSOU'),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+              fontWeight: FontWeight.w600, color: context.textPrimary),
         ),
         const SizedBox(height: 16),
 
@@ -197,16 +198,16 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
             hintText: 'Ex: aicha@example.com',
             errorText: _emailError,
           ),
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+              fontWeight: FontWeight.w600, color: context.textPrimary),
         ),
         const SizedBox(height: 6),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             'Reçoit les reçus de commande et les notifications importantes.',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                color: AppColors.lightSubtext),
+                color: context.textSecondary),
           ),
         ),
       ]),

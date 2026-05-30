@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/app_notification.dart';
 
 class ProNotificationsScreen extends ConsumerWidget {
@@ -30,7 +31,7 @@ class ProNotificationsScreen extends ConsumerWidget {
     final unread = ref.watch(unreadCountProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Notifications'),
         actions: [
@@ -107,10 +108,10 @@ class _NotificationTileState extends ConsumerState<_NotificationTile> {
         opacity: notif.read ? 0.65 : 1.0,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: notif.read ? AppColors.darkBorder : AppColors.primary.withOpacity(0.4),
+              color: notif.read ? context.borderColor : AppColors.primary.withOpacity(0.4),
               width: notif.read ? 1 : 1.5,
             ),
           ),
@@ -151,22 +152,22 @@ class _NotificationTileState extends ConsumerState<_NotificationTile> {
                       fontFamily: 'Nunito',
                       fontSize: 14,
                       fontWeight: notif.read ? FontWeight.w700 : FontWeight.w900,
-                      color: AppColors.darkText,
+                      color: context.textPrimary,
                     ),
                   )),
                   const SizedBox(width: 6),
                   Text(notif.relativeTime,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Nunito', fontSize: 11,
-                      fontWeight: FontWeight.w600, color: AppColors.darkSubtext,
+                      fontWeight: FontWeight.w600, color: context.textSecondary,
                     ),
                   ),
                 ]),
                 const SizedBox(height: 2),
                 Text(notif.body,
                   maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                      color: AppColors.darkSubtext, height: 1.3)),
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                      color: context.textSecondary, height: 1.3)),
               ]),
             )),
             const SizedBox(width: 8),
@@ -211,16 +212,16 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
-        Icon(Icons.notifications_none_rounded, size: 64, color: AppColors.darkMuted),
-        SizedBox(height: 16),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.notifications_none_rounded, size: 64, color: context.textMuted),
+        const SizedBox(height: 16),
         Text('Aucune notification',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
-        SizedBox(height: 6),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
+        const SizedBox(height: 6),
         Text(
           'Les nouvelles commandes et alertes apparaîtront ici.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.5),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5),
         ),
       ]),
     ),
@@ -240,7 +241,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: 12),
         Text(message.replaceAll('Exception: ', ''),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRetry,

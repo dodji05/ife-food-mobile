@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 class EmptyState extends StatelessWidget {
   final String emoji, title, subtitle;
@@ -17,9 +17,9 @@ class EmptyState extends StatelessWidget {
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Text(emoji, style: const TextStyle(fontSize: 64)),
       const SizedBox(height: 16),
-      Text(title, style: const TextStyle(fontFamily: 'Nunito', fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.nearBlack), textAlign: TextAlign.center),
+      Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 20, fontWeight: FontWeight.w800, color: context.textPrimary), textAlign: TextAlign.center),
       const SizedBox(height: 8),
-      Text(subtitle, style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.grey, height: 1.5), textAlign: TextAlign.center),
+      Text(subtitle, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted, height: 1.5), textAlign: TextAlign.center),
       if (actionLabel != null && onAction != null) ...[
         const SizedBox(height: 24),
         ElevatedButton(onPressed: onAction, style: ElevatedButton.styleFrom(minimumSize: const Size(200, 48)),

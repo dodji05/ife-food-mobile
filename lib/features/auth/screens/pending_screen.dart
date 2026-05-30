@@ -5,6 +5,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 
 class PendingScreen extends ConsumerStatefulWidget {
   const PendingScreen({super.key});
@@ -67,24 +68,24 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bgColor,
       body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(
         mainAxisAlignment: MainAxisAlignment.center, children: [
         const Text('⏳', style: TextStyle(fontSize: 64)),
         const SizedBox(height: 24),
-        const Text('Dossier en cours\nde validation', textAlign: TextAlign.center,
+        Text('Dossier en cours\nde validation', textAlign: TextAlign.center,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 26,
-              fontWeight: FontWeight.w900, color: AppColors.nearBlack, height: 1.2)),
+              fontWeight: FontWeight.w900, color: context.textPrimary, height: 1.2)),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Notre équipe vérifie votre dossier. Vous serez notifié dès l\'activation de votre compte.\n\nDélai moyen : moins de 24h.',
           textAlign: TextAlign.center,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              color: AppColors.lightSubtext, height: 1.6)),
+              color: context.textSecondary, height: 1.6)),
         const SizedBox(height: 32),
         Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.lightBg, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.lightBorder)),
+          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.borderColor)),
           child: Column(children: [
             _Step('✅', 'Dossier soumis', done: true),
             _Step('⏳', 'Vérification documents', active: true),
@@ -144,7 +145,7 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
           Text(_message!, textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w600,
-              color: _message!.startsWith('✅') ? AppColors.success : AppColors.lightSubtext,
+              color: _message!.startsWith('✅') ? AppColors.success : context.textSecondary,
             )),
         ],
 
@@ -168,7 +169,7 @@ class _Step extends StatelessWidget {
       Text(emoji, style: const TextStyle(fontSize: 16)),
       const SizedBox(width: 10),
       Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-        color: done ? AppColors.success : active ? AppColors.warning : AppColors.lightBorder,
+        color: done ? AppColors.success : active ? AppColors.warning : context.borderColor,
         fontWeight: active ? FontWeight.w800 : FontWeight.w500)),
     ]));
 }

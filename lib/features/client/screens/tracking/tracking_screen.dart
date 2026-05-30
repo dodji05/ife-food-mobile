@@ -24,6 +24,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../order/order_detail_screen.dart' show orderDetailProvider;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -284,7 +285,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.arrow_back_rounded, color: AppColors.nearBlack))),
+            child: Icon(Icons.arrow_back_rounded, color: context.textPrimary))),
       ),
       body: Stack(children: [
         if (_mapError)
@@ -309,11 +310,11 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
         Positioned(
           bottom: 0, left: 0, right: 0,
           child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: context.cardColor,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -4))],
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -4))],
             ),
             child: SafeArea(top: false, child: Padding(
               padding: const EdgeInsets.all(24),
@@ -325,7 +326,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                   Center(child: Container(
                     width: 36, height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.lightGrey,
+                      color: context.borderColor,
                       borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 20),
 
@@ -349,17 +350,17 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                     Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(_statusHeadline,
-                          style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                            fontWeight: FontWeight.w800, color: AppColors.nearBlack)),
+                          style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                            fontWeight: FontWeight.w800, color: context.textPrimary)),
                         const SizedBox(height: 2),
                         if (_etaMinutes != null && !cancelled && !delivered)
                           Text('ETA environ $_etaMinutes min',
                             style: const TextStyle(fontFamily: 'Nunito',
                               fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600))
                         else
-                          const Text('Suivi en temps réel',
+                          Text('Suivi en temps réel',
                             style: TextStyle(fontFamily: 'Nunito',
-                              fontSize: 13, color: AppColors.grey)),
+                              fontSize: 13, color: context.textMuted)),
                       ])),
                   ]),
 
@@ -422,7 +423,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                           return Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppColors.offWhite,
+                              color: context.bgColor,
                               borderRadius: BorderRadius.circular(14)),
                             child: Row(children: [
                               CircleAvatar(
@@ -430,13 +431,13 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                                 backgroundColor: AppColors.warning.withOpacity(0.15),
                                 child: const Text('⏳', style: TextStyle(fontSize: 18))),
                               const SizedBox(width: 12),
-                              const Expanded(child: Column(
+                              Expanded(child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text('Recherche d\'un livreur…',
                                     style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                                      fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                                      fontWeight: FontWeight.w700, color: context.textPrimary)),
                                   Text('Vous serez notifié dès qu\'un livreur prend votre commande',
-                                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.grey)),
+                                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
                                 ])),
                             ]),
                           );
@@ -448,7 +449,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                         return Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.offWhite,
+                            color: context.bgColor,
                             borderRadius: BorderRadius.circular(14)),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,26 +467,26 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const Text('Votre livreur',
-                                      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+                                    Text('Votre livreur',
+                                      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
                                     Text(name,
-                                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                                        fontWeight: FontWeight.w700, color: AppColors.nearBlack)),
+                                      style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                                        fontWeight: FontWeight.w700, color: context.textPrimary)),
                                     if (vehicle != null || plate != null)
                                       Text(
                                         [
                                           if (vehicle != null) vehicle,
                                           if (plate  != null) plate,
                                         ].join(' • '),
-                                        style: const TextStyle(fontFamily: 'Nunito',
-                                          fontSize: 12, color: AppColors.grey)),
+                                        style: TextStyle(fontFamily: 'Nunito',
+                                          fontSize: 12, color: context.textMuted)),
                                   ])),
                                 IconButton(
                                   onPressed: phone != null && phone.isNotEmpty
                                       ? () => _callDriver(phone) : null,
                                   tooltip: phone != null ? 'Appeler $name' : 'Téléphone indisponible',
                                   icon: Icon(Icons.phone_rounded,
-                                    color: phone != null ? AppColors.primary : AppColors.grey),
+                                    color: phone != null ? AppColors.primary : context.textMuted),
                                 ),
                                 IconButton(
                                   onPressed: () => context.push('/chat/${widget.orderId}'),
@@ -581,11 +582,11 @@ class _StatusStep extends StatelessWidget {
     child: Row(children: [
       Icon(icon, size: 18,
         color: done ? AppColors.primary
-            : (isActive ? AppColors.warning : AppColors.lightGrey)),
+            : (isActive ? AppColors.warning : context.borderColor)),
       const SizedBox(width: 10),
       Text(label,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-          color: done ? AppColors.nearBlack : AppColors.grey,
+          color: done ? context.textPrimary : context.textMuted,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500)),
       if (isActive) ...[
         const SizedBox(width: 8),

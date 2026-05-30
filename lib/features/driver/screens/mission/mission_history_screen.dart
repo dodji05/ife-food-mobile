@@ -5,8 +5,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 final missionHistoryProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -22,13 +24,13 @@ class MissionHistoryScreen extends ConsumerWidget {
     final history = ref.watch(missionHistoryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
-        title: const Text('Mes missions',
+        title: Text('Mes missions',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-              fontWeight: FontWeight.w800, color: AppColors.darkText)),
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -63,10 +65,10 @@ class MissionHistoryScreen extends ConsumerWidget {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8, top: 4),
                     child: Text(entry.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Nunito', fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.darkSubtext,
+                        color: context.textSecondary,
                         letterSpacing: 0.5)),
                   );
                 }
@@ -150,6 +152,9 @@ class _MissionCardState extends State<_MissionCard>
     final status      = m['status'] as String? ?? '';
     final isDelivered = status == 'DELIVERED';
     final isFailed    = status == 'FAILED';
+    final orderId     = (m['orderId'] as String?)
+        ?? ((m['order'] as Map<String, dynamic>?)?['id'] as String?)
+        ?? '';
 
     final createdAt    = _parseDate(m['createdAt']);
     final pickupTime   = _parseDate(m['pickupTime']);
@@ -172,12 +177,12 @@ class _MissionCardState extends State<_MissionCard>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _expanded
                 ? AppColors.primary.withOpacity(0.3)
-                : AppColors.darkBorder),
+                : context.borderColor),
         ),
         child: Column(children: [
 
@@ -207,20 +212,20 @@ class _MissionCardState extends State<_MissionCard>
                 children: [
                   Text(businessName,
                     maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                        fontWeight: FontWeight.w800, color: AppColors.darkText)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                        fontWeight: FontWeight.w800, color: context.textPrimary)),
                   const SizedBox(height: 3),
                   Row(children: [
                     _StatusBadge(status),
                     const SizedBox(width: 8),
                     Text(_timeStr(createdAt),
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                          color: AppColors.darkSubtext)),
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                          color: context.textSecondary)),
                   ]),
                 ],
               )),
 
-              // Montant + chevron
+              // Montant + chat + chevron
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(
                   isDelivered && deliveryFee != null
@@ -232,13 +237,30 @@ class _MissionCardState extends State<_MissionCard>
                 const SizedBox(height: 2),
                 if (distanceKm != null)
                   Text('${distanceKm.toStringAsFixed(1)} km',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                        color: AppColors.darkMuted)),
-                const SizedBox(height: 2),
-                RotationTransition(
-                  turns: _rotate,
-                  child: const Icon(Icons.keyboard_arrow_down_rounded,
-                    color: AppColors.darkMuted, size: 18)),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        color: context.textMuted)),
+                const SizedBox(height: 4),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  // Bouton chat — toujours visible même mission terminée
+                  if (orderId.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => context.push('/driver/chat/$orderId'),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.chat_bubble_outline_rounded,
+                            size: 15, color: AppColors.primary),
+                      ),
+                    ),
+                  const SizedBox(width: 6),
+                  RotationTransition(
+                    turns: _rotate,
+                    child: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: context.textMuted, size: 18)),
+                ]),
               ]),
             ]),
           ),
@@ -299,7 +321,7 @@ class _ExpandedDetail extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(12),
-      ),
+      ), // darkSurface conservé : c'est la couche de surface in-card, pas le fond principal
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
         // Itinéraire
@@ -332,8 +354,8 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   @override
   Widget build(BuildContext context) => Text(text,
-    style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-        fontWeight: FontWeight.w800, color: AppColors.darkMuted,
+    style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+        fontWeight: FontWeight.w800, color: context.textMuted,
         letterSpacing: 0.6));
 }
 
@@ -357,16 +379,16 @@ class _RouteRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.yellow,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.darkBg, width: 2))),
-          Container(width: 1.5, height: 22, color: AppColors.darkBorder),
+              border: Border.all(color: context.bgColor, width: 2))),
+          Container(width: 1.5, height: 22, color: context.borderColor),
         ]),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Retrait', style: TextStyle(fontFamily: 'Nunito',
-              fontSize: 10, color: AppColors.darkMuted, fontWeight: FontWeight.w600)),
+          Text('Retrait', style: TextStyle(fontFamily: 'Nunito',
+              fontSize: 10, color: context.textMuted, fontWeight: FontWeight.w600)),
           Text(fromAddress.isNotEmpty ? fromAddress : '—',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: AppColors.darkText, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textPrimary, fontWeight: FontWeight.w600)),
         ])),
       ]),
 
@@ -377,15 +399,15 @@ class _RouteRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.primary,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.darkBg, width: 2))),
+              border: Border.all(color: context.bgColor, width: 2))),
         ]),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Livraison', style: TextStyle(fontFamily: 'Nunito',
-              fontSize: 10, color: AppColors.darkMuted, fontWeight: FontWeight.w600)),
+          Text('Livraison', style: TextStyle(fontFamily: 'Nunito',
+              fontSize: 10, color: context.textMuted, fontWeight: FontWeight.w600)),
           Text(toAddress.isNotEmpty ? toAddress : '—',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: AppColors.darkText, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textPrimary, fontWeight: FontWeight.w600)),
         ])),
         if (distanceKm != null) Padding(
           padding: const EdgeInsets.only(left: 8),
@@ -420,33 +442,33 @@ class _Timeline extends StatelessWidget {
     ];
 
     if (events.isEmpty) {
-      return const Text('—', style: TextStyle(fontFamily: 'Nunito',
-          fontSize: 12, color: AppColors.darkMuted));
+      return Builder(builder: (ctx) => Text('—', style: TextStyle(fontFamily: 'Nunito',
+          fontSize: 12, color: ctx.textMuted)));
     }
 
     return Column(children: events.asMap().entries.map((e) {
       final isLast = e.key == events.length - 1;
       final ev = e.value;
-      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      return Builder(builder: (ctx) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Column(children: [
           Container(width: 26, height: 26,
             decoration: BoxDecoration(
               color: ev.color.withOpacity(0.15),
               shape: BoxShape.circle),
             child: Icon(ev.icon, color: ev.color, size: 13)),
-          if (!isLast) Container(width: 1.5, height: 16, color: AppColors.darkBorder),
+          if (!isLast) Container(width: 1.5, height: 16, color: ctx.borderColor),
         ]),
         const SizedBox(width: 10),
         Expanded(child: Padding(
           padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(ev.label, style: const TextStyle(fontFamily: 'Nunito',
-                fontSize: 12, color: AppColors.darkText, fontWeight: FontWeight.w600)),
-            Text(_fmt(ev.time), style: const TextStyle(fontFamily: 'Nunito',
-                fontSize: 12, color: AppColors.darkSubtext)),
+            Text(ev.label, style: TextStyle(fontFamily: 'Nunito',
+                fontSize: 12, color: ctx.textPrimary, fontWeight: FontWeight.w600)),
+            Text(_fmt(ev.time), style: TextStyle(fontFamily: 'Nunito',
+                fontSize: 12, color: ctx.textSecondary)),
           ]),
         )),
-      ]);
+      ]));
     }).toList());
   }
 
@@ -503,12 +525,12 @@ class _Empty extends StatelessWidget {
       Center(child: Text(emoji, style: const TextStyle(fontSize: 52))),
       const SizedBox(height: 12),
       Center(child: Text(title,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 18,
-          fontWeight: FontWeight.w800, color: AppColors.darkText))),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+          fontWeight: FontWeight.w800, color: context.textPrimary))),
       const SizedBox(height: 8),
       Center(child: Text(subtitle, textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-          color: AppColors.darkSubtext))),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+          color: context.textSecondary))),
     ],
   );
 }

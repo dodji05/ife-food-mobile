@@ -87,8 +87,18 @@ class _State extends ConsumerState<ScheduleScreen> {
               const Spacer(),
               Switch(
                 value: isOpen,
-                onChanged: (v) => setState(() { if (v) { _hours[key] = {'open': '08:00', 'close': '22:00'}; } else { _hours[key] = {'open': null, 'close': null}; } }),
-                activeColor: AppColors.primary,
+                onChanged: (v) => setState(() {
+                  if (v) {
+                    _hours[key] = {'open': '08:00', 'close': '22:00'};
+                  } else {
+                    _hours[key] = {'open': null, 'close': null};
+                  }
+                }),
+                activeColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                inactiveThumbColor: AppColors.darkMuted,
+                inactiveTrackColor: AppColors.darkBorder,
+                trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
               ),
             ]),
           );

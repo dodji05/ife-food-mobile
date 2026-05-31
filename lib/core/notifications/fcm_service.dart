@@ -51,8 +51,10 @@ class FcmService {
     _initialized = true;
 
     try {
-      await _requestPermission();
+      // Init des notifs locales AVANT la demande de permission : on a besoin
+      // de l'implémentation Android du plugin pour demander POST_NOTIFICATIONS.
       await _initLocalNotifications();
+      await _requestPermission();
       _wireForegroundListener();
       _wireTokenRefreshListener(ref);
       _wireTapListeners(ref);
@@ -84,10 +86,21 @@ class FcmService {
 
   // ── 1. Permission utilisateur ──────────────────────────────────────────────
   static Future<void> _requestPermission() async {
+    // iOS + enregistrement APNs via Firebase.
     final settings = await _messaging.requestPermission(
       alert: true, badge: true, sound: true,
     );
-    debugPrint('[FCM] Permission: ${settings.authorizationStatus.name}');
+    debugPrint('[FCM] Permission iOS/FCM: ${settings.authorizationStatus.name}');
+
+    // Android 13+ (API 33) : POST_NOTIFICATIONS doit être demandé explicitement
+    // au runtime. firebase_messaging ne le fait pas de façon fiable — on passe
+    // par l'implémentation Android de flutter_local_notifications.
+    final androidImpl = _localNotif
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImpl != null) {
+      final granted = await androidImpl.requestNotificationsPermission();
+      debugPrint('[FCM] Permission Android POST_NOTIFICATIONS: $granted');
+    }
   }
 
   // ── 2. Local notifications + channel Android ──────────────────────────────

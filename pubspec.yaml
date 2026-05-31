@@ -72,7 +72,6 @@ dependencies:
   share_plus: ^7.2.2          # partage social (restaurant_screen + futur)
   qr_flutter: ^4.1.0          # génération QR code (parrainage pro)
   connectivity_plus: ^5.0.2
-  package_info_plus: ^9.0.1   # bump pour compat web >=0.5.0 (requis par kkiapay)
   local_auth: ^2.1.8
   csv: ^6.0.0
   audioplayers: ^5.2.1
@@ -109,7 +108,6 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
-    - assets/sounds/
   fonts:
     - family: Nunito
       fonts:

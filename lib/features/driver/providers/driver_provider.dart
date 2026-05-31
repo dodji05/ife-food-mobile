@@ -28,6 +28,7 @@ class DriverState {
   final bool isOnline;
   final bool isLoading;
   final List<Mission> activeMissions;
+  final List<Mission> availableMissions;
   final String? selectedMissionOrderId;
   final double? currentLat, currentLng;
   final String? error;
@@ -37,6 +38,7 @@ class DriverState {
     this.isOnline         = false,
     this.isLoading        = false,
     this.activeMissions   = const [],
+    this.availableMissions = const [],
     this.selectedMissionOrderId,
     this.currentLat,
     this.currentLng,
@@ -62,6 +64,7 @@ class DriverState {
     bool? isOnline,
     bool? isLoading,
     List<Mission>? activeMissions,
+    List<Mission>? availableMissions,
     Object? selectedMissionOrderId = _keep, // FIX: sentinel pour distinguer null explicite de "non fourni"
     double? currentLat,
     double? currentLng,
@@ -71,6 +74,7 @@ class DriverState {
     isOnline:               isOnline               ?? this.isOnline,
     isLoading:              isLoading              ?? this.isLoading,
     activeMissions:         activeMissions         ?? this.activeMissions,
+    availableMissions:      availableMissions      ?? this.availableMissions,
     selectedMissionOrderId: selectedMissionOrderId == _keep
         ? this.selectedMissionOrderId
         : selectedMissionOrderId as String?,
@@ -100,6 +104,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
   final _api = ApiClient.instance;
   final Ref _ref;
   io.Socket? _socket;
+  Timer? _availableTimer;
 
   // Garde-fou anti-spam : on n'ouvre pas deux fois le dialog pour la même
   // mission (le backend peut broadcaster plusieurs fois en cas de reconnect
@@ -128,6 +133,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
         _startLocationUpdates();
         await _connectSocket();
         await loadActiveMissions();
+        _startAvailablePolling();
       }
     } catch (e) {
       state = state.copyWith(error: e.toString().replaceAll('Exception: ', ''));
@@ -150,6 +156,36 @@ class DriverNotifier extends StateNotifier<DriverState> {
     }
   }
 
+  /// Missions disponibles (fenêtre d'acceptation ouverte). Rafraîchies via
+  /// polling quand le livreur est en ligne, et au reçu d'un `new_mission`.
+  Future<void> loadAvailableMissions() async {
+    try {
+      final res  = await _api.get('/drivers/me/available-missions');
+      final list = (res['data'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map((d) => Mission.fromAvailableJson(d))
+          .toList();
+      state = state.copyWith(availableMissions: list);
+    } catch (_) {
+      // best-effort : on garde la liste précédente
+    }
+  }
+
+  void _startAvailablePolling() {
+    _availableTimer?.cancel();
+    // Rafraîchit toutes les 15 s tant que le livreur est en ligne.
+    _availableTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (state.isOnline) loadAvailableMissions();
+    });
+    loadAvailableMissions(); // premier chargement immédiat
+  }
+
+  void _stopAvailablePolling() {
+    _availableTimer?.cancel();
+    _availableTimer = null;
+    state = state.copyWith(availableMissions: const []);
+  }
+
   Future<void> toggleAvailability() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -162,12 +198,14 @@ class DriverNotifier extends StateNotifier<DriverState> {
         _startLocationUpdates();
         await _connectSocket();
         await loadActiveMissions();
+        _startAvailablePolling();
         // Filet de sécurité : garantit que le token FCM est enregistré pour
         // recevoir les missions push même app fermée (cas fcmToken NULL).
         FcmService.ensureTokenRegistered(_ref);
       } else {
         _stopLocationUpdates();
         _socket?.disconnect();
+        _stopAvailablePolling();
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -253,6 +291,8 @@ class DriverNotifier extends StateNotifier<DriverState> {
 
         final mission = Mission.fromOrderJson({...json, 'id': orderId});
         _showIncomingMissionDialog(mission);
+        // Rafraîchit aussi la liste des missions disponibles in-app.
+        loadAvailableMissions();
       } catch (e) {
         // Best-effort : un payload malformé ne doit pas crasher le socket.
         debugPrint('[DriverNotifier] new_mission parse failed: $e');
@@ -299,6 +339,9 @@ class DriverNotifier extends StateNotifier<DriverState> {
       state = state.copyWith(
         activeMissions:         updated,
         selectedMissionOrderId: mission.orderId,
+        // Retire la mission de la liste des disponibles.
+        availableMissions: state.availableMissions
+            .where((m) => m.orderId != orderId).toList(),
       );
       _socket?.emit('join_mission', {'orderId': orderId});
     } catch (e) {
@@ -350,6 +393,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
   void dispose() {
     _locationSub?.cancel();
     _socket?.disconnect();
+    _availableTimer?.cancel();
     super.dispose();
   }
 }

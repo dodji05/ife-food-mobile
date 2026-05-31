@@ -24,6 +24,8 @@ class Mission {
   final String deliveryStatus;
   final DateTime createdAt;
   final List<MissionItem> items;
+  /// Échéance d'acceptation (missions disponibles uniquement) — null sinon.
+  final DateTime? acceptDeadline;
 
   const Mission({
     required this.orderId,
@@ -47,6 +49,7 @@ class Mission {
     this.deliveryStatus       = 'ASSIGNED',
     required this.createdAt,
     this.items                = const [],
+    this.acceptDeadline,
   });
 
   // Depuis un Order (payload de la notification initiale)
@@ -81,6 +84,16 @@ class Mission {
     );
   }
 
+  // Depuis GET /drivers/me/available-missions — calcule l'échéance d'acceptation
+  // à partir de remainingSeconds pour un compte à rebours live côté UI.
+  factory Mission.fromAvailableJson(Map<String, dynamic> json) {
+    final base = Mission.fromOrderJson(json);
+    final remaining = (json['remainingSeconds'] as num?)?.toInt() ?? 0;
+    return base.copyWith(
+      acceptDeadline: DateTime.now().add(Duration(seconds: remaining)),
+    );
+  }
+
   // Depuis une Delivery (réponse de GET /drivers/me/active-missions)
   factory Mission.fromDeliveryJson(Map<String, dynamic> json) {
     final order = json['order'] as Map<String, dynamic>? ?? {};
@@ -91,7 +104,9 @@ class Mission {
   }
 
   // Crée une copie avec un nouveau deliveryStatus
-  Mission withStep(String step) => Mission(
+  Mission withStep(String step) => copyWith(deliveryStatus: step);
+
+  Mission copyWith({String? deliveryStatus, DateTime? acceptDeadline}) => Mission(
     orderId: orderId, professionalName: professionalName,
     professionalAddress: professionalAddress, professionalLat: professionalLat,
     professionalLng: professionalLng, professionalPhone: professionalPhone,
@@ -100,7 +115,9 @@ class Mission {
     deliveryFee: deliveryFee, currency: currency, distanceKm: distanceKm,
     distanceToPickupKm: distanceToPickupKm, deliveryZone: deliveryZone,
     estimatedMinutes: estimatedMinutes, orderStatus: orderStatus,
-    deliveryStatus: step, createdAt: createdAt, items: items,
+    deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+    createdAt: createdAt, items: items,
+    acceptDeadline: acceptDeadline ?? this.acceptDeadline,
   );
 
   bool get isPickupPhase => const [

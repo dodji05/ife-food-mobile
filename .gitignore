@@ -57,6 +57,7 @@ ios/Flutter/app.zip
 # Secrets / env
 *.env
 .env*
-google-services.json
 GoogleService-Info.plist
+# google-services.json est versionné : ses clés sont publiques (embarquées
+# dans chaque APK distribué). Le versionner garantit un build Firebase fiable.
 android/build/

@@ -31,11 +31,10 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # ── 4. Fichiers secrets ────────────────────────────────────────────────
-      - name: 🔐 Write google-services.json
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+      # google-services.json est désormais versionné dans le repo
+      # (clés publiques, safe à committer). Plus d'injection par secret —
+      # cela évitait les mismatch silencieux qui cassaient l'init Firebase
+      # (getToken null → fcmToken jamais enregistré).
 
       # ── 5. Dépendances ─────────────────────────────────────────────────────
       - name: 📦 Install dependencies

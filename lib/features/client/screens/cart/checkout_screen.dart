@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:kkiapay/kkiapay.dart';
 import '../../../../core/utils/location_utils.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/addresses_provider.dart';
@@ -298,12 +300,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final res = await ApiClient.instance.post('/orders', data: body);
       final orderId = res['data']['id'] as String;
       final payRes  = await ApiClient.instance.post('/payments/$orderId/initiate/$_selectedPayment');
-      final checkoutUrl = (payRes['data'] as Map<String, dynamic>?)?['checkoutUrl'] as String?;
+      final payData = (payRes['data'] as Map<String, dynamic>?) ?? {};
       ref.read(cartProvider.notifier).clearCart();
       if (!mounted) return;
+
+      // KKiaPay : pas d'URL serveur → on ouvre le widget natif (mobile money/carte).
+      if (payData['widget'] == true) {
+        await _handleKkiapay(orderId, payData);
+        if (mounted) context.go('/order/$orderId');
+        return;
+      }
+
       // FedaPay : navigateur intégré (inAppBrowserView = Chrome Custom Tab /
       // SFSafariViewController) → bouton "Fermer" visible, l'utilisateur
       // revient automatiquement dans l'app en appuyant dessus.
+      final checkoutUrl = payData['checkoutUrl'] as String?;
       if (checkoutUrl != null) {
         final uri = Uri.parse(checkoutUrl);
         if (await canLaunchUrl(uri)) {
@@ -319,6 +330,52 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Ouvre le widget KKiaPay natif. À la réussite, vérifie la transaction
+  /// côté backend (POST /payments/:orderId/verify-kkiapay/:transactionId).
+  Future<void> _handleKkiapay(String orderId, Map<String, dynamic> payData) async {
+    final completer = Completer<void>();
+
+    void callback(Map<String, dynamic> response, BuildContext ctx) {
+      final status = response['status'] as String?;
+      if (status == PAYMENT_SUCCESS) {
+        final txId = response['transactionId']?.toString() ?? '';
+        Navigator.of(ctx).pop(); // ferme le widget
+        // Vérification serveur — best-effort, l'écran de suivi montrera le statut.
+        ApiClient.instance
+            .post('/payments/$orderId/verify-kkiapay/$txId')
+            .catchError((_) => <String, dynamic>{});
+        if (!completer.isCompleted) completer.complete();
+      } else if (status == PAYMENT_CANCELLED) {
+        Navigator.of(ctx).pop();
+        if (!completer.isCompleted) completer.complete();
+      }
+      // PENDING_PAYMENT / PAYMENT_INIT : on laisse le widget ouvert.
+    }
+
+    final widget = KKiaPay(
+      amount:    (payData['amount'] as num?)?.toInt() ?? 0,
+      reason:    'Commande ifè FOOD',
+      phone:     payData['phone'] as String?,
+      name:      payData['name'] as String?,
+      email:     payData['email'] as String?,
+      data:      orderId,
+      apikey:    payData['publicKey'] as String? ?? '',
+      sandbox:   payData['sandbox'] as bool? ?? true,
+      theme:     '#1A6B3C',
+      countries: const ['BJ', 'CI', 'SN', 'TG'],
+      paymentMethods: const ['momo', 'card'],
+      callback:  callback,
+    );
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => widget),
+    );
+    // Si l'utilisateur ferme manuellement (retour) sans callback, on continue.
+    if (!completer.isCompleted) completer.complete();
+    await completer.future;
   }
 
   String? _composeInstructions(String? addrInstr, String checkoutNote) {

@@ -68,6 +68,7 @@ dependencies:
   uuid: ^4.3.3
   timeago: ^3.6.1
   url_launcher: ^6.2.5
+  kkiapay: ^1.3.0-dev.14       # widget de paiement KKiaPay (mobile money / carte)
   share_plus: ^7.2.2          # partage social (restaurant_screen + futur)
   qr_flutter: ^4.1.0          # génération QR code (parrainage pro)
   connectivity_plus: ^5.0.2

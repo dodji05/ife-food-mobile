@@ -207,6 +207,36 @@ class FcmService {
   /// si l'enregistrement automatique au boot a échoué.
   static Future<void> ensureTokenRegistered(Ref ref) => _registerCurrentToken(ref);
 
+  /// Diagnostic visible in-app (sans logcat) : permission + token FCM.
+  /// Tente aussi un ré-enregistrement si un token est obtenu.
+  /// Accepte WidgetRef (appel depuis un écran) ou Ref.
+  static Future<String> diagnose(WidgetRef ref) async {
+    final buf = StringBuffer();
+    try {
+      final settings = await _messaging.getNotificationSettings();
+      buf.writeln('Permission : ${settings.authorizationStatus.name}');
+    } catch (e) {
+      buf.writeln('Permission : erreur ($e)');
+    }
+    try {
+      final token = await _messaging.getToken();
+      if (token == null || token.isEmpty) {
+        buf.writeln('Token FCM : ❌ NULL');
+        buf.writeln('→ Firebase ne renvoie pas de token (Play Services ou config).');
+      } else {
+        buf.writeln('Token FCM : ✅ obtenu');
+        buf.writeln('(${token.substring(0, 16)}…)');
+        // Ré-enregistre côté backend dans la foulée.
+        await ref.read(authProvider.notifier).registerFcmToken(token);
+        buf.writeln('→ Envoyé au serveur ✓');
+      }
+    } catch (e) {
+      buf.writeln('Token FCM : erreur Firebase');
+      buf.writeln('$e');
+    }
+    return buf.toString();
+  }
+
   // ── 5. Tap handlers (background + terminated state) ───────────────────────
   static void _wireTapListeners(Ref ref) {
     _lastRef = ref;

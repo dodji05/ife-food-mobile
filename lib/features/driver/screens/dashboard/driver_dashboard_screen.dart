@@ -9,6 +9,7 @@ import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../shared/widgets/notifications_list_widget.dart';
 import '../../providers/driver_provider.dart';
+import '../../widgets/available_mission_card.dart';
 
 class DriverDashboardScreen extends ConsumerWidget {
   const DriverDashboardScreen({super.key});
@@ -65,6 +66,22 @@ class DriverDashboardScreen extends ConsumerWidget {
             loading: driver.isLoading,
             onToggle: () => ref.read(driverProvider.notifier).toggleAvailability(),
           ),
+        )),
+
+        // ── Missions disponibles ───────────────────────────────────────────────
+        if (isOnline && driver.availableMissions.isNotEmpty) SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.bolt_rounded, size: 18, color: AppColors.driverGreen),
+              const SizedBox(width: 6),
+              Text('Missions disponibles (${driver.availableMissions.length})',
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w900, color: AppColors.driverGreen)),
+            ]),
+            const SizedBox(height: 12),
+            ...driver.availableMissions.map((m) => AvailableMissionCard(mission: m)),
+          ]),
         )),
 
         // ── Stats ─────────────────────────────────────────────────────────────

@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
+import '../../providers/driver_provider.dart';
+import '../../widgets/available_mission_card.dart';
 
 final missionHistoryProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -22,6 +24,7 @@ class MissionHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(missionHistoryProvider);
+    final available = ref.watch(driverProvider).availableMissions;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -38,47 +41,71 @@ class MissionHistoryScreen extends ConsumerWidget {
           ref.invalidate(missionHistoryProvider);
           await ref.read(missionHistoryProvider.future);
         },
-        child: history.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (_, __) => _Empty(
-            emoji: '⚠️',
-            title: 'Erreur de chargement',
-            subtitle: 'Vérifiez votre connexion puis tirez pour réessayer.',
-          ),
-          data: (list) {
-            if (list.isEmpty) {
-              return _Empty(
-                emoji: '📭',
-                title: 'Aucune mission',
-                subtitle: 'Passez en ligne et acceptez votre\npremière mission !',
-              );
-            }
-            // Regroupe les livraisons par date (jour).
-            final grouped = _groupByDate(list);
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              itemCount: grouped.length,
-              itemBuilder: (ctx, i) {
-                final entry = grouped[i];
-                if (entry is _DateHeader) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8, top: 4),
-                    child: Text(entry.label,
-                      style: TextStyle(
-                        fontFamily: 'Nunito', fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: context.textSecondary,
-                        letterSpacing: 0.5)),
-                  );
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            // ── Missions disponibles (en premier, couleur distincte) ─────────
+            if (available.isNotEmpty) ...[
+              Row(children: [
+                const Icon(Icons.bolt_rounded, size: 18, color: AppColors.driverGreen),
+                const SizedBox(width: 6),
+                Text('Missions disponibles (${available.length})',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                    fontWeight: FontWeight.w900, color: AppColors.driverGreen)),
+              ]),
+              const SizedBox(height: 12),
+              ...available.map((m) => AvailableMissionCard(mission: m)),
+              const SizedBox(height: 8),
+              Divider(color: context.borderColor),
+              const SizedBox(height: 12),
+              Text('Historique',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                  fontWeight: FontWeight.w800, color: context.textSecondary,
+                  letterSpacing: 0.5)),
+              const SizedBox(height: 12),
+            ],
+
+            // ── Historique ───────────────────────────────────────────────────
+            ...history.when(
+              loading: () => [const Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              )],
+              error: (_, __) => [_Empty(
+                emoji: '⚠️',
+                title: 'Erreur de chargement',
+                subtitle: 'Vérifiez votre connexion puis tirez pour réessayer.',
+              )],
+              data: (list) {
+                if (list.isEmpty) {
+                  return [available.isEmpty
+                    ? _Empty(
+                        emoji: '📭',
+                        title: 'Aucune mission',
+                        subtitle: 'Passez en ligne et acceptez votre\npremière mission !',
+                      )
+                    : const SizedBox.shrink()];
                 }
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _MissionCard(m: (entry as _DeliveryEntry).data),
-                );
+                return _groupByDate(list).map<Widget>((entry) {
+                  if (entry is _DateHeader) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8, top: 4),
+                      child: Text(entry.label,
+                        style: TextStyle(
+                          fontFamily: 'Nunito', fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: context.textSecondary,
+                          letterSpacing: 0.5)),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _MissionCard(m: (entry as _DeliveryEntry).data),
+                  );
+                }).toList();
               },
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

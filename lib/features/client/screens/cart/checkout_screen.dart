@@ -336,16 +336,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   /// côté backend (POST /payments/:orderId/verify-kkiapay/:transactionId).
   Future<void> _handleKkiapay(String orderId, Map<String, dynamic> payData) async {
     final completer = Completer<void>();
+    String? capturedTxId;
 
     void callback(Map<String, dynamic> response, BuildContext ctx) {
       final status = response['status'] as String?;
       if (status == PAYMENT_SUCCESS) {
-        final txId = response['transactionId']?.toString() ?? '';
+        capturedTxId = response['transactionId']?.toString();
         Navigator.of(ctx).pop(); // ferme le widget
-        // Vérification serveur — best-effort, l'écran de suivi montrera le statut.
-        ApiClient.instance
-            .post('/payments/$orderId/verify-kkiapay/$txId')
-            .catchError((_) => <String, dynamic>{});
         if (!completer.isCompleted) completer.complete();
       } else if (status == PAYMENT_CANCELLED) {
         Navigator.of(ctx).pop();
@@ -376,6 +373,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     // Si l'utilisateur ferme manuellement (retour) sans callback, on continue.
     if (!completer.isCompleted) completer.complete();
     await completer.future;
+
+    // Vérification serveur APRÈS fermeture du widget — on attend le résultat
+    // pour que la commande soit confirmée avant d'afficher le suivi.
+    if (capturedTxId != null && capturedTxId!.isNotEmpty) {
+      try {
+        await ApiClient.instance
+            .post('/payments/$orderId/verify-kkiapay/$capturedTxId');
+      } catch (_) {
+        // Best-effort : le bouton "J'ai payé — Vérifier le statut" du suivi
+        // permettra une re-vérification (txId mémorisé côté serveur).
+      }
+    }
   }
 
   String? _composeInstructions(String? addrInstr, String checkoutNote) {

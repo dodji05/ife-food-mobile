@@ -120,7 +120,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                         setState(() => _checking = true);
                         try {
                           final res = await ApiClient.instance.post(
-                            '/payments/${widget.orderId}/check-fedapay',
+                            '/payments/${widget.orderId}/check',
                           );
                           final status = res['data']?['status'] as String? ?? 'PENDING';
                           if (status == 'SUCCESS') {
@@ -136,7 +136,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                           } else {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                content: Text('Paiement toujours en attente de confirmation FedaPay.'),
+                                content: Text('Paiement toujours en attente de confirmation.'),
                               ));
                             }
                           }

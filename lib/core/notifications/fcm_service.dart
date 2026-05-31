@@ -51,34 +51,32 @@ class FcmService {
     _initialized = true;
 
     try {
-      // Init des notifs locales AVANT la demande de permission : on a besoin
-      // de l'implémentation Android du plugin pour demander POST_NOTIFICATIONS.
+      // Init des notifs locales (nécessaire pour l'impl Android du plugin).
       await _initLocalNotifications();
-      await _requestPermission();
       _wireForegroundListener();
       _wireTokenRefreshListener(ref);
       _wireTapListeners(ref);
 
-      // Écoute chaque changement de l'auth state.
-      // On ne filtre PAS sur la transition prev→next pour éviter la race
-      // condition entre FcmService.init() (build frame 0) et _bootstrapImpl()
-      // (post-frame callback) : si _bootstrapImpl se termine avant que le
-      // listener soit en place, la transition est ratée et le token n'est
-      // jamais enregistré.
-      // L'appel est idempotent (PATCH /users/me/fcm-token), le léger surplus
-      // de requêtes est négligeable.
+      // ⚠️ Le listener auth DOIT être posé AVANT _requestPermission() :
+      // la demande POST_NOTIFICATIONS (Android 13+) affiche un dialog BLOQUANT.
+      // Si l'auth se termine pendant que l'utilisateur répond au dialog, et
+      // que le listener n'est pas encore posé, la transition est ratée → le
+      // token n'est jamais enregistré (symptôme : fcmToken NULL en base).
+      // On ne filtre pas la transition (idempotent : PATCH /users/me/fcm-token).
       ref.listen(authProvider, (prev, next) {
         if (next.isAuthenticated) {
           _registerCurrentToken(ref);
         }
       });
 
-      // Tente aussi immédiatement si l'utilisateur est déjà authentifié
-      // (session persistée depuis la dernière ouverture).
-      final alreadyAuth = ref.read(authProvider).isAuthenticated;
-      if (alreadyAuth) {
-        await _registerCurrentToken(ref);
+      // Si déjà authentifié (session persistée), enregistre tout de suite —
+      // sans await pour ne pas bloquer la suite.
+      if (ref.read(authProvider).isAuthenticated) {
+        _registerCurrentToken(ref);
       }
+
+      // Demande de permission EN DERNIER (peut bloquer sur interaction user).
+      await _requestPermission();
     } catch (e, st) {
       debugPrint('[FCM] init failed: $e\n$st');
     }
@@ -184,11 +182,30 @@ class FcmService {
 
   static Future<void> _registerCurrentToken(Ref ref) async {
     _lastRef = ref;
-    final token = await _messaging.getToken();
-    if (token == null || token.isEmpty) return;
+    // getToken() peut renvoyer null au tout premier appel (Play Services pas
+    // encore prêt après install). On réessaie quelques fois.
+    String? token;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        token = await _messaging.getToken();
+      } catch (e) {
+        debugPrint('[FCM] getToken tentative ${attempt + 1} échouée: $e');
+      }
+      if (token != null && token.isNotEmpty) break;
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+    if (token == null || token.isEmpty) {
+      debugPrint('[FCM] ⚠️ getToken null après 3 tentatives — token non enregistré');
+      return;
+    }
     debugPrint('[FCM] current token: ${token.substring(0, 12)}…');
     await ref.read(authProvider.notifier).registerFcmToken(token);
   }
+
+  /// Force l'enregistrement du token FCM. À appeler depuis un point fiable
+  /// et authentifié (ex: livreur qui passe en ligne) comme filet de sécurité
+  /// si l'enregistrement automatique au boot a échoué.
+  static Future<void> ensureTokenRegistered(Ref ref) => _registerCurrentToken(ref);
 
   // ── 5. Tap handlers (background + terminated state) ───────────────────────
   static void _wireTapListeners(Ref ref) {

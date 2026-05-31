@@ -11,6 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/notifications/fcm_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/driver.dart';
 import '../../../shared/models/driver_zone.dart';
@@ -161,6 +162,9 @@ class DriverNotifier extends StateNotifier<DriverState> {
         _startLocationUpdates();
         await _connectSocket();
         await loadActiveMissions();
+        // Filet de sécurité : garantit que le token FCM est enregistré pour
+        // recevoir les missions push même app fermée (cas fcmToken NULL).
+        FcmService.ensureTokenRegistered(_ref);
       } else {
         _stopLocationUpdates();
         _socket?.disconnect();

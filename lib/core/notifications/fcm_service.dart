@@ -210,22 +210,26 @@ class FcmService {
   /// Affiche le diagnostic notifications dans une boîte de dialogue.
   /// Réutilisable depuis n'importe quel profil (client / livreur / pro).
   static Future<void> showDiagnosticDialog(BuildContext context, WidgetRef ref) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-    final result = await diagnose(ref);
+    // On calcule le diagnostic AVANT d'afficher quoi que ce soit (pas de
+    // loader dialog imbriqué qui pourrait poser problème au pop). Tout est
+    // protégé pour ne jamais crasher l'app.
+    String result;
+    try {
+      result = await diagnose(ref);
+    } catch (e) {
+      result = 'Erreur diagnostic : $e';
+    }
     if (!context.mounted) return;
-    Navigator.of(context).pop(); // ferme le loader
-    showDialog(
+    await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dctx) => AlertDialog(
         title: const Text('État des notifications'),
-        content: Text(result, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+        content: SingleChildScrollView(
+          child: Text(result, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dctx).pop(),
             child: const Text('Fermer'),
           ),
         ],
@@ -250,19 +254,17 @@ class FcmService {
         buf.writeln('Token FCM : ❌ NULL');
         buf.writeln('→ Firebase ne renvoie pas de token (Play Services ou config).');
       } else {
-        buf.writeln('Token FCM : ✅ obtenu');
-        buf.writeln('(${token.substring(0, 16)}…)');
+        final preview = token.length > 16 ? token.substring(0, 16) : token;
+        buf.writeln('Token FCM : obtenu ($preview...)');
         // Appel API DIRECT (sans le try/catch silencieux de registerFcmToken)
         // pour afficher le vrai résultat / la vraie erreur du PATCH.
-        final auth = ref.read(authProvider);
-        buf.writeln('Authentifié : ${auth.isAuthenticated}');
+        final isAuth = ref.read(authProvider).isAuthenticated;
+        buf.writeln('Authentifie : $isAuth');
         try {
-          final res = await ApiClient.instance.patch(
-            '/users/me/fcm-token', data: {'fcmToken': token});
-          buf.writeln('→ Serveur : ✅ enregistré');
-          buf.writeln('(réponse: ${res.toString().substring(0, res.toString().length.clamp(0, 60))})');
+          await ApiClient.instance.patch('/users/me/fcm-token', data: {'fcmToken': token});
+          buf.writeln('Serveur : enregistre OK');
         } catch (e) {
-          buf.writeln('→ Serveur : ❌ échec PATCH');
+          buf.writeln('Serveur : ECHEC');
           buf.writeln('$e');
         }
       }

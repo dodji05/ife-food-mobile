@@ -9,6 +9,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'firebase_options.dart';
 import 'core/api/api_client.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/router/app_router.dart';
@@ -25,7 +26,9 @@ import 'core/constants/app_constants.dart';
 /// (Hook réservé pour future logique : badge, persistance offline, etc.)
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }
 
 void main() async {
@@ -77,14 +80,19 @@ void main() async {
   // Hive (cache local)
   await Hive.initFlutter();
 
-  // Firebase (push notifications)
+  // Firebase (push notifications) — init EXPLICITE avec options générées
+  // depuis google-services.json. L'init sans options ([core/no-app]) échouait
+  // car le traitement natif de google-services.json n'aboutissait pas.
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     // Background handler enregistré APRÈS init et AVANT runApp — sinon
     // les messages reçus app fermée ne sont pas dispatchés à l'isolate.
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
-  } catch (_) {
-    // Firebase optionnel en dev sans google-services.json
+    debugPrint('[Firebase] ✅ initialisé (projet ife-food)');
+  } catch (e) {
+    debugPrint('[Firebase] ❌ init échouée : $e');
   }
 
   runApp(const ProviderScope(child: IfeFoodApp()));

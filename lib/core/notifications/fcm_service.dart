@@ -20,7 +20,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -206,6 +206,32 @@ class FcmService {
   /// et authentifié (ex: livreur qui passe en ligne) comme filet de sécurité
   /// si l'enregistrement automatique au boot a échoué.
   static Future<void> ensureTokenRegistered(Ref ref) => _registerCurrentToken(ref);
+
+  /// Affiche le diagnostic notifications dans une boîte de dialogue.
+  /// Réutilisable depuis n'importe quel profil (client / livreur / pro).
+  static Future<void> showDiagnosticDialog(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final result = await diagnose(ref);
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // ferme le loader
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('État des notifications'),
+        content: Text(result, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Diagnostic visible in-app (sans logcat) : permission + token FCM.
   /// Tente aussi un ré-enregistrement si un token est obtenu.

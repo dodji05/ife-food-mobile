@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/notifications/fcm_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -116,6 +117,7 @@ class ProProfileScreen extends ConsumerWidget {
               () => showLanguagePicker(context, ref, currentLang: user?.lang ?? 'fr', darkTheme: true)),
           _Item(Icons.badge_rounded, 'Mes documents', () => context.push('/pro/documents')),
           _Item(Icons.notifications_rounded, 'Notifications', () => context.push('/pro/notifications')),
+          _Item(Icons.notifications_active_rounded, 'État des notifications', () => FcmService.showDiagnosticDialog(context, ref)),
         ]),
         const SizedBox(height: 12),
 

@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/notifications/fcm_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -156,6 +157,9 @@ class DriverProfileScreen extends ConsumerWidget {
           }),
           _Item(Icons.notifications_rounded, 'Mes notifications',
               onTap: () => context.push('/driver/notifications')),
+          _Item(Icons.notifications_active_rounded, 'État des notifications',
+              sub: 'Vérifier le token push',
+              onTap: () => FcmService.showDiagnosticDialog(context, ref)),
           _Item(Icons.language_rounded, 'Langue',
               sub: _langLabel(user?.lang ?? 'fr'),
               onTap: () => showLanguagePicker(context, ref,

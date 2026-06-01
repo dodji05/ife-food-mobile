@@ -232,31 +232,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             icon: Icons.notifications_active_rounded,
             label: 'État des notifications',
             sub: 'Vérifier le token push',
-            onTap: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              );
-              final result = await FcmService.diagnose(ref);
-              if (!context.mounted) return;
-              Navigator.of(context).pop(); // ferme le loader
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('État des notifications'),
-                  content: Text(result, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Fermer'),
-                    ),
-                  ],
-                ),
-              );
-              messenger.hideCurrentSnackBar();
-            },
+            onTap: () => FcmService.showDiagnosticDialog(context, ref),
           ),
         ]),
         const SizedBox(height: 12),

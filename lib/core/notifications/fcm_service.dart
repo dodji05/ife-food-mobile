@@ -252,9 +252,19 @@ class FcmService {
       } else {
         buf.writeln('Token FCM : ✅ obtenu');
         buf.writeln('(${token.substring(0, 16)}…)');
-        // Ré-enregistre côté backend dans la foulée.
-        await ref.read(authProvider.notifier).registerFcmToken(token);
-        buf.writeln('→ Envoyé au serveur ✓');
+        // Appel API DIRECT (sans le try/catch silencieux de registerFcmToken)
+        // pour afficher le vrai résultat / la vraie erreur du PATCH.
+        final auth = ref.read(authProvider);
+        buf.writeln('Authentifié : ${auth.isAuthenticated}');
+        try {
+          final res = await ApiClient.instance.patch(
+            '/users/me/fcm-token', data: {'fcmToken': token});
+          buf.writeln('→ Serveur : ✅ enregistré');
+          buf.writeln('(réponse: ${res.toString().substring(0, res.toString().length.clamp(0, 60))})');
+        } catch (e) {
+          buf.writeln('→ Serveur : ❌ échec PATCH');
+          buf.writeln('$e');
+        }
       }
     } catch (e) {
       buf.writeln('Token FCM : erreur Firebase');

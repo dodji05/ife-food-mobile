@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kkiapay/kkiapay.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' as stripe;
 import '../../../../core/utils/location_utils.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/addresses_provider.dart';
@@ -311,6 +312,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         return;
       }
 
+      // Stripe : PaymentSheet native (carte internationale / diaspora).
+      if (payData['stripe'] == true) {
+        await _handleStripe(orderId, payData);
+        if (mounted) context.go('/order/$orderId');
+        return;
+      }
+
       // FedaPay : navigateur intégré (inAppBrowserView = Chrome Custom Tab /
       // SFSafariViewController) → bouton "Fermer" visible, l'utilisateur
       // revient automatiquement dans l'app en appuyant dessus.
@@ -383,6 +391,57 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       } catch (_) {
         // Best-effort : le bouton "J'ai payé — Vérifier le statut" du suivi
         // permettra une re-vérification (txId mémorisé côté serveur).
+      }
+    }
+  }
+
+  /// Affiche la PaymentSheet Stripe puis vérifie le paiement côté serveur.
+  Future<void> _handleStripe(String orderId, Map<String, dynamic> payData) async {
+    final clientSecret   = payData['clientSecret'] as String?;
+    final publishableKey = payData['publishableKey'] as String?;
+    if (clientSecret == null || publishableKey == null || publishableKey.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Stripe non configuré (clé manquante).'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+      return;
+    }
+    try {
+      // Init de la clé publishable (idempotent).
+      stripe.Stripe.publishableKey = publishableKey;
+      await stripe.Stripe.instance.applySettings();
+
+      await stripe.Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: stripe.SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'ifè FOOD',
+        ),
+      );
+      await stripe.Stripe.instance.presentPaymentSheet();
+
+      // Succès PaymentSheet → on confirme côté serveur (le webhook le fait
+      // aussi, mais on déclenche /check pour une confirmation immédiate).
+      try {
+        await ApiClient.instance.post('/payments/$orderId/check');
+      } catch (_) {/* le suivi de commande pollera le statut */}
+    } on stripe.StripeException catch (e) {
+      if (mounted) {
+        final cancelled = e.error.code == stripe.FailureCode.Canceled;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(cancelled
+              ? 'Paiement annulé.'
+              : 'Paiement refusé : ${e.error.localizedMessage ?? e.error.message ?? ''}'),
+          backgroundColor: cancelled ? AppColors.darkSubtext : AppColors.error,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Erreur Stripe : ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: AppColors.error,
+        ));
       }
     }
   }

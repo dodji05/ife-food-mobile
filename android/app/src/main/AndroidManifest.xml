@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Popup mission livreur par-dessus l'écran (heads-up / full-screen) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 
     <!-- Biométrie -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>

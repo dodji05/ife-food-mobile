@@ -44,6 +44,15 @@ class FcmService {
   static const _orderChannelDesc =
       'Notifications de nouvelles commandes, livraisons et statuts.';
 
+  /// Canal DÉDIÉ aux missions livreur — importance MAX pour un vrai popup
+  /// heads-up (bannière + son + vibration) même par-dessus d'autres apps.
+  /// ID versionné (_v2) pour éviter le verrouillage d'importance Android si
+  /// un canal du même nom avait été créé avec une importance plus basse.
+  static const _missionChannelId = 'ife_missions_v2';
+  static const _missionChannelName = 'Missions livreur';
+  static const _missionChannelDesc =
+      'Alertes de nouvelles missions à accepter (prioritaire).';
+
   /// Point d'entrée — à appeler depuis main.dart après runApp.
   /// Idempotent : appels multiples sans effet (utile en hot-reload).
   static Future<void> init(Ref ref) async {
@@ -135,9 +144,20 @@ class FcmService {
       playSound: true,
       enableVibration: true,
     );
-    await _localNotif
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    // Canal missions livreur — importance MAX = heads-up popup garanti.
+    const missionChannel = AndroidNotificationChannel(
+      _missionChannelId,
+      _missionChannelName,
+      description: _missionChannelDesc,
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+    );
+    final androidImpl = _localNotif
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.createNotificationChannel(channel);
+    await androidImpl?.createNotificationChannel(missionChannel);
   }
 
   // ── 3. Foreground handler : affiche via local notif ───────────────────────
@@ -149,18 +169,32 @@ class FcmService {
       final body  = msg.notification?.body  ?? msg.data['body']  as String? ?? '';
       debugPrint('[FCM] foreground msg: $title — data=${msg.data}');
 
+      // Mission livreur → canal MAX (popup heads-up appuyé). Sinon canal standard.
+      final isMission = msg.data['type'] == 'NEW_MISSION';
+      final android = isMission
+          ? const AndroidNotificationDetails(
+              _missionChannelId, _missionChannelName,
+              channelDescription: _missionChannelDesc,
+              importance: Importance.max,
+              priority: Priority.max,
+              playSound: true,
+              enableVibration: true,
+              fullScreenIntent: true, // tente d'ouvrir par-dessus l'écran
+              category: AndroidNotificationCategory.call,
+            )
+          : const AndroidNotificationDetails(
+              _orderChannelId, _orderChannelName,
+              channelDescription: _orderChannelDesc,
+              importance: Importance.high,
+              priority: Priority.high,
+              playSound: true,
+            );
+
       await _localNotif.show(
         DateTime.now().millisecondsSinceEpoch.remainder(2147483647), // id unique
         title, body,
         NotificationDetails(
-          android: AndroidNotificationDetails(
-            _orderChannelId, _orderChannelName,
-            channelDescription: _orderChannelDesc,
-            importance: Importance.high,
-            priority: Priority.high,
-            playSound: true,
-            // icon: '@mipmap/ic_launcher', // default OK
-          ),
+          android: android,
           iOS: const DarwinNotificationDetails(presentSound: true),
         ),
         // Payload sérialisé pour le tap handler (qui ne peut pas accéder

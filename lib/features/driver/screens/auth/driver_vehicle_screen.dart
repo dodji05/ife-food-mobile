@@ -15,6 +15,7 @@
 // Adapté : zoneCity/Country en dur Cotonou/BJ (sera éditable plus tard).
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
@@ -31,15 +32,6 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
   String _vehicle = 'MOTORCYCLE';
   final _plate = TextEditingController();
   bool _loading = false;
-
-  // Types de véhicule supportés (alignés sur enum VehicleType backend).
-  // Ordre : du plus courant au moins courant en Afrique de l'Ouest.
-  final _vehicles = const [
-    {'id': 'MOTORCYCLE', 'label': 'Moto',     'emoji': '🛵', 'sub': 'Le plus courant'},
-    {'id': 'BICYCLE',    'label': 'Vélo',     'emoji': '🚲', 'sub': 'Écologique'},
-    {'id': 'CAR',        'label': 'Voiture',  'emoji': '🚗', 'sub': 'Grandes livraisons'},
-    {'id': 'ON_FOOT',    'label': 'À pied',   'emoji': '🚶', 'sub': 'Courtes distances'},
-  ];
 
   @override
   void dispose() {
@@ -78,7 +70,15 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final List<Map<String, String>> vehicles = [
+      {'id': 'MOTORCYCLE', 'label': t.driverVehicleMotorcycle, 'emoji': '🛵', 'sub': t.driverVehicleMotorcycleSub},
+      {'id': 'BICYCLE',    'label': t.driverVehicleBicycle,    'emoji': '🚲', 'sub': t.driverVehicleBicycleSub},
+      {'id': 'CAR',        'label': t.driverVehicleCar,        'emoji': '🚗', 'sub': t.driverVehicleCarSub},
+      {'id': 'ON_FOOT',    'label': t.driverVehicleOnFoot,     'emoji': '🚶', 'sub': t.driverVehicleOnFootSub},
+    ];
+    return Scaffold(
     backgroundColor: context.bgColor,
     appBar: AppBar(
       backgroundColor: context.bgColor, elevation: 0,
@@ -88,17 +88,17 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
     body: SafeArea(child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Votre véhicule',
+        Text(t.driverVehicleTitle,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
             fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 6),
-        Text('Quel type de véhicule utilisez-vous pour livrer ?',
+        Text(t.driverVehicleQuestion,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
         const SizedBox(height: 28),
 
         // Liste des véhicules — sélection radio visuelle
         Expanded(child: ListView(children: [
-          ..._vehicles.map((v) => GestureDetector(
+          ...vehicles.map((v) => GestureDetector(
             onTap: () => setState(() => _vehicle = v['id']!),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -136,7 +136,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           // Plaque d'immatriculation (cachée pour "À pied")
           if (_vehicle != 'ON_FOOT') Column(
             crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('PLAQUE D\'IMMATRICULATION',
+              Text(t.driverLicensePlate,
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: context.textSecondary, letterSpacing: 0.5)),
@@ -146,7 +146,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
                   fontWeight: FontWeight.w600, color: context.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Ex: BJ 1234 AB',
+                  hintText: t.driverLicensePlateHint,
                   hintStyle: TextStyle(color: context.textMuted),
                   filled: true,
                   fillColor: context.cardColor,
@@ -162,7 +162,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text('Optionnel — pour vérification par l\'admin',
+              Text(t.driverLicensePlateOptional,
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                   color: context.textMuted)),
             ],
@@ -179,15 +179,16 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
           child: _loading
             ? const SizedBox(width: 20, height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-            : const Text('Soumettre mon inscription',
-                style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
+            : Text(t.driverSubmitRegistration,
+                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
         ),
         const SizedBox(height: 12),
         Center(child: Text(
-          'Votre dossier sera vérifié sous 24h',
+          t.driverFileReviewed24h,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
             color: context.textMuted))),
       ]),
     )),
   );
+  }
 }

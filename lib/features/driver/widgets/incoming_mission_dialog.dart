@@ -2,6 +2,7 @@
 // ifè FOOD Driver — IncomingMissionDialog
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../../../core/theme/app_theme.dart';
@@ -77,6 +78,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
 
   @override
   Widget build(BuildContext context) {
+    final t             = AppLocalizations.of(context);
     final mission       = widget.mission;
     final activeMissions = ref.watch(driverProvider).activeMissions;
     final missionCount  = activeMissions.length;
@@ -125,7 +127,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
             const SizedBox(height: 20),
 
             // ── Titre ───────────────────────────────────────────────────────
-            Text('Nouvelle mission !', style: TextStyle(fontFamily: 'Nunito',
+            Text(t.driverIncomingMissionTitle, style: TextStyle(fontFamily: 'Nunito',
                 fontSize: 20, fontWeight: FontWeight.w900, color: context.textPrimary)),
             const SizedBox(height: 8),
 
@@ -134,6 +136,9 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
               _MultiDeliveryBadge(
                 current: missionCount,
                 mission: mission,
+                compatibleLabel: (c, z) => t.driverMultiCompatible(c, z),
+                willAddLabel: (c) => t.driverMultiWillAdd(c),
+                inProgressLabel: t.driverZoneInProgress,
               ),
               const SizedBox(height: 8),
             ],
@@ -144,18 +149,18 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
               decoration: BoxDecoration(
                   color: AppColors.darkSurface, borderRadius: BorderRadius.circular(14)),
               child: Column(children: [
-                _Row(Icons.store_rounded, 'Établissement', mission.professionalName,
+                _Row(Icons.store_rounded, t.driverIncomingEstablishment, mission.professionalName,
                     color: AppColors.yellow),
                 const SizedBox(height: 10),
-                _Row(Icons.location_on_rounded, 'Adresse', mission.professionalAddress,
+                _Row(Icons.location_on_rounded, t.driverIncomingAddress, mission.professionalAddress,
                     color: AppColors.primary),
                 if (mission.deliveryZone.isNotEmpty) ...[
                   const SizedBox(height: 10),
-                  _Row(Icons.place_rounded, 'Zone de livraison', mission.deliveryZone,
+                  _Row(Icons.place_rounded, t.driverIncomingDeliveryZone, mission.deliveryZone,
                       color: AppColors.info),
                 ],
                 const SizedBox(height: 10),
-                _Row(Icons.near_me_rounded, 'Livrer à',
+                _Row(Icons.near_me_rounded, t.driverIncomingDeliverTo,
                   mission.clientAddress.length > 45
                     ? '${mission.clientAddress.substring(0, 45)}…'
                     : mission.clientAddress,
@@ -169,25 +174,25 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
               if (mission.distanceToPickupKm != null)
                 Expanded(child: _Chip('📍',
                     '${mission.distanceToPickupKm!.toStringAsFixed(1)} km',
-                    'Jusqu\'au resto')),
+                    t.driverIncomingToRestaurant)),
               if (mission.distanceToPickupKm != null) const SizedBox(width: 6),
               Expanded(child: _Chip('📏',
                   '${mission.distanceKm.toStringAsFixed(1)} km',
-                  'Livraison')),
+                  t.driverIncomingDelivery)),
               const SizedBox(width: 6),
               Expanded(child: _Chip('⏱',
                   '~${mission.estimatedMinutes} min',
-                  'Durée est.')),
+                  t.driverIncomingEstDuration)),
               const SizedBox(width: 6),
               Expanded(child: _Chip('💰',
                   '${mission.deliveryFee.toStringAsFixed(0)} F',
-                  'Gain')),
+                  t.driverIncomingGain)),
             ]),
 
             if (mission.items.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                '${mission.items.length} article${mission.items.length > 1 ? 's' : ''}',
+                t.driverIncomingItemsCount(mission.items.length),
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
                     color: context.textSecondary)),
             ],
@@ -206,8 +211,8 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
                     minimumSize: const Size(0, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Refuser',
-                      style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                  child: Text(t.driverIncomingDecline,
+                      style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
                 )),
                 const SizedBox(width: 12),
                 Expanded(child: ElevatedButton(
@@ -215,7 +220,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(0, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: const Text('Accepter ✓'),
+                  child: Text(t.driverIncomingAccept),
                 )),
               ]),
           ]),
@@ -229,13 +234,22 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
 class _MultiDeliveryBadge extends StatelessWidget {
   final int current;
   final Mission mission;
-  const _MultiDeliveryBadge({required this.current, required this.mission});
+  final String Function(int, String) compatibleLabel;
+  final String Function(int) willAddLabel;
+  final String inProgressLabel;
+  const _MultiDeliveryBadge({
+    required this.current,
+    required this.mission,
+    required this.compatibleLabel,
+    required this.willAddLabel,
+    required this.inProgressLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
     // Compatibilité itinéraire : même zone de livraison ou même ville pro
     final hasZone     = mission.deliveryZone.isNotEmpty;
-    final zoneLabel   = hasZone ? mission.deliveryZone : 'en cours';
+    final zoneLabel   = hasZone ? mission.deliveryZone : inProgressLabel;
     final compatible  = hasZone; // si deliveryZone peuplé = même secteur dispatché
 
     return Container(
@@ -255,8 +269,8 @@ class _MultiDeliveryBadge extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(child: Text(
           compatible
-            ? 'Compatible avec vos $current mission(s) — zone $zoneLabel'
-            : "S'ajoutera à vos $current mission(s) en cours",
+            ? compatibleLabel(current, zoneLabel)
+            : willAddLabel(current),
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
               fontWeight: FontWeight.w700,
               color: compatible ? AppColors.success : AppColors.accent),

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,28 +27,35 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
   final Set<String> _uploading = {};
 
   static const _docTypes = [
-    _DocTypeInfo('ID_CARD',         'Pièce d\'identité', Icons.credit_card_rounded),
-    _DocTypeInfo('DRIVER_LICENSE',  'Permis de conduire', Icons.drive_eta_rounded),
+    _DocTypeInfo('ID_CARD',        Icons.credit_card_rounded),
+    _DocTypeInfo('DRIVER_LICENSE', Icons.drive_eta_rounded),
   ];
 
+  static String _docLabel(AppLocalizations t, String type) => switch (type) {
+    'ID_CARD'        => t.driverDocIdCard,
+    'DRIVER_LICENSE' => t.driverDocLicense,
+    _                => type,
+  };
+
   Future<void> _upload(String docType) async {
+    final t = AppLocalizations.of(context);
     final choice = await showModalBottomSheet<_UploadChoice>(
       context: context,
       backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: Text('Galerie photo', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
+          title: Text(t.driverDocGallery, style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.gallery),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
+          title: Text(t.driverDocCamera, style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.camera),
         ),
         ListTile(
           leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
-          title: Text('Fichier PDF', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
+          title: Text(t.driverDocPdf, style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, _UploadChoice.pdf),
         ),
         const SizedBox(height: 8),
@@ -75,7 +83,7 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
         filename = '$filename.jpg';
       }
     } catch (e) {
-      if (mounted) _snack('Impossible d\'accéder au fichier', error: true);
+      if (mounted) _snack(t.driverDocAccessError, error: true);
       return;
     }
 
@@ -90,7 +98,7 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
       await ApiClient.instance.post('/drivers/me/documents', data: formData);
       if (!mounted) return;
       ref.invalidate(_driverDocsProvider);
-      _snack('Document envoyé avec succès');
+      _snack(t.driverDocUploadSuccess);
     } catch (e) {
       if (mounted) _snack(e.toString().replaceAll('Exception: ', ''), error: true);
     } finally {
@@ -107,10 +115,11 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final async = ref.watch(_driverDocsProvider);
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(title: const Text('Mes documents'), leading: const BackButton()),
+      appBar: AppBar(title: Text(t.driverDocsTitle), leading: const BackButton()),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error:   (e, _) => Center(child: Text(e.toString())),
@@ -125,12 +134,12 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.info.withOpacity(0.25)),
               ),
-              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.info),
-                SizedBox(width: 8),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.info),
+                const SizedBox(width: 8),
                 Expanded(child: Text(
-                  'Ces documents sont utilisés pour valider votre compte livreur. Formats acceptés : JPG, PNG, PDF (max 10 Mo).',
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.info, height: 1.4),
+                  t.driverDocInfo,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.info, height: 1.4),
                 )),
               ]),
             ),
@@ -139,6 +148,10 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
               final uploading = _uploading.contains(info.type);
               return _DocCard(
                 info:      info,
+                label:     _docLabel(t, info.type),
+                verifiedLabel:    t.driverDocVerified,
+                pendingLabel:     t.driverDocPending,
+                notProvidedLabel: t.driverDocNotProvided,
                 existing:  existing,
                 uploading: uploading,
                 onUpload:  uploading ? null : () => _upload(info.type),
@@ -155,10 +168,17 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
 // ── Carte document ─────────────────────────────────────────────────────────────
 class _DocCard extends StatelessWidget {
   final _DocTypeInfo  info;
+  final String        label;
+  final String        verifiedLabel;
+  final String        pendingLabel;
+  final String        notProvidedLabel;
   final _DocEntry?    existing;
   final bool          uploading;
   final VoidCallback? onUpload;
-  const _DocCard({required this.info, this.existing, required this.uploading, this.onUpload});
+  const _DocCard({required this.info, required this.label,
+      required this.verifiedLabel, required this.pendingLabel,
+      required this.notProvidedLabel,
+      this.existing, required this.uploading, this.onUpload});
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +211,7 @@ class _DocCard extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(info.label,
+          Text(label,
             style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
           const SizedBox(height: 4),
           if (hasDoc) ...[
@@ -203,7 +223,7 @@ class _DocCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                existing!.verified ? 'Vérifié' : 'En attente de vérification',
+                existing!.verified ? verifiedLabel : pendingLabel,
                 style: TextStyle(
                   fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w600,
                   color: existing!.verified ? AppColors.success : AppColors.warning,
@@ -211,7 +231,7 @@ class _DocCard extends StatelessWidget {
               ),
             ]),
           ] else
-            Text('Non fourni',
+            Text(notProvidedLabel,
               style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         ])),
         const SizedBox(width: 8),
@@ -240,9 +260,9 @@ class _DocCard extends StatelessWidget {
 enum _UploadChoice { gallery, camera, pdf }
 
 class _DocTypeInfo {
-  final String type, label;
+  final String type;
   final IconData icon;
-  const _DocTypeInfo(this.type, this.label, this.icon);
+  const _DocTypeInfo(this.type, this.icon);
 }
 
 class _DocEntry {

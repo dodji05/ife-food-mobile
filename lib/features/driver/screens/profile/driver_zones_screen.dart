@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -11,6 +12,7 @@ class DriverZonesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     final zonesAsync = ref.watch(driverZonesProvider);
 
     return Scaffold(
@@ -27,14 +29,14 @@ class DriverZonesScreen extends ConsumerWidget {
             child: Icon(Icons.arrow_back_rounded, color: context.textPrimary),
           ),
         ),
-        title: Text('Zones de livraison',
+        title: Text(t.driverDeliveryZones,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
               fontWeight: FontWeight.w800, color: context.textPrimary)),
       ),
       body: zonesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => Center(
-          child: Text('Erreur : $e',
+          child: Text(t.driverZonesError(e.toString()),
               style: const TextStyle(color: AppColors.danger, fontFamily: 'Nunito'))),
         data: (zones) {
           if (zones.isEmpty) return const _EmptyState();
@@ -47,12 +49,12 @@ class DriverZonesScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.info.withOpacity(0.25)),
               ),
-              child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.info),
-                SizedBox(width: 8),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.info),
+                const SizedBox(width: 8),
                 Expanded(child: Text(
-                  'Sélectionnez les zones où vous souhaitez recevoir des missions.',
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                  t.driverZonesSelectHint,
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
                       color: AppColors.info, height: 1.4),
                 )),
               ]),
@@ -184,7 +186,9 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return Center(
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Container(
         width: 72, height: 72,
@@ -195,13 +199,14 @@ class _EmptyState extends StatelessWidget {
         child: const Icon(Icons.place_rounded, color: AppColors.primary, size: 34),
       ),
       const SizedBox(height: 16),
-      Text('Aucune zone disponible',
+      Text(t.driverZonesEmptyTitle,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
             fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 6),
-      Text('L\'administrateur n\'a pas encore créé\nde zones de livraison.',
+      Text(t.driverZonesEmptySubtitle,
         textAlign: TextAlign.center,
         style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
     ]),
   );
+  }
 }

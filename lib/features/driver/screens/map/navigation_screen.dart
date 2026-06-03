@@ -9,6 +9,7 @@
 //                    + fallback OSM web
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -70,6 +71,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final t        = AppLocalizations.of(context);
     final config   = ref.watch(driverConfigProvider).valueOrNull ?? {};
     final provider = (config['navigationProvider'] as String?) ?? 'GOOGLE_MAPS';
     final isOSM    = provider == 'OPENSTREETMAP';
@@ -144,7 +146,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
               ),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Destination',
+                Text(t.driverNavDestination,
                   style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                     color: context.textSecondary, fontWeight: FontWeight.w600)),
                 Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -161,7 +163,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
             ElevatedButton.icon(
               onPressed: () => _navigate(provider),
               icon: Icon(isOSM ? Icons.map_rounded : Icons.navigation_rounded, size: 20),
-              label: Text(isOSM ? 'Naviguer avec OpenStreetMap' : 'Ouvrir dans Google Maps'),
+              label: Text(isOSM ? t.driverNavOpenOSM : t.driverNavOpenGoogleMaps),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 54),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
@@ -177,7 +179,7 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
                 color: context.textSecondary,
               ),
               label: Text(
-                isOSM ? 'Ouvrir dans Google Maps' : 'Ouvrir dans OpenStreetMap',
+                isOSM ? t.driverNavOpenInGoogleMaps : t.driverNavOpenInOSM,
                 style: TextStyle(
                     fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary),
               ),

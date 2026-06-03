@@ -3,6 +3,7 @@
 // Thin wrapper sur NotificationsListWidget.
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/notifications_provider.dart';
@@ -15,6 +16,7 @@ class DriverNotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     final unread = ref.watch(unreadCountProvider);
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -29,8 +31,8 @@ class DriverNotificationsScreen extends ConsumerWidget {
                 } catch (_) {}
               },
               icon: const Icon(Icons.done_all_rounded, size: 18, color: AppColors.primary),
-              label: const Text('Tout lu',
-                style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: AppColors.primary)),
+              label: Text(t.driverNotifMarkAllRead,
+                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: AppColors.primary)),
             ),
         ],
       ),

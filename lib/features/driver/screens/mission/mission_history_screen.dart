@@ -4,6 +4,7 @@
 // Source : GET /deliveries/driver/history
 // ─────────────────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
@@ -23,6 +24,7 @@ class MissionHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     final history = ref.watch(missionHistoryProvider);
     final available = ref.watch(driverProvider).availableMissions;
 
@@ -31,7 +33,7 @@ class MissionHistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.darkSurface,
         elevation: 0,
-        title: Text('Mes missions',
+        title: Text(t.driverMyMissions,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
               fontWeight: FontWeight.w800, color: context.textPrimary)),
       ),
@@ -49,7 +51,7 @@ class MissionHistoryScreen extends ConsumerWidget {
               Row(children: [
                 const Icon(Icons.bolt_rounded, size: 18, color: AppColors.driverGreen),
                 const SizedBox(width: 6),
-                Text('Missions disponibles (${available.length})',
+                Text(t.driverAvailableMissions(available.length),
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
                     fontWeight: FontWeight.w900, color: AppColors.driverGreen)),
               ]),
@@ -58,7 +60,7 @@ class MissionHistoryScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Divider(color: context.borderColor),
               const SizedBox(height: 12),
-              Text('Historique',
+              Text(t.driverHistory,
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                   fontWeight: FontWeight.w800, color: context.textSecondary,
                   letterSpacing: 0.5)),
@@ -73,20 +75,20 @@ class MissionHistoryScreen extends ConsumerWidget {
               )],
               error: (_, __) => [_Empty(
                 emoji: '⚠️',
-                title: 'Erreur de chargement',
-                subtitle: 'Vérifiez votre connexion puis tirez pour réessayer.',
+                title: t.driverLoadError,
+                subtitle: t.driverLoadErrorSub,
               )],
               data: (list) {
                 if (list.isEmpty) {
                   return [available.isEmpty
                     ? _Empty(
                         emoji: '📭',
-                        title: 'Aucune mission',
-                        subtitle: 'Passez en ligne et acceptez votre\npremière mission !',
+                        title: t.driverNoMission,
+                        subtitle: t.driverNoMissionSub,
                       )
                     : const SizedBox.shrink()];
                 }
-                return _groupByDate(list).map<Widget>((entry) {
+                return _groupByDate(list, t).map<Widget>((entry) {
                   if (entry is _DateHeader) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8, top: 4),
@@ -112,13 +114,13 @@ class MissionHistoryScreen extends ConsumerWidget {
   }
 
   /// Intercale des en-têtes de date entre les livraisons.
-  List<Object> _groupByDate(List<Map<String, dynamic>> list) {
+  List<Object> _groupByDate(List<Map<String, dynamic>> list, AppLocalizations t) {
     final result = <Object>[];
     String? lastLabel;
     for (final m in list) {
       final dt = DateTime.tryParse(m['createdAt'] as String? ?? '')
           ?.toLocal() ?? DateTime.now();
-      final label = _dayLabel(dt);
+      final label = _dayLabel(dt, t);
       if (label != lastLabel) {
         result.add(_DateHeader(label));
         lastLabel = label;
@@ -128,13 +130,13 @@ class MissionHistoryScreen extends ConsumerWidget {
     return result;
   }
 
-  String _dayLabel(DateTime dt) {
+  String _dayLabel(DateTime dt, AppLocalizations t) {
     final now = DateTime.now();
     final today    = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final d = DateTime(dt.year, dt.month, dt.day);
-    if (d == today)     return "Aujourd'hui";
-    if (d == yesterday) return 'Hier';
+    if (d == today)     return t.driverDayToday;
+    if (d == yesterday) return t.driverDayYesterday;
     final months = ['jan.', 'fév.', 'mar.', 'avr.', 'mai', 'juin',
                     'juil.', 'aoû.', 'sep.', 'oct.', 'nov.', 'déc.'];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
@@ -175,6 +177,7 @@ class _MissionCardState extends State<_MissionCard>
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final m = widget.m;
     final status      = m['status'] as String? ?? '';
     final isDelivered = status == 'DELIVERED';

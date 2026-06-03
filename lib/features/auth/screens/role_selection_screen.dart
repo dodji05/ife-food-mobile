@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_colors.dart';
@@ -12,32 +13,33 @@ class RoleSelectionScreen extends StatefulWidget {
 class _State extends State<RoleSelectionScreen> {
   UserRole? _selected;
 
-  final _roles = [
-    _RoleCard(
-      role: UserRole.client,
-      emoji: '🛒',
-      title: 'Je suis client',
-      description: 'Je commande des repas et produits et je me fais livrer.',
-      color: AppColors.primary,
-    ),
-    _RoleCard(
-      role: UserRole.driver,
-      emoji: '🛵',
-      title: 'Je suis livreur',
-      description: 'Je livre les commandes et je gagne de l\'argent par mission.',
-      color: AppColors.info,
-    ),
-    _RoleCard(
-      role: UserRole.professional,
-      emoji: '🏪',
-      title: 'Je suis professionnel',
-      description: 'Je gère un restaurant, épicerie ou autre commerce.',
-      color: AppColors.yellow,
-    ),
-  ];
-
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final List<_RoleCard> roles = [
+      _RoleCard(
+        role: UserRole.client,
+        emoji: '🛒',
+        title: t.iAmClient,
+        description: t.clientDesc,
+        color: AppColors.primary,
+      ),
+      _RoleCard(
+        role: UserRole.driver,
+        emoji: '🛵',
+        title: t.iAmDriver,
+        description: t.driverDesc,
+        color: AppColors.info,
+      ),
+      _RoleCard(
+        role: UserRole.professional,
+        emoji: '🏪',
+        title: t.iAmPro,
+        description: t.proDesc,
+        color: AppColors.yellow,
+      ),
+    ];
+    return Scaffold(
     backgroundColor: context.bgColor,
     appBar: AppBar(
       backgroundColor: context.bgColor,
@@ -47,15 +49,15 @@ class _State extends State<RoleSelectionScreen> {
     body: SafeArea(child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Qui êtes-vous ?',
+        Text(t.whoAreYou,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
               fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 6),
-        Text('Choisissez votre profil pour personnaliser votre expérience.',
+        Text(t.chooseProfile,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
               color: context.textSecondary, height: 1.5)),
         const SizedBox(height: 32),
-        ..._roles.map((card) => Padding(
+        ...roles.map((card) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: GestureDetector(
             onTap: () => setState(() => _selected = card.role),
@@ -98,11 +100,12 @@ class _State extends State<RoleSelectionScreen> {
         ElevatedButton(
           onPressed: _selected == null ? null : () =>
               context.go('/auth/phone', extra: _selected),
-          child: const Text('Continuer'),
+          child: Text(t.actionContinue),
         ),
       ]),
     )),
   );
+  }
 }
 
 class _RoleCard {

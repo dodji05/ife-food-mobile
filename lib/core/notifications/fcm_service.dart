@@ -53,6 +53,13 @@ class FcmService {
   static const _missionChannelDesc =
       'Alertes de nouvelles missions à accepter (prioritaire).';
 
+  /// Canal DÉDIÉ aux nouvelles commandes côté professionnel — importance MAX
+  /// pour un popup heads-up à l'arrivée d'une commande payée.
+  static const _proOrderChannelId = 'ife_pro_orders_v1';
+  static const _proOrderChannelName = 'Nouvelles commandes (pro)';
+  static const _proOrderChannelDesc =
+      'Alertes de nouvelles commandes reçues (prioritaire).';
+
   /// Point d'entrée — à appeler depuis main.dart après runApp.
   /// Idempotent : appels multiples sans effet (utile en hot-reload).
   static Future<void> init(Ref ref) async {
@@ -154,10 +161,21 @@ class FcmService {
       enableVibration: true,
       enableLights: true,
     );
+    // Canal nouvelles commandes pro — importance MAX = heads-up popup.
+    const proOrderChannel = AndroidNotificationChannel(
+      _proOrderChannelId,
+      _proOrderChannelName,
+      description: _proOrderChannelDesc,
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+    );
     final androidImpl = _localNotif
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(channel);
     await androidImpl?.createNotificationChannel(missionChannel);
+    await androidImpl?.createNotificationChannel(proOrderChannel);
   }
 
   // ── 3. Foreground handler : affiche via local notif ───────────────────────
@@ -169,26 +187,43 @@ class FcmService {
       final body  = msg.notification?.body  ?? msg.data['body']  as String? ?? '';
       debugPrint('[FCM] foreground msg: $title — data=${msg.data}');
 
-      // Mission livreur → canal MAX (popup heads-up appuyé). Sinon canal standard.
-      final isMission = msg.data['type'] == 'NEW_MISSION';
-      final android = isMission
-          ? const AndroidNotificationDetails(
-              _missionChannelId, _missionChannelName,
-              channelDescription: _missionChannelDesc,
-              importance: Importance.max,
-              priority: Priority.max,
-              playSound: true,
-              enableVibration: true,
-              fullScreenIntent: true, // tente d'ouvrir par-dessus l'écran
-              category: AndroidNotificationCategory.call,
-            )
-          : const AndroidNotificationDetails(
-              _orderChannelId, _orderChannelName,
-              channelDescription: _orderChannelDesc,
-              importance: Importance.high,
-              priority: Priority.high,
-              playSound: true,
-            );
+      // Mission livreur → canal MAX (popup heads-up appuyé).
+      // Nouvelle commande pro (status PAID) → canal pro MAX (popup).
+      // Sinon → canal standard.
+      final isMission  = msg.data['type'] == 'NEW_MISSION';
+      final isProOrder = msg.data['status'] == 'PAID';
+      final AndroidNotificationDetails android;
+      if (isMission) {
+        android = const AndroidNotificationDetails(
+          _missionChannelId, _missionChannelName,
+          channelDescription: _missionChannelDesc,
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.call,
+        );
+      } else if (isProOrder) {
+        android = const AndroidNotificationDetails(
+          _proOrderChannelId, _proOrderChannelName,
+          channelDescription: _proOrderChannelDesc,
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.call,
+        );
+      } else {
+        android = const AndroidNotificationDetails(
+          _orderChannelId, _orderChannelName,
+          channelDescription: _orderChannelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+        );
+      }
 
       await _localNotif.show(
         DateTime.now().millisecondsSinceEpoch.remainder(2147483647), // id unique

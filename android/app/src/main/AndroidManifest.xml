@@ -82,6 +82,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <!-- FCM : canal + icône par défaut pour l'affichage système des
+             notifications quand l'app est en arrière-plan ou fermée.
+             Sans ces meta-data, les notifs n'apparaissent QUE quand l'app
+             est au premier plan (affichées par notre code Dart). -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="ife_orders"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ife_notification_color"/>
     </application>
 
     <queries>

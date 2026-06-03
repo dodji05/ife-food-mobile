@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/mission.dart';
@@ -58,8 +59,8 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
     try {
       await ref.read(driverProvider.notifier).acceptMission(widget.mission.orderId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Mission acceptée ✓'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).driverMissionAccepted),
           backgroundColor: AppColors.success,
         ));
       }
@@ -67,7 +68,7 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(e.toString().contains('already')
-              ? 'Mission déjà prise par un autre livreur.'
+              ? AppLocalizations.of(context).driverMissionAlreadyTaken
               : e.toString().replaceAll('Exception: ', '')),
           backgroundColor: AppColors.danger,
         ));
@@ -79,6 +80,7 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final m = widget.mission;
     final remaining = _remainingSeconds;
     // Couleur distincte (vert électrique livreur) + urgence (rouge) si <15s.
@@ -104,7 +106,7 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
           child: Row(children: [
             Icon(Icons.bolt_rounded, size: 16, color: accent),
             const SizedBox(width: 6),
-            Text('NOUVELLE MISSION',
+            Text(t.driverNewMission,
               style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                 fontWeight: FontWeight.w900, color: accent, letterSpacing: 0.5)),
             const Spacer(),
@@ -164,7 +166,7 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
                 child: _accepting
                     ? const SizedBox(width: 20, height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                    : Text(remaining <= 0 ? 'Expirée' : 'Accepter la mission',
+                    : Text(remaining <= 0 ? t.driverMissionExpired : t.driverAcceptMission,
                         style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
                           fontWeight: FontWeight.w900)),
               ),

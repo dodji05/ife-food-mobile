@@ -33,5 +33,10 @@
   "localNumber": "Local number",
   "enterPin": "Enter your PIN",
   "forgotPin": "Forgot PIN?",
-  "wrongPin": "Incorrect PIN."
+  "wrongPin": "Incorrect PIN.",
+  "driverNewMission": "NEW MISSION",
+  "driverMissionAccepted": "Mission accepted ✓",
+  "driverMissionAlreadyTaken": "Mission already taken by another driver.",
+  "driverMissionExpired": "Expired",
+  "driverAcceptMission": "Accept mission"
 }

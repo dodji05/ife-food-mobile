@@ -33,5 +33,10 @@
   "localNumber": "Numéro local",
   "enterPin": "Entrez votre code PIN",
   "forgotPin": "Code PIN oublié ?",
-  "wrongPin": "Code PIN incorrect."
+  "wrongPin": "Code PIN incorrect.",
+  "driverNewMission": "NOUVELLE MISSION",
+  "driverMissionAccepted": "Mission acceptée ✓",
+  "driverMissionAlreadyTaken": "Mission déjà prise par un autre livreur.",
+  "driverMissionExpired": "Expirée",
+  "driverAcceptMission": "Accepter la mission"
 }

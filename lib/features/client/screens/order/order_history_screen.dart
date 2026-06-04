@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
 import '../../providers/cart_provider.dart';
+import '../../../../core/utils/invoice_generator.dart';
 
 final ordersProvider = FutureProvider.autoDispose<List<Order>>((ref) async {
   final res = await ApiClient.instance.get('/orders/my-orders', params: {'limit': '50'});
@@ -152,6 +153,7 @@ class _OrderCard extends ConsumerStatefulWidget {
 
 class _OrderCardState extends ConsumerState<_OrderCard> {
   bool _reordering = false;
+  bool _generatingInvoice = false;
 
   Color get _statusColor {
     if (widget.order.isDelivered) return AppColors.success;
@@ -206,6 +208,21 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
       ));
     } finally {
       if (mounted) setState(() => _reordering = false);
+    }
+  }
+
+  Future<void> _downloadInvoice() async {
+    setState(() => _generatingInvoice = true);
+    try {
+      await generateAndShareInvoice(widget.order);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Erreur lors de la génération de la facture'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) setState(() => _generatingInvoice = false);
     }
   }
 
@@ -268,6 +285,25 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
           const SizedBox(height: 10),
           Row(children: [
             const Spacer(),
+            // Bouton facture (dès que le paiement est confirmé)
+            if (order.isPaid) ...[
+              OutlinedButton.icon(
+                onPressed: _generatingInvoice ? null : _downloadInvoice,
+                icon: _generatingInvoice
+                    ? const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                    : const Icon(Icons.receipt_long_rounded, size: 14),
+                label: const Text('Facture',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(80, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  side: const BorderSide(color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             // Bouton avis (livré, pas encore d'avis)
             if (order.isDelivered && !order.hasReview) ...[
               OutlinedButton.icon(

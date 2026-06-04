@@ -6,6 +6,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
+import '../../../../core/utils/invoice_generator.dart';
 
 final orderDetailProvider = FutureProvider.autoDispose.family<Order, String>((ref, id) async {
   final res = await ApiClient.instance.get('/orders/$id');
@@ -25,6 +26,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
   Timer? _pollTimer;
   DateTime? _pollStart;
   bool _checking = false;
+  bool _generatingInvoice = false;
 
   static const _pollInterval   = Duration(seconds: 3);
   static const _maxPollMinutes = Duration(minutes: 5);
@@ -66,6 +68,21 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  Future<void> _downloadInvoice(Order order) async {
+    setState(() => _generatingInvoice = true);
+    try {
+      await generateAndShareInvoice(order);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Erreur lors de la génération de la facture'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) setState(() => _generatingInvoice = false);
+    }
   }
 
   @override
@@ -266,6 +283,31 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
             ],
           ])),
+          // Bouton facture (dès que paiement confirmé)
+          if (o.isPaid) ...[
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _generatingInvoice ? null : () => _downloadInvoice(o),
+                icon: _generatingInvoice
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                    : const Icon(Icons.download_rounded, size: 18),
+                label: Text(
+                  _generatingInvoice ? 'Génération...' : 'Télécharger la facture',
+                  style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           const SizedBox(height: 40),
         ]);
         },

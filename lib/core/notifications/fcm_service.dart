@@ -60,6 +60,11 @@ class FcmService {
   static const _proOrderChannelDesc =
       'Alertes de nouvelles commandes reçues (prioritaire).';
 
+  /// Canal DÉDIÉ aux messages de chat — importance haute (son + bandeau).
+  static const _chatChannelId = 'ife_messages_chat';
+  static const _chatChannelName = 'Messages';
+  static const _chatChannelDesc = 'Nouveaux messages de discussion.';
+
   /// Point d'entrée — à appeler depuis main.dart après runApp.
   /// Idempotent : appels multiples sans effet (utile en hot-reload).
   static Future<void> init(Ref ref) async {
@@ -171,11 +176,21 @@ class FcmService {
       enableVibration: true,
       enableLights: true,
     );
+    // Canal messages chat — importance haute (son + bandeau, sans full-screen).
+    const chatChannel = AndroidNotificationChannel(
+      _chatChannelId,
+      _chatChannelName,
+      description: _chatChannelDesc,
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
     final androidImpl = _localNotif
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidImpl?.createNotificationChannel(channel);
     await androidImpl?.createNotificationChannel(missionChannel);
     await androidImpl?.createNotificationChannel(proOrderChannel);
+    await androidImpl?.createNotificationChannel(chatChannel);
   }
 
   // ── 3. Foreground handler : affiche via local notif ───────────────────────
@@ -189,9 +204,10 @@ class FcmService {
 
       // Mission livreur → canal MAX (popup heads-up appuyé).
       // Nouvelle commande pro (status PAID) → canal pro MAX (popup).
-      // Sinon → canal standard.
+      // Message chat → canal chat. Sinon → canal standard.
       final isMission  = msg.data['type'] == 'NEW_MISSION';
       final isProOrder = msg.data['status'] == 'PAID';
+      final isChat     = msg.data['type'] == 'NEW_MESSAGE';
       final AndroidNotificationDetails android;
       if (isMission) {
         android = const AndroidNotificationDetails(
@@ -214,6 +230,16 @@ class FcmService {
           enableVibration: true,
           fullScreenIntent: true,
           category: AndroidNotificationCategory.call,
+        );
+      } else if (isChat) {
+        android = const AndroidNotificationDetails(
+          _chatChannelId, _chatChannelName,
+          channelDescription: _chatChannelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+          category: AndroidNotificationCategory.message,
         );
       } else {
         android = const AndroidNotificationDetails(
@@ -375,6 +401,20 @@ class FcmService {
     final auth = ref.read(authProvider);
     if (!auth.isAuthenticated) return;
     final router = ref.read(routerProvider);
+
+    // Message chat → ouvre la conversation (route selon le rôle).
+    if (data['type'] == 'NEW_MESSAGE') {
+      final convOrderId = orderId
+          ?? data['conversationId']?.toString().replaceFirst('order_', '');
+      if (convOrderId != null && convOrderId.isNotEmpty) {
+        switch (auth.role) {
+          case UserRole.driver:       router.push('/driver/chat/$convOrderId'); break;
+          case UserRole.professional: router.push('/pro/chat/$convOrderId');    break;
+          default:                    router.push('/chat/$convOrderId');
+        }
+        return;
+      }
+    }
 
     // Pas d'orderId → tap sur une notif système non-commande (rare) → home.
     if (orderId == null || orderId.isEmpty) {

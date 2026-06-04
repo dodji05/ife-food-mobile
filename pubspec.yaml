@@ -71,6 +71,8 @@ dependencies:
   kkiapay: ^1.3.0-dev.14       # widget de paiement KKiaPay (mobile money / carte)
   flutter_stripe: ^10.1.1      # PaymentSheet Stripe (carte internationale / diaspora)
   share_plus: ^7.2.2          # partage social (restaurant_screen + futur)
+  pdf: ^3.10.8
+  path_provider: ^2.1.2
   qr_flutter: ^4.1.0          # génération QR code (parrainage pro)
   connectivity_plus: ^5.0.2
   local_auth: ^2.1.8

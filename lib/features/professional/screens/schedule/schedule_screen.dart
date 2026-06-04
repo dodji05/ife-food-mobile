@@ -104,11 +104,14 @@ class _State extends ConsumerState<ScheduleScreen> {
           );
         }).toList(),
       ])),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        child: ElevatedButton(
-          onPressed: _loading ? null : _save,
-          child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Enregistrer les horaires'),
+      SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: ElevatedButton(
+            onPressed: _loading ? null : _save,
+            child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Enregistrer les horaires'),
+          ),
         ),
       ),
     ]),

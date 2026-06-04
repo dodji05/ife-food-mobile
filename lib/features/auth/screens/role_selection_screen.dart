@@ -46,9 +46,10 @@ class _State extends State<RoleSelectionScreen> {
       elevation: 0,
       leading: BackButton(color: context.textPrimary),
     ),
-    body: SafeArea(child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    body: Column(children: [
+      Expanded(child: SafeArea(bottom: false, child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(t.whoAreYou,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
               fontWeight: FontWeight.w900, color: context.textPrimary)),
@@ -96,14 +97,20 @@ class _State extends State<RoleSelectionScreen> {
             ),
           ),
         )),
-        const Spacer(),
-        ElevatedButton(
-          onPressed: _selected == null ? null : () =>
-              context.go('/auth/phone', extra: _selected),
-          child: Text(t.actionContinue),
+        ])),
+      )),
+      SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: ElevatedButton(
+            onPressed: _selected == null ? null : () =>
+                context.go('/auth/phone', extra: _selected),
+            child: Text(t.actionContinue),
+          ),
         ),
-      ]),
-    )),
+      ),
+    ]),
   );
   }
 }

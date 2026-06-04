@@ -53,7 +53,10 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
       backgroundColor: context.bgColor,
       appBar: AppBar(backgroundColor: context.bgColor, elevation: 0,
           leading: BackButton(color: context.textPrimary)),
-      body: SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(
+      body: Column(children: [
+        Expanded(child: SafeArea(bottom: false, child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Badge rôle
@@ -102,17 +105,23 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
           if (_error != null) ...[const SizedBox(height: 10),
             Text(_error!, style: const TextStyle(color: AppColors.danger,
                 fontFamily: 'Nunito', fontSize: 13))],
-          const Spacer(),
-          ElevatedButton(
-            onPressed: (_loading || _ctrl.text.trim().isEmpty) ? null : _send,
-            style: ElevatedButton.styleFrom(backgroundColor: roleColor),
-            child: _loading
-                ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Recevoir le code'),
-          ),
         ],
-      ))),
+      )))),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: ElevatedButton(
+              onPressed: (_loading || _ctrl.text.trim().isEmpty) ? null : _send,
+              style: ElevatedButton.styleFrom(backgroundColor: roleColor),
+              child: _loading
+                  ? const SizedBox(width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Recevoir le code'),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

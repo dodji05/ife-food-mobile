@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/providers/currency_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_colors.dart';
@@ -80,8 +81,8 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
   }
 
   String get _formattedDisplayPrice {
-    final p = _displayPrice.toStringAsFixed(0);
-    return product.currency == 'XOF' ? '$p F' : '$p ${product.currency}';
+    // Conversion à l'affichage selon la devise du client (estimation).
+    return ref.watch(currencyFormatterProvider).format(_displayPrice);
   }
 
   Future<void> _addToCart() async {

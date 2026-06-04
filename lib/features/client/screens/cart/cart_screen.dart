@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/cart_provider.dart';
+import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 
@@ -12,6 +13,7 @@ class CartScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
+    final fmt  = ref.watch(currencyFormatterProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -57,7 +59,7 @@ class CartScreen extends ConsumerWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(item.product.localizedName('fr'), style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 2),
-                      Text('${item.product.price.toStringAsFixed(0)} F / unité',
+                      Text('${fmt.format(item.product.price)} / unité',
                         style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
                       const SizedBox(height: 8),
                       Row(children: [
@@ -73,7 +75,7 @@ class CartScreen extends ConsumerWidget {
                               child: const Icon(Icons.add_rounded, size: 16, color: Colors.white))),
                         ]),
                         const Spacer(),
-                        Text('${item.total.toStringAsFixed(0)} F',
+                        Text(fmt.format(item.total),
                           style: const TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       ]),
                     ]),
@@ -93,7 +95,7 @@ class CartScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor.withOpacity(0.8))),
                 child: Column(children: [
-                  _SummaryRow(label: 'Sous-total', value: '${cart.subtotal.toStringAsFixed(0)} F'),
+                  _SummaryRow(label: 'Sous-total', value: fmt.format(cart.subtotal)),
                   const SizedBox(height: 8),
                   // Livraison : montant exact calculé seulement après saisie
                   // de l'adresse au checkout (besoin coords delivery vs pro).
@@ -103,7 +105,7 @@ class CartScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
                     _SummaryRow(
                       label: 'Code promo (${cart.promoCode})',
-                      value: '-${cart.promoDiscount.toStringAsFixed(0)} F',
+                      value: '-${fmt.format(cart.promoDiscount)}',
                       valueColor: AppColors.success,
                     ),
                   ],
@@ -113,7 +115,7 @@ class CartScreen extends ConsumerWidget {
                   // calculée côté backend (POST /orders renvoie deliveryFee).
                   _SummaryRow(
                     label: 'Sous-total après promo',
-                    value: '${cart.totalAfterPromo.toStringAsFixed(0)} F',
+                    value: fmt.format(cart.totalAfterPromo),
                     isBold: true,
                   ),
                   const SizedBox(height: 4),
@@ -137,7 +139,7 @@ class CartScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                    child: Text('${cart.totalAfterPromo.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
+                    child: Text(fmt.format(cart.totalAfterPromo), style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
                 ]),
               )),
             ),
@@ -184,6 +186,7 @@ class _PromoCodeRowState extends ConsumerState<_PromoCodeRow> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final fmt  = ref.watch(currencyFormatterProvider);
 
     // Si une promo est déjà appliquée -> affichage "chip" avec bouton retirer.
     if (cart.hasPromo) {
@@ -201,7 +204,7 @@ class _PromoCodeRowState extends ConsumerState<_PromoCodeRow> {
             Text(cart.promoCode!,
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
                   fontWeight: FontWeight.w900, color: AppColors.success)),
-            Text('-${cart.promoDiscount.toStringAsFixed(0)} F sur votre commande',
+            Text('-${fmt.format(cart.promoDiscount)} sur votre commande',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
           ])),
           IconButton(

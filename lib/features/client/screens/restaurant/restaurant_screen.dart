@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/providers/currency_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:share_plus/share_plus.dart';
@@ -948,7 +949,7 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
                 ],
                 const SizedBox(height: 8),
                 Row(children: [
-                  Text(product.formattedPrice,
+                  PriceText(amount: product.price,
                     style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
                         fontWeight: FontWeight.w800, color: AppColors.primary)),
                   const Spacer(),
@@ -1043,9 +1044,10 @@ class _CartFab extends StatelessWidget {
           ),
         ]),
         const SizedBox(width: 10),
-        Text('Voir le panier · ${cart.subtotal.toStringAsFixed(0)} F',
+        Consumer(builder: (_, ref, __) => Text(
+          'Voir le panier · ${ref.watch(currencyFormatterProvider).format(cart.subtotal)}',
           style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              fontWeight: FontWeight.w800, color: Colors.white)),
+              fontWeight: FontWeight.w800, color: Colors.white))),
       ]),
     ),
   );

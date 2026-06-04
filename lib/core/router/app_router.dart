@@ -66,7 +66,6 @@ import '../../features/professional/screens/orders/pro_orders_screen.dart';
 import '../../features/professional/screens/orders/pro_order_detail_screen.dart';
 import '../../features/professional/screens/catalogue/catalogue_screen.dart';
 import '../../features/professional/screens/catalogue/add_product_screen.dart';
-import '../../features/professional/screens/catalogue/manage_categories_screen.dart';
 import '../../features/professional/screens/notifications/pro_notifications_screen.dart';
 import '../../features/admin/screens/admin_pending_screen.dart';
 import '../../features/client/screens/notifications/client_notifications_screen.dart';
@@ -373,7 +372,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pro/schedule', builder: (_, __) => const ScheduleScreen()),
       GoRoute(path: '/pro/reviews',  builder: (_, __) => const ReviewsScreen()),
       GoRoute(path: '/pro/edit-info',  builder: (_, __) => const EditBusinessInfoScreen()),
-      GoRoute(path: '/pro/categories',    builder: (_, __) => const ManageCategoriesScreen()),
       GoRoute(path: '/pro/notifications',     builder: (_, __) => const ProNotificationsScreen()),
       GoRoute(path: '/pro/favorite-drivers', builder: (_, __) => const FavoriteDriversScreen()),
       GoRoute(path: '/pro/promo',            builder: (_, __) => const ProPromoScreen()),

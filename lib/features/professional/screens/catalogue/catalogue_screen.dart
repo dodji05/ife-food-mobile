@@ -30,11 +30,6 @@ class CatalogueScreen extends ConsumerWidget {
         title: const Text('Mon catalogue'),
         actions: [
           IconButton(
-            onPressed: () => context.push('/pro/categories'),
-            icon: Icon(Icons.folder_outlined, color: context.textPrimary),
-            tooltip: 'Gérer les catégories',
-          ),
-          IconButton(
             onPressed: () {
               ref.invalidate(productsProvider);
               ref.invalidate(categoriesProvider);

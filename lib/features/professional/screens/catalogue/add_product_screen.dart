@@ -749,7 +749,7 @@ class _EmptyCategories extends StatelessWidget {
       Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
       SizedBox(width: 10),
       Expanded(child: Text(
-        'Aucune catégorie disponible. Créez-en une depuis la gestion du catalogue.',
+        'Aucune catégorie disponible. Contactez l\'administrateur pour en créer.',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
             fontWeight: FontWeight.w600, color: AppColors.warning),
       )),

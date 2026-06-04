@@ -8,6 +8,7 @@ import '../../../shared/models/order.dart';
 /// Génère un reçu PDF pour [order] et ouvre la feuille de partage native.
 /// Ne doit être appelé que si [order.isPaid] est true.
 Future<void> generateAndShareInvoice(Order order) async {
+  assert(order.isPaid, 'generateAndShareInvoice called on unpaid order ${order.id}');
   final doc = pw.Document();
 
   // ── Dimensions format reçu ─────────────────────────────────────────
@@ -146,7 +147,7 @@ Future<void> generateAndShareInvoice(Order order) async {
         pw.Row(children: [
           pw.Text('Statut paiement :', style: styleSmall),
           pw.Spacer(),
-          pw.Text('Payé ✓', style: styleBold),
+          pw.Text('Payé - OK', style: styleBold),
         ]),
         pw.SizedBox(height: 10),
         sep,

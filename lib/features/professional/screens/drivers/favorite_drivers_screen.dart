@@ -11,7 +11,12 @@
 //   • Retirer des favoris (DELETE)
 //
 // Ajout : FAB → bottom sheet de recherche par téléphone
+//
+// Pour réactiver l'ajout de livreur : passer _kAddDriverVisible à true
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ignore: constant_identifier_names
+const bool _kAddDriverVisible = false;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,13 +52,15 @@ class _FavoriteDriversScreenState extends ConsumerState<FavoriteDriversScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddSheet,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.person_add_rounded, color: Colors.white),
-        label: const Text('Ajouter',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: Colors.white)),
-      ),
+      floatingActionButton: _kAddDriverVisible
+          ? FloatingActionButton.extended(
+              onPressed: _openAddSheet,
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+              label: const Text('Ajouter',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: Colors.white)),
+            )
+          : null,
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => _ErrorState(
@@ -577,12 +584,14 @@ class _EmptyState extends StatelessWidget {
         Text('Ajoutez des livreurs pour les retrouver rapidement ou les marquer comme exclusifs.',
           textAlign: TextAlign.center,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5)),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: onAdd,
-          icon: const Icon(Icons.person_add_rounded),
-          label: const Text('Ajouter un livreur'),
-        ),
+        if (_kAddDriverVisible) ...[
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.person_add_rounded),
+            label: const Text('Ajouter un livreur'),
+          ),
+        ],
       ]),
     ),
   );

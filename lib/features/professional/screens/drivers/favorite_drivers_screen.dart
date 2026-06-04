@@ -15,8 +15,6 @@
 // Pour réactiver l'ajout de livreur : passer _kAddDriverVisible à true
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ignore: constant_identifier_names
-const bool _kAddDriverVisible = false;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +23,10 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
+
+// Pour réactiver l'ajout de livreur favori : passer à true
+// ignore: constant_identifier_names
+const bool _kAddDriverVisible = false;
 
 class FavoriteDriversScreen extends ConsumerStatefulWidget {
   const FavoriteDriversScreen({super.key});

@@ -40,7 +40,7 @@ Future<void> generateAndShareInvoice(Order order) async {
 
   // ── Séparateurs ───────────────────────────────────────────────────
   final sep = pw.Divider(color: PdfColors.grey400, thickness: 0.5);
-  const gap = pw.SizedBox(height: 4);
+  final gap = pw.SizedBox(height: 4);
 
   doc.addPage(pw.Page(
     pageFormat: pageFormat,

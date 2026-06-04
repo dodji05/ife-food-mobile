@@ -12,6 +12,7 @@ import '../../providers/addresses_provider.dart';
 import '../../widgets/address_selector_modal.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -458,6 +459,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final fmt  = ref.watch(currencyFormatterProvider);
     final defaultAddr = ref.watch(defaultAddressProvider);
     final effectiveAddr = _manuallySelectedAddress ?? defaultAddr;
 
@@ -607,20 +609,20 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(item.product.localizedName('fr'),
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 14)),
-                Text('${item.product.price.toStringAsFixed(0)} F / unité',
+                Text('${fmt.format(item.product.price)} / unité',
                   style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
               ])),
-              Text('${item.total.toStringAsFixed(0)} F',
+              Text(fmt.format(item.total),
                 style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700)),
             ]),
           )),
           const Divider(height: 20),
-          _SummaryRow(label: 'Sous-total', value: '${cart.subtotal.toStringAsFixed(0)} F'),
+          _SummaryRow(label: 'Sous-total', value: fmt.format(cart.subtotal)),
           if (cart.hasPromo) ...[
             const SizedBox(height: 6),
             _SummaryRow(
               label: 'Code promo (${cart.promoCode})',
-              value: '-${cart.promoDiscount.toStringAsFixed(0)} F',
+              value: '-${fmt.format(cart.promoDiscount)}',
               valueColor: AppColors.success,
             ),
           ],
@@ -644,15 +646,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             _SummaryRow(
               label: 'Livraison',
               value: _deliveryFee != null
-                ? '${_deliveryFee!.toStringAsFixed(0)} F'
+                ? fmt.format(_deliveryFee!)
                 : 'Calculée à la commande',
             ),
           const Divider(height: 20),
           _SummaryRow(
             label: _deliveryFee != null ? 'Total estimé' : 'À payer (hors livraison)',
             value: _deliveryFee != null
-              ? '${(cart.totalAfterPromo + _deliveryFee!).toStringAsFixed(0)} F'
-              : '${cart.totalAfterPromo.toStringAsFixed(0)} F',
+              ? fmt.format(cart.totalAfterPromo + _deliveryFee!)
+              : fmt.format(cart.totalAfterPromo),
             isBold: true,
           ),
         ])),
@@ -709,8 +711,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ? const SizedBox(height: 20, width: 20,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
             : Text(_deliveryFee != null
-              ? 'Commander — ${(cart.totalAfterPromo + _deliveryFee!).toStringAsFixed(0)} F'
-              : 'Payer ${cart.totalAfterPromo.toStringAsFixed(0)} F + livraison'),
+              ? 'Commander — ${fmt.format(cart.totalAfterPromo + _deliveryFee!)}'
+              : 'Payer ${fmt.format(cart.totalAfterPromo)} + livraison'),
         ),
         const SizedBox(height: 40),
       ]),

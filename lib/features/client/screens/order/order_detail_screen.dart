@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../shared/models/order.dart';
@@ -88,6 +89,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(orderDetailProvider(widget.orderId));
+    final fmt   = ref.watch(currencyFormatterProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -217,7 +219,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                 Text('${item.quantity}×', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.primary)),
                 const SizedBox(width: 8),
                 Expanded(child: Text(item.product?['name']?['fr'] ?? 'Produit', style: const TextStyle(fontFamily: 'Nunito', fontSize: 14))),
-                Text('${item.totalPrice.toStringAsFixed(0)} F', style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 14)),
+                Text(fmt.format(item.totalPrice), style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 14)),
               ]),
             )).toList(),
           )),
@@ -225,12 +227,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
 
           // Totals
           _Card(title: 'Résumé', child: Column(children: [
-            _Row('Sous-total', '${o.subtotal.toStringAsFixed(0)} F'),
-            _Row('Livraison', '${o.deliveryFee.toStringAsFixed(0)} F'),
-            if (o.promoDiscount > 0) _Row('Réduction', '-${o.promoDiscount.toStringAsFixed(0)} F', color: AppColors.success),
-            if (o.tipAmount > 0) _Row('Pourboire livreur 🎁', '${o.tipAmount.toStringAsFixed(0)} F', color: AppColors.warning),
+            _Row('Sous-total', fmt.format(o.subtotal)),
+            _Row('Livraison', fmt.format(o.deliveryFee)),
+            if (o.promoDiscount > 0) _Row('Réduction', '-${fmt.format(o.promoDiscount)}', color: AppColors.success),
+            if (o.tipAmount > 0) _Row('Pourboire livreur 🎁', fmt.format(o.tipAmount), color: AppColors.warning),
             const Divider(height: 20),
-            _Row('Total', '${o.totalAmount.toStringAsFixed(0)} F', bold: true),
+            _Row('Total', fmt.format(o.totalAmount), bold: true),
           ])),
           const SizedBox(height: 12),
 

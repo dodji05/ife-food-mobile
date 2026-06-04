@@ -27,7 +27,6 @@ import '../../../../shared/widgets/editable_avatar.dart';
 import '../../../../shared/widgets/language_picker.dart';
 import '../../../../shared/widgets/theme_selector_tile.dart';
 import '../../providers/driver_provider.dart';
-import 'driver_zones_screen.dart';
 import 'driver_documents_screen.dart';
 
 class DriverProfileScreen extends ConsumerWidget {
@@ -146,10 +145,6 @@ class DriverProfileScreen extends ConsumerWidget {
               sub: _vehicleLabel(driver?.vehicleType) +
                   (driver?.licensePlate != null ? ' • ${driver!.licensePlate}' : ''),
               onTap: () => _showVehicleSheet(context, ref, driver)),
-          _Item(Icons.location_city_rounded, 'Zones de livraison',
-              sub: 'Gérer mes zones d\'activité',
-              onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const DriverZonesScreen()))),
           _Item(Icons.lock_rounded, 'Modifier le PIN', onTap: () {
             final phone = user?.phone;
             if (phone == null || phone.isEmpty) return;

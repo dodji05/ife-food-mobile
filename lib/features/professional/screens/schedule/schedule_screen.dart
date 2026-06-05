@@ -62,12 +62,18 @@ class _State extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.darkBg,
-    resizeToAvoidBottomInset: false,
     appBar: AppBar(title: const Text('Horaires d\'ouverture'), leading: const BackButton()),
-    body: SafeArea(
+    bottomNavigationBar: SafeArea(
       top: false,
-      child: Column(children: [
-        Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: ElevatedButton(
+          onPressed: _loading ? null : _save,
+          child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Enregistrer les horaires'),
+        ),
+      ),
+    ),
+    body: ListView(padding: const EdgeInsets.all(16), children: [
           const Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, height: 1.5)),
           const SizedBox(height: 20),
@@ -106,16 +112,7 @@ class _State extends ConsumerState<ScheduleScreen> {
               ]),
             );
           }).toList(),
-        ])),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: ElevatedButton(
-            onPressed: _loading ? null : _save,
-            child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Enregistrer les horaires'),
-          ),
-        ),
-      ]),
-    ),
+    ]),
   );
 }
 

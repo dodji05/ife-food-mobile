@@ -30,7 +30,27 @@ class _State extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: context.bgColor,
-    body: SafeArea(child: Column(children: [
+    bottomNavigationBar: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ElevatedButton(
+            onPressed: () => _page < 2
+                ? _ctrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease)
+                : context.go('/auth/role'),
+            child: Text(_page < 2 ? 'Suivant →' : 'Commencer'),
+          ),
+          const SizedBox(height: 6),
+          TextButton(
+            onPressed: () => context.go('/login/phone'),
+            child: Text('J\'ai déjà un compte',
+              style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary,
+                  fontWeight: FontWeight.w600, fontSize: 14)),
+          ),
+        ]),
+      ),
+    ),
+    body: Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         child: Row(children: [
           RichText(text: const TextSpan(
@@ -63,24 +83,8 @@ class _State extends State<OnboardingScreen> {
             color: i == _page ? _slides[i].color : context.borderColor,
             borderRadius: BorderRadius.circular(4)),
         ))),
-      const SizedBox(height: 28),
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Column(children: [
-        ElevatedButton(
-          onPressed: () => _page < 2
-              ? _ctrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease)
-              : context.go('/auth/role'),
-          child: Text(_page < 2 ? 'Suivant →' : 'Commencer'),
-        ),
-        const SizedBox(height: 10),
-        TextButton(
-          onPressed: () => context.go('/login/phone'),
-          child: Text('J\'ai déjà un compte',
-            style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary,
-                fontWeight: FontWeight.w600, fontSize: 14)),
-        ),
-      ])),
       const SizedBox(height: 16),
-    ])),
+    ]),
   );
 }
 

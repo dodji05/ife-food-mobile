@@ -53,10 +53,21 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
       backgroundColor: context.bgColor,
       appBar: AppBar(backgroundColor: context.bgColor, elevation: 0,
           leading: BackButton(color: context.textPrimary)),
-      body: SafeArea(
+      bottomNavigationBar: SafeArea(
         top: false,
-        child: Column(children: [
-        Expanded(child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: ElevatedButton(
+            onPressed: (_loading || _ctrl.text.trim().isEmpty) ? null : _send,
+            style: ElevatedButton.styleFrom(backgroundColor: roleColor),
+            child: _loading
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Recevoir le code'),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,19 +119,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
             Text(_error!, style: const TextStyle(color: AppColors.danger,
                 fontFamily: 'Nunito', fontSize: 13))],
         ],
-      ))),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-          child: ElevatedButton(
-            onPressed: (_loading || _ctrl.text.trim().isEmpty) ? null : _send,
-            style: ElevatedButton.styleFrom(backgroundColor: roleColor),
-            child: _loading
-                ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Recevoir le code'),
-          ),
-        ),
-      ])),
+      ),
     );
   }
 }

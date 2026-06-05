@@ -84,12 +84,50 @@ class _TipScreenState extends ConsumerState<TipScreen> {
         title: const Text('Laisser un pourboire'),
         leading: BackButton(onPressed: _skip),
       ),
-      body: SafeArea(
+      bottomNavigationBar: SafeArea(
+        top: false,
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (_loading || _effectiveAmount == null) ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _loading
+                  ? const SizedBox(width: 22, height: 22,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(
+                      _effectiveAmount != null
+                          ? 'Envoyer $_effectiveAmount F à votre livreur'
+                          : 'Sélectionner un montant',
+                      style: const TextStyle(fontFamily: 'Nunito',
+                          fontSize: 15, fontWeight: FontWeight.w800),
+                    ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: _skip,
+                child: Text('Passer pour l\'instant',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                      color: context.textMuted, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // Header — nom du livreur si disponible
               orderAsync.maybeWhen(
                 data: (order) => _DriverHeader(
@@ -188,45 +226,7 @@ class _TipScreenState extends ConsumerState<TipScreen> {
                 ),
               ),
 
-              const Spacer(),
-
-              // CTA
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (_loading || _effectiveAmount == null) ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: _loading
-                    ? const SizedBox(width: 22, height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(
-                        _effectiveAmount != null
-                            ? 'Envoyer $_effectiveAmount F à votre livreur'
-                            : 'Sélectionner un montant',
-                        style: const TextStyle(fontFamily: 'Nunito',
-                            fontSize: 15, fontWeight: FontWeight.w800),
-                      ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Passer
-              Center(
-                child: TextButton(
-                  onPressed: _skip,
-                  child: Text('Passer pour l\'instant',
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                        color: context.textMuted, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

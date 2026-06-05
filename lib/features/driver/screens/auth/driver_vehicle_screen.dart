@@ -85,9 +85,30 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       // Pas de back : étape obligatoire avant d'accéder au dashboard.
       automaticallyImplyLeading: false,
     ),
-    body: SafeArea(
+    bottomNavigationBar: SafeArea(
       top: false,
-      child: Column(children: [
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ElevatedButton(
+            onPressed: _loading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _loading
+              ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+              : const Text('Soumettre mon inscription',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
+          ),
+          const SizedBox(height: 8),
+          Text('Votre dossier sera vérifié sous 24h',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
+        ]),
+      ),
+    ),
+    body: ListView(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -101,9 +122,9 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
         ]),
       ),
       // Liste des véhicules — sélection radio visuelle
-      Expanded(child: Padding(
+      Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: ListView(children: [
+        child: Column(children: [
           ..._vehicles.map((v) => GestureDetector(
             onTap: () => setState(() => _vehicle = v['id']!),
             child: AnimatedContainer(
@@ -173,28 +194,8 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                   color: context.textMuted)),
             ],
           ),
-        ]))),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        child: Column(children: [
-          ElevatedButton(
-            onPressed: _loading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 54),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: _loading
-              ? const SizedBox(width: 20, height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-              : const Text('Soumettre mon inscription',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Votre dossier sera vérifié sous 24h',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
         ]),
       ),
-    ])),
+    ]),
   );
 }

@@ -105,7 +105,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 8, 28, 16),
+          child: TextButton.icon(
+            onPressed: _forgotLoading ? null : _forgotPin,
+            icon: _forgotLoading
+                ? const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                : const Icon(Icons.lock_reset_rounded, size: 16, color: AppColors.primary),
+            label: Text(_forgotLoading ? 'Envoi en cours…' : 'PIN oublié ?',
+              style: const TextStyle(
+                  fontFamily: 'Nunito', fontWeight: FontWeight.w700,
+                  fontSize: 14, color: AppColors.primary)),
+          ),
+        ),
+      ),
       body: SafeArea(
+        top: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Column(
@@ -191,21 +209,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const CircularProgressIndicator(color: AppColors.primary),
               ],
 
-              const Spacer(),
-
-              // Bouton PIN oublié
-              TextButton.icon(
-                onPressed: _forgotLoading ? null : _forgotPin,
-                icon: _forgotLoading
-                    ? const SizedBox(width: 14, height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
-                    : const Icon(Icons.lock_reset_rounded, size: 16, color: AppColors.primary),
-                label: Text(_forgotLoading ? 'Envoi en cours…' : 'PIN oublié ?',
-                  style: const TextStyle(
-                      fontFamily: 'Nunito', fontWeight: FontWeight.w700,
-                      fontSize: 14, color: AppColors.primary)),
-              ),
-              const SizedBox(height: 8),
             ],
           ),
         ),

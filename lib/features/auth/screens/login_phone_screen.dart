@@ -43,9 +43,20 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
         elevation: 0,
         leading: BackButton(color: context.textPrimary),
       ),
-      body: SafeArea(
+      bottomNavigationBar: SafeArea(
+        top: false,
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: ElevatedButton(
+            onPressed: canSubmit ? _continue : null,
+            child: const Text('Continuer'),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -99,11 +110,6 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
                     ),
                   )),
                 ]),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: canSubmit ? _continue : null,
-                child: const Text('Continuer'),
               ),
             ],
           ),

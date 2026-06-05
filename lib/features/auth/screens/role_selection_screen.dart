@@ -47,11 +47,18 @@ class _State extends State<RoleSelectionScreen> {
         elevation: 0,
         leading: BackButton(color: context.textPrimary),
       ),
-      body: SafeArea(
+      bottomNavigationBar: SafeArea(
         top: false,
-        child: Column(children: [
-          // ── Contenu scrollable ────────────────────────────────────────────
-          Expanded(child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: ElevatedButton(
+            onPressed: _selected == null ? null : () =>
+                context.go('/auth/phone', extra: _selected),
+            child: Text(t.actionContinue),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(t.whoAreYou,
@@ -107,17 +114,6 @@ class _State extends State<RoleSelectionScreen> {
                 ),
               )),
             ]),
-          )),
-          // ── Bouton continuer (fixe en bas) ────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-            child: ElevatedButton(
-              onPressed: _selected == null ? null : () =>
-                  context.go('/auth/phone', extra: _selected),
-              child: Text(t.actionContinue),
-            ),
-          ),
-        ]),
       ),
     );
   }

@@ -62,59 +62,60 @@ class _State extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.darkBg,
+    resizeToAvoidBottomInset: false,
     appBar: AppBar(title: const Text('Horaires d\'ouverture'), leading: const BackButton()),
-    body: Column(children: [
-      Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
-        const Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, height: 1.5)),
-        const SizedBox(height: 20),
-        ..._dayKeys.asMap().entries.map((e) {
-          final idx = e.key; final key = e.value;
-          final isOpen = _hours[key]?['open'] != null;
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
-            child: Row(children: [
-              SizedBox(width: 36, child: Text(_days[idx], style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText))),
-              const SizedBox(width: 12),
-              if (isOpen) ...[
-                GestureDetector(onTap: () => _pickTime(key, 'open'), child: _TimeChip(_hours[key]?['open'] ?? '08:00', Icons.wb_sunny_rounded)),
-                const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—', style: TextStyle(color: AppColors.darkSubtext))),
-                GestureDetector(onTap: () => _pickTime(key, 'close'), child: _TimeChip(_hours[key]?['close'] ?? '22:00', Icons.nights_stay_rounded)),
-              ] else
-                const Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted)),
-              const Spacer(),
-              Switch(
-                value: isOpen,
-                onChanged: (v) => setState(() {
-                  if (v) {
-                    _hours[key] = {'open': '08:00', 'close': '22:00'};
-                  } else {
-                    _hours[key] = {'open': null, 'close': null};
-                  }
-                }),
-                activeColor: Colors.white,
-                activeTrackColor: AppColors.primary,
-                inactiveThumbColor: AppColors.darkMuted,
-                inactiveTrackColor: AppColors.darkBorder,
-                trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
-              ),
-            ]),
-          );
-        }).toList(),
-      ])),
-      SafeArea(
-        top: false,
-        child: Padding(
+    body: SafeArea(
+      top: false,
+      child: Column(children: [
+        Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+          const Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, height: 1.5)),
+          const SizedBox(height: 20),
+          ..._dayKeys.asMap().entries.map((e) {
+            final idx = e.key; final key = e.value;
+            final isOpen = _hours[key]?['open'] != null;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+              child: Row(children: [
+                SizedBox(width: 36, child: Text(_days[idx], style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText))),
+                const SizedBox(width: 12),
+                if (isOpen) ...[
+                  GestureDetector(onTap: () => _pickTime(key, 'open'), child: _TimeChip(_hours[key]?['open'] ?? '08:00', Icons.wb_sunny_rounded)),
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—', style: TextStyle(color: AppColors.darkSubtext))),
+                  GestureDetector(onTap: () => _pickTime(key, 'close'), child: _TimeChip(_hours[key]?['close'] ?? '22:00', Icons.nights_stay_rounded)),
+                ] else
+                  const Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted)),
+                const Spacer(),
+                Switch(
+                  value: isOpen,
+                  onChanged: (v) => setState(() {
+                    if (v) {
+                      _hours[key] = {'open': '08:00', 'close': '22:00'};
+                    } else {
+                      _hours[key] = {'open': null, 'close': null};
+                    }
+                  }),
+                  activeColor: Colors.white,
+                  activeTrackColor: AppColors.primary,
+                  inactiveThumbColor: AppColors.darkMuted,
+                  inactiveTrackColor: AppColors.darkBorder,
+                  trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                ),
+              ]),
+            );
+          }).toList(),
+        ])),
+        Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: ElevatedButton(
             onPressed: _loading ? null : _save,
             child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Enregistrer les horaires'),
           ),
         ),
-      ),
-    ]),
+      ]),
+    ),
   );
 }
 

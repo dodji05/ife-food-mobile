@@ -85,8 +85,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       // Pas de back : étape obligatoire avant d'accéder au dashboard.
       automaticallyImplyLeading: false,
     ),
-    body: Column(children: [
-      SafeArea(bottom: false, child: Padding(
+    body: SafeArea(
+      top: false,
+      child: Column(children: [
+      Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Votre véhicule',
@@ -97,7 +99,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
             style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
           const SizedBox(height: 28),
         ]),
-      )),
+      ),
       // Liste des véhicules — sélection radio visuelle
       Expanded(child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -172,9 +174,7 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
             ],
           ),
         ]))),
-      SafeArea(
-      top: false,
-      child: Padding(
+      Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         child: Column(children: [
           ElevatedButton(
@@ -195,7 +195,6 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
             style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
         ]),
       ),
-    ),
-    ]),
+    ])),
   );
 }

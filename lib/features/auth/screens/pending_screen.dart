@@ -69,7 +69,9 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(
+      body: SafeArea(child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center, children: [
         const Text('⏳', style: TextStyle(fontSize: 64)),
         const SizedBox(height: 24),

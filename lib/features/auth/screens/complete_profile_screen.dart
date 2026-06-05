@@ -71,8 +71,10 @@ class _State extends ConsumerState<CompleteProfileScreen> {
       title: const Text('Compléter mon profil',
         style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: Colors.white, fontSize: 17)),
     ),
-    body: Column(children: [
-      Expanded(child: SafeArea(bottom: false, child: SingleChildScrollView(
+    body: SafeArea(
+      top: false,
+      child: Column(children: [
+      Expanded(child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,22 +107,19 @@ class _State extends ConsumerState<CompleteProfileScreen> {
           ]),
         ),
       ],
-    )))),
-      SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-          child: ElevatedButton(
-            onPressed: (_firstName.text.isEmpty || _lastName.text.isEmpty || !_accepted || _loading)
-                ? null : _save,
-            child: _loading
-                ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Créer mon compte'),
-          ),
+    ))),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: ElevatedButton(
+          onPressed: (_firstName.text.isEmpty || _lastName.text.isEmpty || !_accepted || _loading)
+              ? null : _save,
+          child: _loading
+              ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Créer mon compte'),
         ),
       ),
-    ]),
+    ])),
   );
 
   Widget _TF(String label, TextEditingController ctrl, String hint) => Column(

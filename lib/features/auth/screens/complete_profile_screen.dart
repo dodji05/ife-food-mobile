@@ -119,7 +119,8 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         ),
       ],
     ),
-  );
+  ),
+);
 
   Widget _TF(String label, TextEditingController ctrl, String hint) => Column(
     crossAxisAlignment: CrossAxisAlignment.start, children: [

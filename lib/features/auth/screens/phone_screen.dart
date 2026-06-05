@@ -120,6 +120,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                 fontFamily: 'Nunito', fontSize: 13))],
         ],
       ),
-    );
+    ),
+  );
   }
 }

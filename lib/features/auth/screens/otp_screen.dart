@@ -142,7 +142,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 child: const Text('Renvoyer le code', style: TextStyle(
                     fontFamily: 'Nunito', fontWeight: FontWeight.w700,
                     color: AppColors.primary)))),
-          const Spacer(),
         ]),
       )),
     );

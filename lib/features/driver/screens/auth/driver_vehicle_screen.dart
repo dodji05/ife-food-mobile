@@ -85,19 +85,23 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
       // Pas de back : étape obligatoire avant d'accéder au dashboard.
       automaticallyImplyLeading: false,
     ),
-    body: SafeArea(child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Votre véhicule',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
-            fontWeight: FontWeight.w900, color: context.textPrimary)),
-        const SizedBox(height: 6),
-        Text('Quel type de véhicule utilisez-vous pour livrer ?',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
-        const SizedBox(height: 28),
-
-        // Liste des véhicules — sélection radio visuelle
-        Expanded(child: ListView(children: [
+    body: Column(children: [
+      SafeArea(bottom: false, child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Votre véhicule',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
+              fontWeight: FontWeight.w900, color: context.textPrimary)),
+          const SizedBox(height: 6),
+          Text('Quel type de véhicule utilisez-vous pour livrer ?',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
+          const SizedBox(height: 28),
+        ]),
+      )),
+      // Liste des véhicules — sélection radio visuelle
+      Expanded(child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ListView(children: [
           ..._vehicles.map((v) => GestureDetector(
             onTap: () => setState(() => _vehicle = v['id']!),
             child: AnimatedContainer(
@@ -167,27 +171,31 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
                   color: context.textMuted)),
             ],
           ),
-        ])),
-
-        // CTA submit
-        ElevatedButton(
-          onPressed: _loading ? null : _submit,
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 54),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ]))),
+      SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Column(children: [
+          ElevatedButton(
+            onPressed: _loading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _loading
+              ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+              : const Text('Soumettre mon inscription',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
           ),
-          child: _loading
-            ? const SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-            : const Text('Soumettre mon inscription',
-                style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
-        ),
-        const SizedBox(height: 12),
-        Center(child: Text(
-          'Votre dossier sera vérifié sous 24h',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-            color: context.textMuted))),
-      ]),
-    )),
+          const SizedBox(height: 8),
+          Text(
+            'Votre dossier sera vérifié sous 24h',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)),
+        ]),
+      ),
+    ),
+    ]),
   );
 }

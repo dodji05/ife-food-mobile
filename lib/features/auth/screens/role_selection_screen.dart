@@ -39,82 +39,99 @@ class _State extends State<RoleSelectionScreen> {
         color: AppColors.yellow,
       ),
     ];
+
     return Scaffold(
-    backgroundColor: context.bgColor,
-    appBar: AppBar(
       backgroundColor: context.bgColor,
-      elevation: 0,
-      leading: BackButton(color: context.textPrimary),
-    ),
-    body: SafeArea(
-      top: false,
-      child: Column(children: [
-      Expanded(child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(t.whoAreYou,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
-              fontWeight: FontWeight.w900, color: context.textPrimary)),
-        const SizedBox(height: 6),
-        Text(t.chooseProfile,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-              color: context.textSecondary, height: 1.5)),
-        const SizedBox(height: 32),
-        ...roles.map((card) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: GestureDetector(
-            onTap: () => setState(() => _selected = card.role),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: _selected == card.role
-                    ? card.color.withOpacity(0.06) : context.cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _selected == card.role ? card.color : context.borderColor,
-                  width: _selected == card.role ? 2 : 1,
+      appBar: AppBar(
+        backgroundColor: context.bgColor,
+        elevation: 0,
+        leading: BackButton(color: context.textPrimary),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Column(children: [
+          // ── Contenu scrollable ────────────────────────────────────────────
+          Expanded(child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(t.whoAreYou,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 28,
+                    fontWeight: FontWeight.w900, color: context.textPrimary)),
+              const SizedBox(height: 6),
+              Text(t.chooseProfile,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                    color: context.textSecondary, height: 1.5)),
+              const SizedBox(height: 32),
+              ...roles.map((card) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selected = card.role),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: _selected == card.role
+                          ? card.color.withOpacity(0.06) : context.cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _selected == card.role ? card.color : context.borderColor,
+                        width: _selected == card.role ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 52, height: 52,
+                        decoration: BoxDecoration(
+                          color: card.color.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(14)),
+                        child: Center(child: Text(card.emoji,
+                            style: const TextStyle(fontSize: 26))),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(card.title,
+                            style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                                fontWeight: FontWeight.w800, color: context.textPrimary)),
+                          const SizedBox(height: 2),
+                          Text(card.description,
+                            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                                color: context.textPrimary.withOpacity(0.5), height: 1.4)),
+                        ],
+                      )),
+                      if (_selected == card.role)
+                        Icon(Icons.check_circle_rounded, color: card.color, size: 22),
+                    ]),
+                  ),
                 ),
-              ),
-              child: Row(children: [
-                Container(width: 52, height: 52,
-                  decoration: BoxDecoration(
-                    color: card.color.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(14)),
-                  child: Center(child: Text(card.emoji,
-                      style: const TextStyle(fontSize: 26)))),
-                const SizedBox(width: 14),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(card.title,
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                        fontWeight: FontWeight.w800, color: context.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text(card.description,
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                        color: context.textPrimary.withOpacity(0.5), height: 1.4)),
-                ])),
-                if (_selected == card.role)
-                  Icon(Icons.check_circle_rounded, color: card.color, size: 22),
-              ]),
+              )),
+            ]),
+          )),
+          // ── Bouton continuer (fixe en bas) ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: ElevatedButton(
+              onPressed: _selected == null ? null : () =>
+                  context.go('/auth/phone', extra: _selected),
+              child: Text(t.actionContinue),
             ),
           ),
-        )),
-        ])),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        child: ElevatedButton(
-          onPressed: _selected == null ? null : () =>
-              context.go('/auth/phone', extra: _selected),
-          child: Text(t.actionContinue),
-        ),
+        ]),
       ),
-    ])),
-  );
+    );
   }
 }
 
 class _RoleCard {
-  final UserRole role; final String emoji, title, description; final Color color;
-  const _RoleCard({required this.role, required this.emoji,
-      required this.title, required this.description, required this.color});
+  final UserRole role;
+  final String emoji, title, description;
+  final Color color;
+  const _RoleCard({
+    required this.role,
+    required this.emoji,
+    required this.title,
+    required this.description,
+    required this.color,
+  });
 }

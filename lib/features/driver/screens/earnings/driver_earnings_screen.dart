@@ -217,24 +217,30 @@ class _PeriodChip extends StatelessWidget {
   );
 }
 
-// ── Breakdown commissions + pourboires ────────────────────────────────────────
+// ── Breakdown gains nets + pourboires ────────────────────────────────────────
 class _EarningsBreakdown extends StatelessWidget {
   final Map<String, dynamic> data;
   const _EarningsBreakdown({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final commissions = (data['totalEarnings'] as num?)?.toDouble() ?? 0;
-    final tips        = (data['totalTips']     as num?)?.toDouble() ?? 0;
-    final hasTips     = tips > 0;
+    final netEarnings   = (data['totalEarnings']                as num?)?.toDouble() ?? 0;
+    final commDeducted  = (data['totalDriverCommissionDeducted'] as num?)?.toDouble() ?? 0;
+    final tips          = (data['totalTips']                    as num?)?.toDouble() ?? 0;
+    final hasTips       = tips > 0;
+
+    // Sous-titre : nombre de livraisons + commission déduite si applicable
+    final deliverySub = commDeducted > 0
+      ? '${data['allDeliveries'] ?? 0} livr. · comm −${commDeducted.toStringAsFixed(0)} F'
+      : '${data['allDeliveries'] ?? 0} livraisons';
 
     return Row(children: [
       Expanded(child: _BreakdownTile(
         icon:  Icons.delivery_dining_rounded,
         color: AppColors.info,
-        label: 'Commissions',
-        value: '${commissions.toStringAsFixed(0)} F',
-        sub:   '${data['allDeliveries'] ?? 0} livraisons',
+        label: 'Gains livraison',
+        value: '${netEarnings.toStringAsFixed(0)} F',
+        sub:   deliverySub,
       )),
       if (hasTips) ...[
         const SizedBox(width: 10),

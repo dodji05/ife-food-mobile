@@ -93,7 +93,13 @@ class _Body extends StatelessWidget {
             Text('DÉTAIL FINANCIER', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w800, color: ctx.textSecondary, letterSpacing: 0.6)),
             const SizedBox(height: 12),
             _BreakRow('Sous-total brut', '${_fmt(data.periodGross)} F', color: AppColors.darkText),
-            _BreakRow('Commission plateforme (${data.commissionRate.toStringAsFixed(0)}%)', '-${_fmt(data.periodCommission)} F', color: AppColors.danger),
+            _BreakRow(
+              data.commissionRate > 0
+                ? 'Commission plateforme (${data.commissionRate.toStringAsFixed(0)}%)'
+                : 'Commission plateforme (paliers RPO)',
+              '-${_fmt(data.periodCommission)} F',
+              color: AppColors.danger,
+            ),
             const Divider(color: AppColors.darkBorder, height: 20),
             _BreakRow('Vos revenus nets', '${_fmt(data.periodNet)} F', color: AppColors.primary, bold: true),
           ]),

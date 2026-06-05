@@ -293,6 +293,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/home',    builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/orders',  builder: (_, __) => const OrderHistoryScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ClientProfileScreen()),
+          // Détail commande + sous-écrans dans le shell → bottom nav toujours visible
+          GoRoute(path: '/order/:id', builder: (_, state) =>
+              OrderDetailScreen(orderId: state.pathParameters['id']!)),
+          GoRoute(path: '/order/:id/review', builder: (_, state) =>
+              ReviewScreen(orderId: state.pathParameters['id']!)),
+          GoRoute(path: '/order/:id/tip', builder: (_, state) =>
+              TipScreen(orderId: state.pathParameters['id']!)),
+          GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
+              TrackingScreen(orderId: state.pathParameters['orderId']!)),
         ],
       ),
       GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
@@ -300,14 +309,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           RestaurantScreen(restaurantId: state.pathParameters['id']!)),
       GoRoute(path: '/cart',     builder: (_, __) => const CartScreen()),
       GoRoute(path: '/checkout', builder: (_, __) => const CheckoutScreen()),
-      GoRoute(path: '/order/:id', builder: (_, state) =>
-          OrderDetailScreen(orderId: state.pathParameters['id']!)),
-      GoRoute(path: '/order/:id/review', builder: (_, state) =>
-          ReviewScreen(orderId: state.pathParameters['id']!)),
-      GoRoute(path: '/order/:id/tip', builder: (_, state) =>
-          TipScreen(orderId: state.pathParameters['id']!)),
-      GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
-          TrackingScreen(orderId: state.pathParameters['orderId']!)),
       GoRoute(path: '/addresses',         builder: (_, __) => const AddressesScreen()),
       // Form add/edit. /addresses/new = create (initial=null), /addresses/edit/:id
       // = edit (extra=Map<String,dynamic> de l'adresse à pré-remplir).

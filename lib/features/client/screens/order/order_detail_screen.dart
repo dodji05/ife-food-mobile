@@ -93,7 +93,13 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(title: const Text('Détail de la commande'), leading: const BackButton()),
+      appBar: AppBar(
+        title: const Text('Détail de la commande'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/orders'),
+        ),
+      ),
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => Center(child: Text(e.toString())),

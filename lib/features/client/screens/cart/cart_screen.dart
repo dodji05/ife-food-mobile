@@ -24,6 +24,26 @@ class CartScreen extends ConsumerWidget {
           if (!cart.isEmpty) TextButton(onPressed: () => ref.read(cartProvider.notifier).clearCart(), child: const Text('Vider', style: TextStyle(color: AppColors.error, fontFamily: 'Nunito', fontWeight: FontWeight.w700))),
         ],
       ),
+      bottomNavigationBar: cart.isEmpty ? null : SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          decoration: BoxDecoration(
+            color: context.cardColor,
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -4))],
+          ),
+          child: ElevatedButton(
+            onPressed: () => context.push('/checkout'),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Text('Passer la commande'),
+              const SizedBox(width: 8),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                child: Text(fmt.format(cart.totalAfterPromo), style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
+            ]),
+          ),
+        ),
+      ),
       body: cart.isEmpty
         ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Text('🛒', style: TextStyle(fontSize: 64)),
@@ -35,8 +55,7 @@ class CartScreen extends ConsumerWidget {
             ElevatedButton.icon(onPressed: () => context.go('/home'), icon: const Icon(Icons.explore_rounded), label: const Text('Explorer'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(180, 48))),
           ]))
-        : Column(children: [
-            Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+        : ListView(padding: const EdgeInsets.all(16), children: [
               // Items
               ...cart.items.map((item) => Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -126,23 +145,7 @@ class CartScreen extends ConsumerWidget {
                   ),
                 ]),
               ),
-            ])),
-
-            // Checkout button
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              decoration: BoxDecoration(color: context.cardColor, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -4))]),
-              child: SafeArea(top: false, child: ElevatedButton(
-                onPressed: () => context.push('/checkout'),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Text('Passer la commande'),
-                  const SizedBox(width: 8),
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                    child: Text(fmt.format(cart.totalAfterPromo), style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 13))),
-                ]),
-              )),
-            ),
+            const SizedBox(height: 16),
           ]),
     );
   }

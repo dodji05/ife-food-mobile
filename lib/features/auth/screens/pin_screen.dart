@@ -119,65 +119,79 @@ class _PinScreenState extends ConsumerState<PinScreen> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(children: [
-        const SizedBox(height: 32),
-        Container(width: 68, height: 68,
-          decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.10),
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2)),
-          child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32)),
-        const SizedBox(height: 20),
-        Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
-            fontWeight: FontWeight.w900, color: context.textPrimary)),
-        if (!_isSetting) ...[
-          const SizedBox(height: 6),
-          Text('Bonjour ${ref.watch(authProvider).user?.firstName ?? ''} !',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
+      bottomNavigationBar: !_isSetting ? SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 8, 28, 16),
+          child: _loading
+              ? const Center(child: SizedBox(width: 24, height: 24,
+                  child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)))
+              : TextButton.icon(
+                  onPressed: _loading ? null : () async {
+                    final auth  = ref.read(authProvider);
+                    final phone = auth.user?.phone ?? auth.lastPhone ?? '';
+                    if (phone.isEmpty) {
+                      await ref.read(authProvider.notifier).logout();
+                      if (context.mounted) context.go('/onboarding');
+                      return;
+                    }
+                    final countryCode = auth.user?.countryCode ?? 'BJ';
+                    setState(() => _loading = true);
+                    try {
+                      final result = await ref.read(authProvider.notifier)
+                          .startForgotPin(phone, countryCode);
+                      if (!context.mounted) return;
+                      context.push('/auth/otp', extra: OtpRouteParams(
+                        phone: phone,
+                        sessionId: result.sessionId,
+                        countryCode: countryCode,
+                        prefillOtp: result.otp,
+                      ));
+                    } catch (e) {
+                      if (context.mounted) {
+                        setState(() => _error = 'Impossible d\'envoyer le code. Réessayez.');
+                      }
+                    } finally {
+                      if (mounted) setState(() => _loading = false);
+                    }
+                  },
+                  icon: const Icon(Icons.lock_reset_rounded, size: 16, color: AppColors.primary),
+                  label: const Text('PIN oublié ?', style: TextStyle(
+                      fontFamily: 'Nunito', fontWeight: FontWeight.w700,
+                      fontSize: 14, color: AppColors.primary)),
+                ),
+        ),
+      ) : null,
+      body: SafeArea(child: Padding(padding: const EdgeInsets.all(32), child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 32),
+          Container(width: 68, height: 68,
+            decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.10),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2)),
+            child: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 32)),
+          const SizedBox(height: 20),
+          Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
+              fontWeight: FontWeight.w900, color: context.textPrimary)),
+          if (!_isSetting) ...[
+            const SizedBox(height: 6),
+            Text('Bonjour ${ref.watch(authProvider).user?.firstName ?? ''} !',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
+          ],
+          const SizedBox(height: 40),
+          Pinput(controller: _ctrl, length: 4, obscureText: true, autofocus: true,
+            defaultPinTheme: pt,
+            focusedPinTheme: pt.copyDecorationWith(
+                border: Border.all(color: AppColors.primary, width: 2.5)),
+            onCompleted: _handle),
+          if (_error != null) ...[const SizedBox(height: 12),
+            Text(_error!, textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.danger,
+                fontFamily: 'Nunito', fontSize: 13))],
         ],
-        const SizedBox(height: 40),
-        Pinput(controller: _ctrl, length: 4, obscureText: true, autofocus: true,
-          defaultPinTheme: pt,
-          focusedPinTheme: pt.copyDecorationWith(
-              border: Border.all(color: AppColors.primary, width: 2.5)),
-          onCompleted: _handle),
-        if (_error != null) ...[const SizedBox(height: 12),
-          Text(_error!, style: const TextStyle(color: AppColors.danger,
-              fontFamily: 'Nunito', fontSize: 13))],
-        const Spacer(),
-        if (!_isSetting) TextButton(
-          onPressed: _loading ? null : () async {
-            final auth  = ref.read(authProvider);
-            final phone = auth.user?.phone ?? auth.lastPhone ?? '';
-            if (phone.isEmpty) {
-              await ref.read(authProvider.notifier).logout();
-              if (context.mounted) context.go('/onboarding');
-              return;
-            }
-            final countryCode = auth.user?.countryCode ?? 'BJ';
-            setState(() => _loading = true);
-            try {
-              final result = await ref.read(authProvider.notifier)
-                  .startForgotPin(phone, countryCode);
-              if (!context.mounted) return;
-              context.push('/auth/otp', extra: OtpRouteParams(
-                phone: phone,
-                sessionId: result.sessionId,
-                countryCode: countryCode,
-                prefillOtp: result.otp,
-              ));
-            } catch (e) {
-              if (context.mounted) {
-                setState(() => _error = 'Impossible d\'envoyer le code. Réessayez.');
-              }
-            } finally {
-              if (mounted) setState(() => _loading = false);
-            }
-          },
-          child: const Text('PIN oublié ?', style: TextStyle(
-              fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.primary))),
-        if (_loading) const CircularProgressIndicator(color: AppColors.primary),
-      ]))),
+      ))),
     );
   }
 }

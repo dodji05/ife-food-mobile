@@ -78,7 +78,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Erreur lors de la génération de la facture'),
+        content: Text('Erreur lors de la génération du reçu'),
         backgroundColor: Colors.red,
       ));
     } finally {
@@ -303,7 +303,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                     : const Icon(Icons.download_rounded, size: 18),
                 label: Text(
-                  _generatingInvoice ? 'Génération...' : 'Télécharger la facture',
+                  _generatingInvoice ? 'Génération...' : 'Télécharger le reçu',
                   style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700),
                 ),
                 style: OutlinedButton.styleFrom(

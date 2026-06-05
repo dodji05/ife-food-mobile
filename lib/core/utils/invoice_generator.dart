@@ -162,12 +162,12 @@ Future<void> generateAndShareInvoice(Order order) async {
   // ── Sauvegarde + partage ───────────────────────────────────────────
   final bytes = await doc.save();
   final dir = await getTemporaryDirectory();
-  final fileName = 'facture_ife_$shortId.pdf';
+  final fileName = 'recu_ife_$shortId.pdf';
   final file = File('${dir.path}/$fileName');
   await file.writeAsBytes(bytes);
 
   await Share.shareXFiles(
     [XFile(file.path, mimeType: 'application/pdf')],
-    subject: 'Facture IFE FOOD — Commande #$shortId',
+    subject: 'Reçu IFE FOOD — Commande #$shortId',
   );
 }

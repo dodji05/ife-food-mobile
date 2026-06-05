@@ -218,7 +218,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Erreur lors de la génération de la facture'),
+        content: Text('Erreur lors de la génération du reçu'),
         backgroundColor: Colors.red,
       ));
     } finally {
@@ -294,7 +294,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                         width: 14, height: 14,
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                     : const Icon(Icons.receipt_long_rounded, size: 14),
-                label: const Text('Facture',
+                label: const Text('Reçu',
                     style: TextStyle(fontFamily: 'Nunito', fontSize: 12)),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(80, 32),

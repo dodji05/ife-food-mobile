@@ -100,7 +100,6 @@ class _State extends State<RoleSelectionScreen> {
           ),
         )),
         ])),
-      )),
       Padding(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
         child: ElevatedButton(

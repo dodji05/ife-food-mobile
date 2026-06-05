@@ -155,6 +155,44 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
 
     return Scaffold(
       backgroundColor: context.bgColor,
+      bottomNavigationBar: Container(
+        color: AppColors.darkSurface,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              if (missions.length > 1) Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  ...missions.map((m) => Container(
+                    width: 8, height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: m.orderId == mission.orderId
+                        ? AppColors.primary : context.borderColor,
+                      shape: BoxShape.circle),
+                  )),
+                ]),
+              ),
+              ElevatedButton(
+                onPressed: stepIdx >= _steps.length - 1
+                  ? null : () => _advanceStep(mission),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: stepIdx == _steps.length - 2
+                    ? AppColors.success : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  textStyle: const TextStyle(fontFamily: 'Nunito',
+                      fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+                child: Text(_nextStepLabel(step.id)),
+              ),
+            ]),
+          ),
+        ),
+      ),
       body: Column(children: [
 
         // ── Sélecteur de missions ─────────────────────────────────────────────
@@ -450,40 +488,6 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
           const SizedBox(height: 20),
         ])),
 
-        // ── Bouton avancement ─────────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          color: AppColors.darkSurface,
-          child: SafeArea(top: false, child: Column(children: [
-            if (missions.length > 1) Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                ...missions.map((m) => Container(
-                  width: 8, height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: m.orderId == mission.orderId
-                      ? AppColors.primary : context.borderColor,
-                    shape: BoxShape.circle),
-                )),
-              ]),
-            ),
-            ElevatedButton(
-              onPressed: stepIdx >= _steps.length - 1
-                ? null : () => _advanceStep(mission),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: stepIdx == _steps.length - 2
-                  ? AppColors.success : AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                textStyle: const TextStyle(fontFamily: 'Nunito',
-                    fontSize: 16, fontWeight: FontWeight.w900),
-              ),
-              child: Text(_nextStepLabel(step.id)),
-            ),
-          ])),
-        ),
       ]),
     );
   }

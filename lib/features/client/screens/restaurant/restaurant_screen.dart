@@ -95,19 +95,31 @@ class RestaurantScreen extends ConsumerStatefulWidget {
 
 class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
     with TickerProviderStateMixin {
-  late final TabController _mainTab;
+  late final TabController    _mainTab;
+  late final ScrollController _outerCtrl;
   String _selectedCatId = '__all__';
 
   @override
   void initState() {
     super.initState();
-    _mainTab = TabController(length: 2, vsync: this);
+    _mainTab   = TabController(length: 2, vsync: this);
     _mainTab.addListener(() => setState(() {}));
+    _outerCtrl = ScrollController();
+    // Dès le premier rendu, sauter directement à la position du TabBar
+    // (collapse la SliverAppBar + passe le bloc infos) pour que le menu
+    // soit immédiatement visible sans que le client ait à scroller.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_outerCtrl.hasClients &&
+          _outerCtrl.position.maxScrollExtent > 0) {
+        _outerCtrl.jumpTo(_outerCtrl.position.maxScrollExtent);
+      }
+    });
   }
 
   @override
   void dispose() {
     _mainTab.dispose();
+    _outerCtrl.dispose();
     super.dispose();
   }
 
@@ -171,6 +183,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
           final catKeys = grouped.keys.toList();
 
           return NestedScrollView(
+            controller: _outerCtrl,
             headerSliverBuilder: (ctx, innerScrolled) => [
               // Cover + logo overlay
               SliverAppBar(

@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
@@ -23,7 +25,25 @@ class _State extends ConsumerState<ProEarningsScreen> {
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error:   (e, _) => Center(child: Text(e.toString(), style: const TextStyle(fontFamily: 'Nunito', color: AppColors.danger))),
-        data:    (d) => _Body(data: d, period: _period, onPeriod: (p) => setState(() => _period = p)),
+        data:    (d) => _Body(
+          data: d,
+          period: _period,
+          onPeriod: (p) => setState(() => _period = p),
+          onWithdraw: () => _showWithdrawalModal(context, d),
+        ),
+      ),
+    );
+  }
+
+  void _showWithdrawalModal(BuildContext context, EarningsData data) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ProWithdrawalModal(
+        availableBalance: data.availableBalance,
+        pendingPayouts:   data.pendingPayouts,
+        onSuccess: () => ref.invalidate(earningsProvider(_period)),
       ),
     );
   }
@@ -34,7 +54,8 @@ class _Body extends StatelessWidget {
   final EarningsData data;
   final int period;
   final ValueChanged<int> onPeriod;
-  const _Body({required this.data, required this.period, required this.onPeriod});
+  final VoidCallback onWithdraw;
+  const _Body({required this.data, required this.period, required this.onPeriod, required this.onWithdraw});
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +125,14 @@ class _Body extends StatelessWidget {
             _BreakRow('Vos revenus nets', '${_fmt(data.periodNet)} F', color: AppColors.primary, bold: true),
           ]),
         )),
+        const SizedBox(height: 20),
+
+        // ── Virement ──────────────────────────────────────────────────────────
+        _ProWithdrawalCard(
+          availableBalance: data.availableBalance,
+          pendingPayouts:   data.pendingPayouts,
+          onRequest:        onWithdraw,
+        ),
         const SizedBox(height: 20),
 
         // ── Dernières transactions ────────────────────────────────────────────
@@ -306,6 +335,326 @@ class _BreakRow extends StatelessWidget {
       Text(value, style: TextStyle(fontFamily: 'Nunito', fontSize: bold ? 16 : 13,
         fontWeight: bold ? FontWeight.w900 : FontWeight.w700, color: color)),
     ]),
+  );
+}
+
+// ── Carte virement ────────────────────────────────────────────────────────────
+class _ProWithdrawalCard extends StatelessWidget {
+  final double availableBalance;
+  final double pendingPayouts;
+  final VoidCallback onRequest;
+  const _ProWithdrawalCard({
+    required this.availableBalance,
+    required this.pendingPayouts,
+    required this.onRequest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final canWithdraw = availableBalance > 0;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.borderColor),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.account_balance_rounded,
+                color: AppColors.success, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text('Virement',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                fontWeight: FontWeight.w800, color: context.textPrimary)),
+        ]),
+        const SizedBox(height: 10),
+        Text(
+          canWithdraw
+            ? 'Solde disponible : ${_fmt(availableBalance)} F CFA'
+            : 'Aucun solde disponible pour le moment.',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              color: context.textSecondary, height: 1.4)),
+        if (pendingPayouts > 0) ...[
+          const SizedBox(height: 6),
+          Text(
+            '${_fmt(pendingPayouts)} F en cours de traitement.',
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: AppColors.accent, fontWeight: FontWeight.w600)),
+        ],
+        const SizedBox(height: 14),
+        ElevatedButton.icon(
+          onPressed: canWithdraw ? onRequest : null,
+          icon: const Icon(Icons.send_rounded, size: 16),
+          label: const Text('Demander un virement'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            backgroundColor: AppColors.success,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.darkBorder,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Modal demande de virement ──────────────────────────────────────────────────
+class _ProWithdrawalModal extends ConsumerStatefulWidget {
+  final double availableBalance;
+  final double pendingPayouts;
+  final VoidCallback onSuccess;
+  const _ProWithdrawalModal({
+    required this.availableBalance,
+    required this.pendingPayouts,
+    required this.onSuccess,
+  });
+  @override
+  ConsumerState<_ProWithdrawalModal> createState() => _ProWithdrawalModalState();
+}
+
+class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
+  final _ctrl        = TextEditingController();
+  final _paymentCtrl = TextEditingController();
+  bool   _loading = false;
+  String? _error;
+
+  double get _enteredAmount =>
+      double.tryParse(_ctrl.text.trim().replaceAll(' ', '')) ?? 0;
+
+  bool get _isValid =>
+      _enteredAmount > 0
+      && _enteredAmount <= widget.availableBalance
+      && _paymentCtrl.text.trim().isNotEmpty;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _paymentCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final amount      = _enteredAmount;
+    final paymentInfo = _paymentCtrl.text.trim();
+    if (!_isValid) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      await ApiClient.instance.post('/professionals/me/withdrawal',
+          data: {'amount': amount, 'paymentInfo': paymentInfo});
+      widget.onSuccess();
+      if (mounted) {
+        Navigator.pop(context);
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Demande envoyée — traitement sous 24–48h.'),
+          backgroundColor: AppColors.success,
+        ));
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceAll('Exception: ', '');
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final available = widget.availableBalance;
+    final overflow  = _enteredAmount > available && _enteredAmount > 0;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.darkSurface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.darkBorder,
+              borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 20),
+
+          // En-tête
+          Row(children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.account_balance_rounded,
+                  color: AppColors.success, size: 22),
+            ),
+            const SizedBox(width: 12),
+            // Expanded évite l'overflow si le solde est élevé
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Demander un virement',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
+                    fontWeight: FontWeight.w900, color: context.textPrimary)),
+              Text('Solde disponible : ${_fmt(available)} F CFA',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    color: context.textSecondary)),
+            ])),
+          ]),
+          if (widget.pendingPayouts > 0) ...[
+            const SizedBox(height: 8),
+            Text('${_fmt(widget.pendingPayouts)} F en cours de traitement.',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                  color: AppColors.accent, fontWeight: FontWeight.w600)),
+          ],
+          const SizedBox(height: 20),
+
+          // Champ coordonnées de paiement
+          TextField(
+            controller: _paymentCtrl,
+            keyboardType: TextInputType.text,
+            onChanged: (_) => setState(() {}),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                color: context.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Ex: MTN 0022966XXXXXX ou IBAN…',
+              hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: AppColors.darkBorder),
+              labelText: 'Numéro Mobile Money / Coordonnées bancaires',
+              labelStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textSecondary),
+              prefixIcon: const Icon(Icons.phone_android_rounded,
+                  color: AppColors.primary, size: 20),
+              filled: true,
+              fillColor: context.bgColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: AppColors.darkBorder)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: AppColors.darkBorder)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Champ montant
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (_) => setState(() => _error = null),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
+                fontWeight: FontWeight.w900, color: context.textPrimary),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              hintText: '0',
+              hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 24,
+                  fontWeight: FontWeight.w900, color: AppColors.darkBorder),
+              suffixText: 'F CFA',
+              suffixStyle: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+                  color: context.textSecondary, fontWeight: FontWeight.w700),
+              filled: true,
+              fillColor: context.bgColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: overflow ? AppColors.danger : AppColors.primary, width: 2)),
+            ),
+          ),
+
+          // Erreur dépassement
+          AnimatedSize(
+            duration: const Duration(milliseconds: 150),
+            child: overflow || _error != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(children: [
+                    const Icon(Icons.info_rounded, color: AppColors.danger, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(
+                      overflow
+                        ? 'Montant supérieur au solde disponible (${_fmt(available)} F)'
+                        : _error!,
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                          color: AppColors.danger, fontWeight: FontWeight.w600),
+                    )),
+                  ]),
+                )
+              : const SizedBox.shrink(),
+          ),
+
+          // Raccourcis rapides
+          const SizedBox(height: 14),
+          Row(children: [
+            _QuickChip('25 %', available * 0.25, _ctrl, setState),
+            const SizedBox(width: 8),
+            _QuickChip('50 %', available * 0.50, _ctrl, setState),
+            const SizedBox(width: 8),
+            _QuickChip('100 %', available, _ctrl, setState),
+          ]),
+
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: (_isValid && !_loading) ? _submit : null,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 52),
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              textStyle: const TextStyle(fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w900, fontSize: 15)),
+            child: _loading
+              ? const SizedBox(width: 22, height: 22,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : const Text('Confirmer le virement'),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _QuickChip extends StatelessWidget {
+  final String label;
+  final double amount;
+  final TextEditingController ctrl;
+  final void Function(VoidCallback) setStateCallback;
+  const _QuickChip(this.label, this.amount, this.ctrl, this.setStateCallback);
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: GestureDetector(
+      onTap: () => setStateCallback(() => ctrl.text = amount.toStringAsFixed(0)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withOpacity(0.2))),
+        child: Center(child: Text(label,
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              fontWeight: FontWeight.w800, color: AppColors.primary))),
+      ),
+    ),
   );
 }
 

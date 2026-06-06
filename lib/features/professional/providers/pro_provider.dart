@@ -722,6 +722,8 @@ class EarningsOrderEntry {
 
 class EarningsData {
   final double commissionRate;
+  final double availableBalance;
+  final double pendingPayouts;
   final EarningsSummaryEntry today;
   final EarningsSummaryEntry week;
   final EarningsSummaryEntry month;
@@ -734,6 +736,8 @@ class EarningsData {
 
   const EarningsData({
     required this.commissionRate,
+    this.availableBalance = 0.0,
+    this.pendingPayouts   = 0.0,
     required this.today,
     required this.week,
     required this.month,
@@ -750,6 +754,8 @@ class EarningsData {
     final totals  = j['totals']  as Map<String, dynamic>? ?? {};
     return EarningsData(
       commissionRate:    (j['commissionRate'] as num?)?.toDouble() ?? 15.0,
+      availableBalance:  (j['availableBalance'] as num?)?.toDouble() ?? 0.0,
+      pendingPayouts:    (j['pendingPayouts']   as num?)?.toDouble() ?? 0.0,
       today: EarningsSummaryEntry.fromJson(summary['today'] as Map<String, dynamic>? ?? {}),
       week:  EarningsSummaryEntry.fromJson(summary['week']  as Map<String, dynamic>? ?? {}),
       month: EarningsSummaryEntry.fromJson(summary['month'] as Map<String, dynamic>? ?? {}),

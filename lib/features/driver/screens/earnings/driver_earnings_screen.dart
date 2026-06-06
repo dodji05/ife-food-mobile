@@ -464,7 +464,8 @@ class _WithdrawalModal extends ConsumerStatefulWidget {
 }
 
 class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
-  final _ctrl = TextEditingController();
+  final _ctrl        = TextEditingController();
+  final _paymentCtrl = TextEditingController();
   bool _loading = false;
   String? _error;
 
@@ -472,21 +473,25 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
       double.tryParse(_ctrl.text.trim().replaceAll(' ', '')) ?? 0;
 
   bool get _isValid =>
-      _enteredAmount > 0 && _enteredAmount <= widget.availableBalance;
+      _enteredAmount > 0
+      && _enteredAmount <= widget.availableBalance
+      && _paymentCtrl.text.trim().isNotEmpty;
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _paymentCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    final amount = _enteredAmount;
+    final amount      = _enteredAmount;
+    final paymentInfo = _paymentCtrl.text.trim();
     if (!_isValid) return;
     setState(() { _loading = true; _error = null; });
     try {
       await ApiClient.instance.post('/drivers/me/withdrawal',
-          data: {'amount': amount});
+          data: {'amount': amount, 'paymentInfo': paymentInfo});
       widget.onSuccess();
       if (mounted) {
         Navigator.pop(context);
@@ -536,16 +541,48 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
                   color: AppColors.success, size: 22),
             ),
             const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Expanded évite l'overflow si le solde est élevé
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Demander un virement',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
                     fontWeight: FontWeight.w900, color: context.textPrimary)),
               Text('Solde disponible : ${available.toStringAsFixed(0)} F CFA',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                     color: context.textSecondary)),
-            ]),
+            ])),
           ]),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
+          // Champ coordonnées de paiement (Mobile Money, banque…)
+          TextField(
+            controller: _paymentCtrl,
+            keyboardType: TextInputType.text,
+            onChanged: (_) => setState(() {}),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                color: context.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Ex: MTN 0022966XXXXXX ou IBAN…',
+              hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.borderColor),
+              labelText: 'Numéro Mobile Money / Coordonnées bancaires',
+              labelStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textSecondary),
+              prefixIcon: const Icon(Icons.phone_android_rounded,
+                  color: AppColors.primary, size: 20),
+              filled: true,
+              fillColor: context.bgColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: context.borderColor)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: context.borderColor)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Champ montant
           TextField(

@@ -140,16 +140,17 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
                   color: AppColors.darkSubtext))),
             ]),
             const SizedBox(height: 12),
-            // Métriques
-            Row(children: [
-              _chip('💰', '${m.deliveryFee.toStringAsFixed(0)} ${m.currency}'),
-              const SizedBox(width: 8),
-              _chip('📏', '${m.distanceKm.toStringAsFixed(1)} km'),
-              if (m.distanceToPickupKm != null) ...[
-                const SizedBox(width: 8),
-                _chip('🛵', '${m.distanceToPickupKm!.toStringAsFixed(1)} km'),
+            // Métriques — Wrap évite le débordement si les 3 chips sont présents
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _chip('💰', '${m.deliveryFee.toStringAsFixed(0)} ${m.currency}'),
+                _chip('📏', '${m.distanceKm.toStringAsFixed(1)} km'),
+                if (m.distanceToPickupKm != null)
+                  _chip('🛵', '${m.distanceToPickupKm!.toStringAsFixed(1)} km'),
               ],
-            ]),
+            ),
             const SizedBox(height: 14),
             // Bouton Accepter
             SizedBox(

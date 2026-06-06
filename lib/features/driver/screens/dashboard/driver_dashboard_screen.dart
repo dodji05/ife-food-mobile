@@ -141,7 +141,7 @@ class DriverDashboardScreen extends ConsumerWidget {
         if (isOnline && driver.missionCount > 0) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: GestureDetector(
-            onTap: () => context.go('/driver/active-mission'),
+            onTap: () => context.push('/driver/active-mission'),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

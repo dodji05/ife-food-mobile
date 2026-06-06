@@ -37,7 +37,7 @@ class DriverNotificationsScreen extends ConsumerWidget {
       body: NotificationsListWidget(
         // Côté driver : tap notif commande -> écran mission active
         // (le driver n'a pas de detail per-order séparé, juste la mission courante)
-        onTapOrder: (_) => context.go('/driver/active-mission'),
+        onTapOrder: (_) => context.push('/driver/active-mission'),
       ),
     );
   }

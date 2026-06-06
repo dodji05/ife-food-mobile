@@ -195,11 +195,33 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
       ),
       body: Column(children: [
 
+        // ── Bouton retour ─────────────────────────────────────────────────────
+        SafeArea(bottom: false, child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
+          child: Row(children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              color: context.textPrimary,
+              tooltip: 'Retour',
+              onPressed: () => context.canPop()
+                  ? context.pop()
+                  : context.go('/driver/dashboard'),
+            ),
+            Text('Missions actives', style: TextStyle(
+              fontFamily: 'Nunito', fontSize: 15,
+              fontWeight: FontWeight.w800, color: context.textPrimary)),
+            const Spacer(),
+            Text('${missions.length} en cours',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                fontWeight: FontWeight.w700, color: AppColors.primary)),
+          ]),
+        )),
+
         // ── Sélecteur de missions ─────────────────────────────────────────────
         if (missions.length > 1)
           Container(
             color: AppColors.darkSurface,
-            child: SafeArea(bottom: false, child: Column(children: [
+            child: Column(children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
                 child: Row(children: [
@@ -324,7 +346,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
             )),
           ]))
         else
-          SafeArea(bottom: false, child: Padding(
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: GestureDetector(
               onTap: () => setState(() => _showMap = true),
@@ -343,7 +365,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                 ]),
               ),
             ),
-          )),
+          ),
 
         // ── Détail mission ────────────────────────────────────────────────────
         Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [

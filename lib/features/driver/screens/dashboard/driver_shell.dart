@@ -23,7 +23,7 @@ class DriverShell extends ConsumerWidget {
       body: child,
       floatingActionButton: driverState.missionCount > 0 && loc != '/driver/active-mission'
         ? FloatingActionButton.extended(
-            onPressed: () => context.go('/driver/active-mission'),
+            onPressed: () => context.push('/driver/active-mission'),
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.black,
             icon: const Icon(Icons.delivery_dining_rounded),

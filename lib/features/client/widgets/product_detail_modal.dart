@@ -184,7 +184,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nom + badge indisponible
+                        // Nom + badge état (rupture / indisponible)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -197,9 +197,25 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                   color: context.textPrimary),
                               ),
                             ),
-                            if (!product.isAvailable || product.isOutOfStock)
+                            if (product.isOutOfStock)
                               Container(
-                                margin: const EdgeInsets.only(left: 8, top: 2),
+                                margin: const EdgeInsets.only(left: 8, top: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warning.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: AppColors.warning.withOpacity(0.4))),
+                                child: const Text('Rupture de stock',
+                                  style: TextStyle(
+                                    fontFamily: 'Nunito', fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.warning)),
+                              )
+                            else if (!product.isAvailable)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8, top: 4),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -324,20 +340,25 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                                 ? _addToCart : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              disabledBackgroundColor:
-                                  AppColors.grey.withOpacity(0.2),
+                              disabledBackgroundColor: product.isOutOfStock
+                                  ? AppColors.warning.withOpacity(0.15)
+                                  : AppColors.grey.withOpacity(0.2),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14)),
                             ),
                             child: Text(
-                              product.isAvailable && !product.isOutOfStock
-                                  ? 'Ajouter au panier — $_formattedDisplayPrice'
-                                  : 'Produit indisponible',
-                              style: const TextStyle(
+                              product.isOutOfStock
+                                  ? '⚠️ Rupture de stock'
+                                  : !product.isAvailable
+                                      ? 'Produit indisponible'
+                                      : 'Ajouter au panier — $_formattedDisplayPrice',
+                              style: TextStyle(
                                 fontFamily: 'Nunito', fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white),
+                                color: product.isOutOfStock
+                                    ? AppColors.warning
+                                    : Colors.white),
                             ),
                           ),
                         ),

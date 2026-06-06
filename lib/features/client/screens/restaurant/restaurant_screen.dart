@@ -887,10 +887,13 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
     final cartItem = cart.items.where((i) => i.product.id == widget.product.id).firstOrNull;
     final qty      = cartItem?.quantity ?? 0;
     final product  = widget.product;
-    final unavailable = !product.isAvailable || product.isOutOfStock;
+    // Distinguer rupture de stock (temporaire) vs produit désactivé (indisponible)
+    final outOfStock  = product.isOutOfStock;
+    final notAvailable = !product.isAvailable;
+    final canAddToCart = !outOfStock && !notAvailable;
 
     return Opacity(
-      opacity: unavailable ? 0.55 : 1.0,
+      opacity: (outOfStock || notAvailable) ? 0.6 : 1.0,
       child: GestureDetector(
         onTap: () => showProductDetail(
           context,
@@ -918,17 +921,24 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
                       errorWidget: (_, __, ___) => _ProductPlaceholder())
                   : _ProductPlaceholder(),
             ),
-            // Badge indisponible
-            if (unavailable) Positioned.fill(
+            // Overlay rupture de stock (orange) ou indisponible (rouge)
+            if (outOfStock || notAvailable) Positioned.fill(
               child: ClipRRect(
                 borderRadius: const BorderRadius.horizontal(
                     left: Radius.circular(13)),
                 child: Container(
-                  color: Colors.black.withOpacity(0.4),
-                  child: const Center(child: Text('Indisponible',
+                  color: Colors.black.withOpacity(0.45),
+                  child: Center(child: Text(
+                    outOfStock ? 'Rupture\nde stock' : 'Indisponible',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: 'Nunito', color: Colors.white,
-                        fontSize: 10, fontWeight: FontWeight.w700)))),
+                    style: TextStyle(
+                      fontFamily: 'Nunito', color: Colors.white,
+                      fontSize: 10, fontWeight: FontWeight.w700,
+                      shadows: [Shadow(
+                        color: outOfStock ? AppColors.warning : AppColors.danger,
+                        blurRadius: 8)],
+                    ))),
+                ),
               ),
             ),
           ]),
@@ -938,9 +948,37 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.localizedName('fr'),
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                      fontWeight: FontWeight.w700, color: context.textPrimary)),
+                // Nom + badge état
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: Text(product.localizedName('fr'),
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                        fontWeight: FontWeight.w700, color: context.textPrimary))),
+                  if (outOfStock) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.warning.withOpacity(0.4))),
+                      child: const Text('Rupture',
+                        style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
+                            fontWeight: FontWeight.w800, color: AppColors.warning)),
+                    ),
+                  ] else if (notAvailable) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.danger.withOpacity(0.3))),
+                      child: const Text('Indispo',
+                        style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
+                            fontWeight: FontWeight.w800, color: AppColors.danger)),
+                    ),
+                  ],
+                ]),
                 if (product.localizedDescription('fr') != null &&
                     product.localizedDescription('fr')!.isNotEmpty) ...[
                   const SizedBox(height: 2),
@@ -966,8 +1004,8 @@ class _ProductItemState extends ConsumerState<_ProductItem> {
                     style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
                         fontWeight: FontWeight.w800, color: AppColors.primary)),
                   const Spacer(),
-                  // Compteur panier
-                  if (!unavailable) ...[
+                  // Compteur panier — masqué si rupture ou indisponible
+                  if (canAddToCart) ...[
                     if (qty == 0)
                       GestureDetector(
                         onTap: _addWithGuard,

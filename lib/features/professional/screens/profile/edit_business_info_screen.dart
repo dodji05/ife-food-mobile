@@ -315,7 +315,12 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
     final pro = ref.watch(proProvider).professional;
     return Scaffold(
     backgroundColor: AppColors.darkBg,
-    appBar: AppBar(title: const Text('Mes informations'), leading: const BackButton()),
+    appBar: AppBar(
+      title: const Text('Mes informations'),
+      leading: BackButton(
+        onPressed: () => context.canPop() ? context.pop() : context.go('/pro/profile'),
+      ),
+    ),
     body: ListView(padding: const EdgeInsets.all(20), children: [
       // ── Photo couverture + logo overlay ───────────────────────────────
       _CoverWithLogo(

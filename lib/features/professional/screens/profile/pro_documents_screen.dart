@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -90,7 +91,12 @@ class _State extends ConsumerState<ProDocumentsScreen> {
     final async = ref.watch(_docsProvider);
     return Scaffold(
       backgroundColor: AppColors.darkBg,
-      appBar: AppBar(title: const Text('Mes documents'), leading: const BackButton()),
+      appBar: AppBar(
+        title: const Text('Mes documents'),
+        leading: BackButton(
+          onPressed: () => context.canPop() ? context.pop() : context.go('/pro/profile'),
+        ),
+      ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error:   (e, _) => Center(child: Text(e.toString())),

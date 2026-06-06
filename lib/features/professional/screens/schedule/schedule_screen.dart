@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/pro_provider.dart';
 
@@ -62,7 +63,12 @@ class _State extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.darkBg,
-    appBar: AppBar(title: const Text('Horaires d\'ouverture'), leading: const BackButton()),
+    appBar: AppBar(
+      title: const Text('Horaires d\'ouverture'),
+      leading: BackButton(
+        onPressed: () => context.canPop() ? context.pop() : context.go('/pro/profile'),
+      ),
+    ),
     bottomNavigationBar: SafeArea(
       top: false,
       child: Padding(

@@ -23,7 +23,12 @@ class ProOrderDetailScreen extends ConsumerWidget {
     final order = ref.watch(orderDetailProvider(orderId));
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(title: Text('Commande #${orderId.substring(0, 8).toUpperCase()}'), leading: const BackButton()),
+      appBar: AppBar(
+        title: Text('Commande #${orderId.substring(0, 8).toUpperCase()}'),
+        leading: BackButton(
+          onPressed: () => context.canPop() ? context.pop() : context.go('/pro/orders'),
+        ),
+      ),
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => Center(child: Text(e.toString())),

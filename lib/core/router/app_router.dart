@@ -293,17 +293,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/home',    builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/orders',  builder: (_, __) => const OrderHistoryScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ClientProfileScreen()),
-          // Détail commande + sous-écrans dans le shell → bottom nav toujours visible
-          GoRoute(path: '/order/:id', builder: (_, state) =>
-              OrderDetailScreen(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/order/:id/review', builder: (_, state) =>
-              ReviewScreen(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/order/:id/tip', builder: (_, state) =>
-              TipScreen(orderId: state.pathParameters['id']!)),
-          GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
-              TrackingScreen(orderId: state.pathParameters['orderId']!)),
         ],
       ),
+      // Détail commande + sous-écrans HORS du ShellRoute (pas de bottom nav).
+      // Ces écrans sont accessibles depuis /orders, /notifications ET les taps
+      // FCM — les sortir du shell évite les erreurs de navigation cross-shell
+      // (context.push depuis /notifications vers une route dans le ShellRoute
+      // provoque une exception GoRouter 13.x).
+      GoRoute(path: '/order/:id', builder: (_, state) =>
+          OrderDetailScreen(orderId: state.pathParameters['id']!)),
+      GoRoute(path: '/order/:id/review', builder: (_, state) =>
+          ReviewScreen(orderId: state.pathParameters['id']!)),
+      GoRoute(path: '/order/:id/tip', builder: (_, state) =>
+          TipScreen(orderId: state.pathParameters['id']!)),
+      GoRoute(path: '/tracking/:orderId', builder: (_, state) =>
+          TrackingScreen(orderId: state.pathParameters['orderId']!)),
       GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
       GoRoute(path: '/restaurant/:id', builder: (_, state) =>
           RestaurantScreen(restaurantId: state.pathParameters['id']!)),

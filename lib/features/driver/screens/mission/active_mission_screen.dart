@@ -290,7 +290,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                   );
                 },
               )),
-            ])),
+            ]),
           ),
 
         // ── Carte GPS ─────────────────────────────────────────────────────────

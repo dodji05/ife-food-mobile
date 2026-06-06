@@ -250,7 +250,12 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                     onTap: () => ref.read(driverProvider.notifier).selectMission(m.orderId),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      // Largeur fixe indispensable : les items d'un ListView
+                      // horizontal ont une contrainte principale infinie, donc
+                      // Expanded dans une Row enfant provoquerait une erreur
+                      // de layout Flutter (Row en largeur non contrainte).
+                      width: 150,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.primary.withOpacity(0.15)
@@ -272,7 +277,10 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                               color: isActive ? AppColors.primary : context.textSecondary,
                               size: 14),
                             const SizedBox(width: 5),
-                            Expanded(child: Text(m.professionalName,
+                            // Pas d'Expanded ici : la largeur fixe du container
+                            // contraint déjà la Row → ellipsis fonctionne
+                            // correctement sans provoquer de layout error.
+                            Flexible(child: Text(m.professionalName,
                               style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: isActive ? AppColors.primary : context.textPrimary),

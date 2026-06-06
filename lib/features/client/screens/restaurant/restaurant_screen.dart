@@ -59,6 +59,9 @@ final restaurantDetailProvider =
   return res['data'] as Map<String, dynamic>;
 });
 
+// ⚠️ Ce provider est conservé pour rétro-compatibilité (ex. home_screen) mais
+// n'est PLUS utilisé dans RestaurantScreen — les produits sont désormais embarqués
+// directement dans restaurantDetailProvider (GET /professionals/:id).
 final restaurantProductsProvider =
     FutureProvider.autoDispose.family<List<Product>, String>((ref, id) async {
   final res = await ApiClient.instance.get('/products/professional/$id');
@@ -140,10 +143,9 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
 
   @override
   Widget build(BuildContext context) {
-    final detail   = ref.watch(restaurantDetailProvider(widget.restaurantId));
-    final products = ref.watch(restaurantProductsProvider(widget.restaurantId));
-    final reviews  = ref.watch(restaurantReviewsProvider(widget.restaurantId));
-    final cart     = ref.watch(cartProvider);
+    final detail  = ref.watch(restaurantDetailProvider(widget.restaurantId));
+    final reviews = ref.watch(restaurantReviewsProvider(widget.restaurantId));
+    final cart    = ref.watch(cartProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -160,15 +162,27 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
         data: (json) {
           final pro = Professional.fromJson(json);
 
-          // Groupement produits par catégorie
-          final prodList = products.valueOrNull ?? [];
+          // ── Produits embarqués dans GET /professionals/:id ──────────────
+          // Plus de second appel /products/professional/:id — les produits
+          // (tous, y compris rupture/indisponibles) arrivent dans la même
+          // réponse. Cela évite les désynchronisations et les cas où le
+          // second appel retournait vide alors que les produits existent.
+          final rawProducts = json['products'];
+          final prodList = rawProducts is List
+              ? rawProducts
+                  .whereType<Map<String, dynamic>>()
+                  .map(Product.fromJson)
+                  .toList()
+              : <Product>[];
+
+          // Groupement par catégorie
           final grouped = <String, List<Product>>{};
           final catLabels = <String, String>{};
           for (final p in prodList) {
             final key = p.categoryId ?? '__other__';
             grouped.putIfAbsent(key, () => []).add(p);
           }
-          // Catégories depuis la réponse detail (si incluses)
+          // Labels depuis productCategories embarquées
           final rawCatsRaw = json['productCategories'];
           final rawCats = rawCatsRaw is List ? rawCatsRaw : <dynamic>[];
           for (final c in rawCats) {
@@ -294,7 +308,8 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                   onCatSelect: (id) => setState(() => _selectedCatId = id),
                   professionalId: pro.id,
                   proName: pro.businessName,
-                  productsAsync: products,
+                  // produits déjà chargés avec le détail — on wrap en AsyncData
+                  productsAsync: AsyncValue.data(prodList),
                   isProOpen: pro.isOpen,
                   openingHours: pro.openingHours,
                 ),

@@ -92,14 +92,18 @@ class _State extends ConsumerState<ScheduleScreen> {
               decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
               child: Row(children: [
                 SizedBox(width: 36, child: Text(_days[idx], style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText))),
-                const SizedBox(width: 12),
-                if (isOpen) ...[
-                  GestureDetector(onTap: () => _pickTime(key, 'open'), child: _TimeChip(_hours[key]?['open'] ?? '08:00', Icons.wb_sunny_rounded)),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—', style: TextStyle(color: AppColors.darkSubtext))),
-                  GestureDetector(onTap: () => _pickTime(key, 'close'), child: _TimeChip(_hours[key]?['close'] ?? '22:00', Icons.nights_stay_rounded)),
-                ] else
-                  const Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted)),
-                const Spacer(),
+                const SizedBox(width: 8),
+                // Expanded empêche le débordement (overflow) sur petits écrans.
+                Expanded(
+                  child: Row(children: [
+                    if (isOpen) ...[
+                      GestureDetector(onTap: () => _pickTime(key, 'open'), child: _TimeChip(_hours[key]?['open'] ?? '08:00', Icons.wb_sunny_rounded)),
+                      const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('—', style: TextStyle(color: AppColors.darkSubtext))),
+                      GestureDetector(onTap: () => _pickTime(key, 'close'), child: _TimeChip(_hours[key]?['close'] ?? '22:00', Icons.nights_stay_rounded)),
+                    ] else
+                      const Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted)),
+                  ]),
+                ),
                 Switch(
                   value: isOpen,
                   onChanged: (v) => setState(() {
@@ -127,7 +131,7 @@ class _TimeChip extends StatelessWidget {
   const _TimeChip(this.time, this.icon);
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.primary.withOpacity(0.3))),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 14, color: AppColors.primary),

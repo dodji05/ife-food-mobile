@@ -42,7 +42,9 @@ class _State extends ConsumerState<EditableAvatar> {
   bool _busy = false;
 
   Future<void> _pickAndUpload() async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final hasPhoto = widget.currentUrl != null && widget.currentUrl!.isNotEmpty;
+
+    final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -50,19 +52,52 @@ class _State extends ConsumerState<EditableAvatar> {
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
           title: Text('Choisir depuis la galerie',
             style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
-          onTap: () => Navigator.pop(context, ImageSource.gallery),
+          onTap: () => Navigator.pop(context, 'gallery'),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
           title: Text('Prendre une photo',
             style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
-          onTap: () => Navigator.pop(context, ImageSource.camera),
+          onTap: () => Navigator.pop(context, 'camera'),
         ),
+        if (hasPhoto) ...[
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+            title: Text('Supprimer la photo',
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.danger)),
+            onTap: () => Navigator.pop(context, 'delete'),
+          ),
+        ],
         const SizedBox(height: 8),
       ])),
     );
-    if (source == null) return;
+    if (action == null) return;
 
+    // ── Suppression ────────────────────────────────────────────────────────
+    if (action == 'delete') {
+      setState(() => _busy = true);
+      try {
+        await ref.read(authProvider.notifier).deleteAvatar();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Photo de profil supprimée'),
+          backgroundColor: AppColors.success,
+        ));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+      return;
+    }
+
+    // ── Sélection + upload ─────────────────────────────────────────────────
+    final source = action == 'gallery' ? ImageSource.gallery : ImageSource.camera;
     try {
       final picked = await ImagePicker().pickImage(
         source: source, maxWidth: 1024, imageQuality: 85,

@@ -174,59 +174,84 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
     }
   }
 
-  // ── Upload helpers (logo + cover) ─────────────────────────────────────────
-  /// Affiche un bottom sheet caméra/galerie, retourne le `File` choisi ou null.
-  Future<File?> _pickImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: AppColors.darkCard,
-      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(
-          leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: const Text('Choisir depuis la galerie',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
-          onTap: () => Navigator.pop(context, ImageSource.gallery),
-        ),
-        ListTile(
-          leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: const Text('Prendre une photo',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
-          onTap: () => Navigator.pop(context, ImageSource.camera),
-        ),
-        const SizedBox(height: 8),
-      ])),
-    );
-    if (source == null) return null;
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(source: source, maxWidth: 1280, imageQuality: 85);
-      return picked == null ? null : File(picked.path);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Impossible d\'accéder à l\'image : $e'),
-          backgroundColor: AppColors.danger,
-        ));
-      }
-      return null;
-    }
-  }
+  // ── Upload / suppression helpers (logo + cover) ───────────────────────────
+
+  /// Bottom sheet commun : galerie / caméra / supprimer (si image existante).
+  /// Retourne : 'gallery', 'camera', 'delete' ou null (annulé).
+  Future<String?> _showPhotoAction({required bool hasCurrentImage}) =>
+      showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: AppColors.darkCard,
+        builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+            title: const Text('Choisir depuis la galerie',
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            onTap: () => Navigator.pop(context, 'gallery'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+            title: const Text('Prendre une photo',
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            onTap: () => Navigator.pop(context, 'camera'),
+          ),
+          if (hasCurrentImage) ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              title: const Text('Supprimer',
+                style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.danger)),
+              onTap: () => Navigator.pop(context, 'delete'),
+            ),
+          ],
+          const SizedBox(height: 8),
+        ])),
+      );
 
   Future<void> _pickAndUploadLogo() async {
-    final file = await _pickImage();
-    if (file == null) return;
+    final pro = ref.read(proProvider).professional;
+    final hasLogo = pro?.logoUrl != null && pro!.logoUrl!.isNotEmpty;
+    final action = await _showPhotoAction(hasCurrentImage: hasLogo);
+    if (action == null) return;
+
+    if (action == 'delete') {
+      setState(() => _uploadingLogo = true);
+      try {
+        await ref.read(proProvider.notifier).deleteLogo();
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Logo supprimé'), backgroundColor: AppColors.success,
+        ));
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.danger,
+        ));
+      } finally {
+        if (mounted) setState(() => _uploadingLogo = false);
+      }
+      return;
+    }
+
+    final source = action == 'gallery' ? ImageSource.gallery : ImageSource.camera;
+    File? file;
+    try {
+      final picked = await ImagePicker().pickImage(source: source, maxWidth: 1280, imageQuality: 85);
+      if (picked == null) return;
+      file = File(picked.path);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Impossible d\'accéder à l\'image : $e'), backgroundColor: AppColors.danger,
+      ));
+      return;
+    }
     setState(() => _uploadingLogo = true);
     try {
       await ref.read(proProvider.notifier).uploadAndSetLogo(file);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Logo mis à jour ✓'), backgroundColor: AppColors.success,
       ));
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll('Exception: ', '')),
-        backgroundColor: AppColors.danger,
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.danger,
       ));
     } finally {
       if (mounted) setState(() => _uploadingLogo = false);
@@ -234,20 +259,49 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
   }
 
   Future<void> _pickAndUploadCover() async {
-    final file = await _pickImage();
-    if (file == null) return;
+    final pro = ref.read(proProvider).professional;
+    final hasCover = pro?.coverImageUrl != null && pro!.coverImageUrl!.isNotEmpty;
+    final action = await _showPhotoAction(hasCurrentImage: hasCover);
+    if (action == null) return;
+
+    if (action == 'delete') {
+      setState(() => _uploadingCover = true);
+      try {
+        await ref.read(proProvider.notifier).deleteCover();
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Couverture supprimée'), backgroundColor: AppColors.success,
+        ));
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.danger,
+        ));
+      } finally {
+        if (mounted) setState(() => _uploadingCover = false);
+      }
+      return;
+    }
+
+    final source = action == 'gallery' ? ImageSource.gallery : ImageSource.camera;
+    File? file;
+    try {
+      final picked = await ImagePicker().pickImage(source: source, maxWidth: 1280, imageQuality: 85);
+      if (picked == null) return;
+      file = File(picked.path);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Impossible d\'accéder à l\'image : $e'), backgroundColor: AppColors.danger,
+      ));
+      return;
+    }
     setState(() => _uploadingCover = true);
     try {
       await ref.read(proProvider.notifier).uploadAndSetCover(file);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Photo de couverture mise à jour ✓'), backgroundColor: AppColors.success,
       ));
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll('Exception: ', '')),
-        backgroundColor: AppColors.danger,
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.danger,
       ));
     } finally {
       if (mounted) setState(() => _uploadingCover = false);

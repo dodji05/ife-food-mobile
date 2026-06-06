@@ -454,6 +454,18 @@ class ProNotifier extends StateNotifier<ProState> {
     await _load();
   }
 
+  /// Supprime le logo du pro (logoUrl → null).
+  Future<void> deleteLogo() async {
+    await ApiClient.instance.patch('/professionals/me', data: {'logoUrl': null});
+    await _load();
+  }
+
+  /// Supprime la photo de couverture du pro (coverImageUrl → null).
+  Future<void> deleteCover() async {
+    await ApiClient.instance.patch('/professionals/me', data: {'coverImageUrl': null});
+    await _load();
+  }
+
   // ── Favorite / private drivers ────────────────────────────────────────────
 
   Future<void> addFavoriteDriver(String driverId) async {

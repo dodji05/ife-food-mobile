@@ -341,6 +341,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Supprime la photo de profil (avatarUrl → null).
+  Future<void> deleteAvatar() async {
+    await completeProfile({'avatarUrl': null});
+  }
+
   /// Enregistre le token FCM côté backend.
   /// À appeler après obtention du token Firebase (FirebaseMessaging.getToken).
   Future<void> registerFcmToken(String fcmToken) async {

@@ -113,8 +113,9 @@ class ProProfileScreen extends ConsumerWidget {
             }
             context.push('/auth/pin', extra: PinRouteParams(mode: 'set', phone: phone));
           }),
-          _Item(Icons.language_rounded, 'Langue',
-              () => showLanguagePicker(context, ref, currentLang: user?.lang ?? 'fr', darkTheme: true)),
+          // TODO: réactiver quand la gestion multilingue est finalisée
+          // _Item(Icons.language_rounded, 'Langue',
+          //     () => showLanguagePicker(context, ref, currentLang: user?.lang ?? 'fr', darkTheme: true)),
           _Item(Icons.badge_rounded, 'Mes documents', () => context.push('/pro/documents')),
           _Item(Icons.notifications_rounded, 'Notifications', () => context.push('/pro/notifications')),
           _Item(Icons.notifications_active_rounded, 'État des notifications', () => FcmService.showDiagnosticDialog(context, ref)),

@@ -155,10 +155,11 @@ class DriverProfileScreen extends ConsumerWidget {
           _Item(Icons.notifications_active_rounded, 'État des notifications',
               sub: 'Vérifier le token push',
               onTap: () => FcmService.showDiagnosticDialog(context, ref)),
-          _Item(Icons.language_rounded, 'Langue',
-              sub: _langLabel(user?.lang ?? 'fr'),
-              onTap: () => showLanguagePicker(context, ref,
-                  currentLang: user?.lang ?? 'fr', darkTheme: true)),
+          // TODO: réactiver quand la gestion multilingue est finalisée
+          // _Item(Icons.language_rounded, 'Langue',
+          //     sub: _langLabel(user?.lang ?? 'fr'),
+          //     onTap: () => showLanguagePicker(context, ref,
+          //         currentLang: user?.lang ?? 'fr', darkTheme: true)),
         ]),
         const SizedBox(height: 8),
         Container(

@@ -246,13 +246,14 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             value: _notifEnabled,
             onChanged: _toggleNotif,
           ),
-          _MenuItem(
-            icon: Icons.language_rounded,
-            label: 'Langue',
-            sub: languageLabel(user?.lang ?? 'fr'),
-            onTap: () => showLanguagePicker(context, ref,
-                currentLang: user?.lang ?? 'fr', darkTheme: false),
-          ),
+          // TODO: réactiver quand la gestion multilingue est finalisée
+          // _MenuItem(
+          //   icon: Icons.language_rounded,
+          //   label: 'Langue',
+          //   sub: languageLabel(user?.lang ?? 'fr'),
+          //   onTap: () => showLanguagePicker(context, ref,
+          //       currentLang: user?.lang ?? 'fr', darkTheme: false),
+          // ),
           _MenuItem(
             icon: Icons.currency_exchange_rounded,
             label: 'Pays / Devise',

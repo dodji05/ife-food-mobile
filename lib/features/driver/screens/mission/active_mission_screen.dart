@@ -255,7 +255,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
                       // Expanded dans une Row enfant provoquerait une erreur
                       // de layout Flutter (Row en largeur non contrainte).
                       width: 150,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.primary.withOpacity(0.15)

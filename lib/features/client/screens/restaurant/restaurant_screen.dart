@@ -567,17 +567,21 @@ class _MenuTab extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         itemCount: 4,
         itemBuilder: (_, __) => _ShimmerProductCard()),
-      error: (e, _) => Center(
-        child: Padding(padding: const EdgeInsets.all(32), child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('📡', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
-            Text(e.toString(),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Nunito', color: context.textMuted)),
-          ],
-        ))),
+      error: (e, _) => CustomScrollView(slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('📡', style: TextStyle(fontSize: 40)),
+              const SizedBox(height: 12),
+              Text(e.toString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Nunito', color: context.textMuted)),
+            ],
+          ))),
+        ),
+      ]),
       data: (_) {
         final filtered = selectedCatId == '__all__'
             ? products
@@ -598,10 +602,15 @@ class _MenuTab extends ConsumerWidget {
                 ),
               ),
 
+            // SliverFillRemaining pour l'état vide : remplit l'espace
+            // restant du viewport et centre le contenu correctement.
+            // SliverToBoxAdapter seul ne suffit pas dans NestedScrollView
+            // — le viewport reste blanc car le sliver est trop court.
             if (filtered.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 64),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const Text('🍽️', style: TextStyle(fontSize: 48)),
                     const SizedBox(height: 12),
@@ -610,7 +619,7 @@ class _MenuTab extends ConsumerWidget {
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
                           color: context.textMuted)),
                   ]),
-                ),
+                )),
               )
             else
               SliverPadding(

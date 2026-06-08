@@ -651,20 +651,28 @@ class _ReviewsTab extends StatelessWidget {
           style: TextStyle(fontFamily: 'Nunito', color: context.textMuted))),
     data: (reviews) {
       if (reviews.isEmpty) {
-        return Center(child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('⭐', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 12),
-            Text('Aucun avis pour le moment',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
-                  fontWeight: FontWeight.w700, color: context.textPrimary)),
-            const SizedBox(height: 6),
-            Text('Soyez le premier à donner votre avis !',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: context.textMuted)),
-          ]),
-        ));
+        // NestedScrollView + TabBarView impose un enfant scrollable.
+        // SliverFillRemaining(hasScrollBody:false) centre le contenu
+        // dans l'espace restant sans provoquer d'overflow.
+        return CustomScrollView(slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('⭐', style: TextStyle(fontSize: 56)),
+                const SizedBox(height: 12),
+                Text('Aucun avis pour le moment',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
+                      fontWeight: FontWeight.w700, color: context.textPrimary)),
+                const SizedBox(height: 6),
+                Text('Soyez le premier à donner votre avis !',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                      color: context.textMuted)),
+              ]),
+            )),
+          ),
+        ]);
       }
 
       // Distribution des notes

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,25 +6,113 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../shared/models/professional.dart';
-import '../../../../shared/models/product.dart';
 
-// ── Types de résultats ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Écran de recherche unifié — V2
+//
+// Différences clés vs V1 :
+//  • Appel UNIQUE à `/search/suggest` qui retourne en une fois les
+//    établissements, produits et catégories matchant la query (ILIKE côté
+//    SQL, multilingue fr/en, case-insensitive, paramétré).
+//  • Debounce 250 ms : on n'appelle plus l'API à chaque frappe.
+//  • Affichage segmenté par section avec petits compteurs.
+//  • Clic catégorie → réutilise le label comme nouvelle query (drill-down).
+//  • État vide propre + bouton "Effacer" rapide.
+//
+// Le backend filtre déjà sur status=VALIDATED & isAvailable=true, donc on
+// fait confiance au payload côté UI.
+// ─────────────────────────────────────────────────────────────────────────────
 
-enum _SearchTab { all, restaurants, products }
+// ── Modèles légers (vue uniquement, pas réutilisés ailleurs) ─────────────────
 
-extension _SearchTabX on _SearchTab {
-  String get label => switch (this) {
-    _SearchTab.all         => 'Tout',
-    _SearchTab.restaurants => 'Établissements',
-    _SearchTab.products    => 'Produits',
-  };
+class _Establishment {
+  final String  id;
+  final String  businessName;
+  final String  category;
+  final String? logoUrl;
+  final String? coverImageUrl;
+  final String? city;
+  final bool    isOpen;
+  const _Establishment(this.id, this.businessName, this.category,
+      this.logoUrl, this.coverImageUrl, this.city, this.isOpen);
+
+  factory _Establishment.fromJson(Map<String, dynamic> j) => _Establishment(
+    j['id'] as String? ?? '',
+    j['businessName'] as String? ?? '',
+    (j['category'] as String? ?? '').toUpperCase(),
+    j['logoUrl'] as String?,
+    j['coverImageUrl'] as String?,
+    j['city'] as String?,
+    j['isOpen'] as bool? ?? false,
+  );
 }
 
-// ── Suggestions prédéfinies ───────────────────────────────────────────────────
+class _SuggestProduct {
+  final String  id;
+  final String  professionalId;
+  final String  professionalName;
+  final String? professionalLogoUrl;
+  final String  nameFr;
+  final double  price;
+  final String  currency;
+  final String? imageUrl;
+  const _SuggestProduct(this.id, this.professionalId, this.professionalName,
+      this.professionalLogoUrl, this.nameFr, this.price, this.currency, this.imageUrl);
 
-const _suggestions = [
+  factory _SuggestProduct.fromJson(Map<String, dynamic> j) {
+    String name = '';
+    final n = j['name'];
+    if (n is Map) name = (n['fr'] ?? n['en'] ?? '').toString();
+    else if (n is String) name = n;
+    return _SuggestProduct(
+      j['id']             as String? ?? '',
+      j['professionalId'] as String? ?? '',
+      j['professionalName'] as String? ?? '',
+      j['professionalLogoUrl'] as String?,
+      name,
+      (j['price']    as num?)?.toDouble() ?? 0,
+      j['currency'] as String? ?? 'XOF',
+      j['imageUrl'] as String?,
+    );
+  }
+}
+
+class _SuggestCategory {
+  final String id;
+  final String name;
+  final String? icon;
+  const _SuggestCategory(this.id, this.name, this.icon);
+
+  factory _SuggestCategory.fromJson(Map<String, dynamic> j) {
+    String name = '';
+    final n = j['name'];
+    if (n is Map) name = (n['fr'] ?? n['en'] ?? '').toString();
+    else if (n is String) name = n;
+    return _SuggestCategory(
+      j['id'] as String? ?? '',
+      name,
+      j['icon'] as String?,
+    );
+  }
+}
+
+class _Suggestions {
+  final List<_Establishment>    establishments;
+  final List<_SuggestProduct>   products;
+  final List<_SuggestCategory>  categories;
+  const _Suggestions(this.establishments, this.products, this.categories);
+
+  bool get isEmpty =>
+      establishments.isEmpty && products.isEmpty && categories.isEmpty;
+
+  int get total => establishments.length + products.length + categories.length;
+
+  static const empty = _Suggestions([], [], []);
+}
+
+// ── Suggestions hors-recherche (mots-clés prédéfinis) ────────────────────────
+
+const _kSuggestions = [
   ('🍕', 'Pizza'),
   ('🍔', 'Burger'),
   ('🍜', 'Riz / pâtes'),
@@ -36,7 +125,7 @@ const _suggestions = [
   ('🛒', 'Épicerie'),
 ];
 
-// ── Écran ─────────────────────────────────────────────────────────────────────
+// ── Écran ────────────────────────────────────────────────────────────────────
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -45,167 +134,210 @@ class SearchScreen extends ConsumerStatefulWidget {
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends ConsumerState<SearchScreen>
-    with SingleTickerProviderStateMixin {
-  final _ctrl   = TextEditingController();
-  late final TabController _tabCtrl;
+class _SearchScreenState extends ConsumerState<SearchScreen> {
+  final _ctrl  = TextEditingController();
+  final _focus = FocusNode();
 
-  List<Professional> _pros     = [];
-  List<Product>      _products = [];
-  bool               _loading  = false;
-  String             _lastQuery = '';
-  bool               _openNow  = false;
+  Timer?         _debounce;
+  String         _lastQuery   = '';
+  _Suggestions   _suggestions = _Suggestions.empty;
+  bool           _loading     = false;
+  String?        _errorMsg;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: _SearchTab.values.length, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _ctrl.dispose();
-    _tabCtrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
-  Future<void> _search(String q) async {
-    if (q.trim() == _lastQuery) return;
-    if (q.trim().length < 2) {
-      setState(() { _pros = []; _products = []; _lastQuery = ''; });
+  // ── Logique de recherche ──────────────────────────────────────────────────
+
+  void _onChanged(String value) {
+    setState(() {}); // pour rafraîchir le bouton ✕
+    _debounce?.cancel();
+    final trimmed = value.trim();
+    if (trimmed.length < 1) {
+      setState(() {
+        _suggestions = _Suggestions.empty;
+        _lastQuery   = '';
+        _loading     = false;
+        _errorMsg    = null;
+      });
       return;
     }
-    _lastQuery = q.trim();
-    setState(() => _loading = true);
+    // Debounce : on attend que l'utilisateur arrête de taper avant d'appeler
+    // l'API. 250 ms = compromis perçu instantané vs trafic réseau.
+    _debounce = Timer(const Duration(milliseconds: 250), () {
+      _runSuggest(trimmed);
+    });
+  }
+
+  Future<void> _runSuggest(String q) async {
+    if (q == _lastQuery) return;
+    _lastQuery = q;
+    setState(() { _loading = true; _errorMsg = null; });
     try {
-      final [prosRes, productsRes] = await Future.wait([
-        ApiClient.instance.get('/geo/nearby', params: {
-          'lat': AppConstants.defaultLat,
-          'lng': AppConstants.defaultLng,
-          'radius': 200,
-        }),
-        ApiClient.instance.get('/products/search', params: {
-          'q': q,
-          'lat': AppConstants.defaultLat,
-          'lng': AppConstants.defaultLng,
-        }),
-      ]);
+      final res = await ApiClient.instance.get(
+        '/search/suggest',
+        params: {'q': q, 'limit': '6'},
+      );
+      // Si la query a changé pendant l'appel (utilisateur a continué de
+      // taper), on ignore cette réponse pour ne pas afficher des résultats
+      // périmés.
+      if (q != _lastQuery) return;
 
-      List unwrap(Map<String, dynamic> r) {
-        final raw = r['data'];
-        if (raw is List) return raw;
-        if (raw is Map) return (raw['items'] as List?) ?? (raw['data'] as List?) ?? [];
-        return [];
-      }
-
-      final qLower = q.toLowerCase();
-      final allPros = unwrap(prosRes)
-          .map((e) => Professional.fromJson(e as Map<String, dynamic>))
+      final data = res['data'] as Map<String, dynamic>? ?? {};
+      final pros = (data['establishments'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => _Establishment.fromJson(e.cast<String, dynamic>()))
           .toList();
-      final filteredPros = allPros.where((p) =>
-          p.businessName.toLowerCase().contains(qLower) ||
-          (p.description ?? '').toLowerCase().contains(qLower) ||
-          (p.city ?? '').toLowerCase().contains(qLower) ||
-          p.category.toLowerCase().contains(qLower)).toList();
-
-      final prods = unwrap(productsRes)
-          .map((e) => Product.fromJson(e as Map<String, dynamic>))
+      final prods = (data['products'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => _SuggestProduct.fromJson(e.cast<String, dynamic>()))
+          .toList();
+      final cats = (data['categories'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => _SuggestCategory.fromJson(e.cast<String, dynamic>()))
           .toList();
 
       setState(() {
-        _pros     = filteredPros;
-        _products = prods;
-        _loading  = false;
+        _suggestions = _Suggestions(pros, prods, cats);
+        _loading     = false;
       });
-    } catch (_) {
-      setState(() => _loading = false);
+    } catch (e) {
+      if (q != _lastQuery) return;
+      setState(() {
+        _loading  = false;
+        _errorMsg = e.toString();
+      });
     }
   }
 
-  List<Professional> get _filteredPros =>
-      _openNow ? _pros.where((p) => p.isOpen).toList() : _pros;
+  void _setQuery(String q) {
+    _ctrl.text      = q;
+    _ctrl.selection = TextSelection.fromPosition(TextPosition(offset: q.length));
+    _onChanged(q);
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: context.bgColor,
-    appBar: AppBar(
-      backgroundColor: context.cardColor,
-      elevation: 0,
-      titleSpacing: 0,
-      leading: const BackButton(),
-      title: TextField(
-        controller: _ctrl,
-        autofocus: true,
-        onChanged: _search,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
-            fontWeight: FontWeight.w600),
-        decoration: InputDecoration(
-          hintText: 'Plat, restaurant, boutique, catégorie…',
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          hintStyle: TextStyle(color: context.textMuted, fontFamily: 'Nunito'),
-          contentPadding: EdgeInsets.zero,
-          suffixIcon: _ctrl.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.close_rounded, color: context.textMuted, size: 20),
-                  onPressed: () {
-                    _ctrl.clear();
-                    _search('');
-                    setState(() {});
-                  })
-              : null,
+  Widget build(BuildContext context) {
+    final query = _ctrl.text.trim();
+    final hasQuery = query.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: context.bgColor,
+      appBar: AppBar(
+        backgroundColor: context.cardColor,
+        elevation: 0,
+        titleSpacing: 0,
+        leading: const BackButton(),
+        title: TextField(
+          controller: _ctrl,
+          focusNode: _focus,
+          onChanged: _onChanged,
+          textInputAction: TextInputAction.search,
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 16,
+              fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: 'Plat, restaurant, boutique, catégorie…',
+            border: InputBorder.none, enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            hintStyle: TextStyle(color: context.textMuted, fontFamily: 'Nunito'),
+            contentPadding: EdgeInsets.zero,
+            suffixIcon: hasQuery
+                ? IconButton(
+                    icon: Icon(Icons.close_rounded, color: context.textMuted, size: 20),
+                    onPressed: () {
+                      _ctrl.clear();
+                      _onChanged('');
+                    })
+                : null,
+          ),
         ),
       ),
-      bottom: _ctrl.text.length >= 2
-          ? TabBar(
-              controller: _tabCtrl,
-              labelStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  fontWeight: FontWeight.w700),
-              unselectedLabelStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  fontWeight: FontWeight.w500),
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.grey,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 2.5,
-              tabs: _SearchTab.values.map((t) {
-                final count = switch (t) {
-                  _SearchTab.all         => _filteredPros.length + _products.length,
-                  _SearchTab.restaurants => _filteredPros.length,
-                  _SearchTab.products    => _products.length,
-                };
-                return Tab(text: count > 0 ? '${t.label} ($count)' : t.label);
-              }).toList(),
-            )
-          : null,
-    ),
-    body: _loading
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-        : _ctrl.text.length < 2
-            ? _SuggestionsPanel(onTap: (s) {
-                _ctrl.text = s;
-                _ctrl.selection = TextSelection.fromPosition(
-                    TextPosition(offset: s.length));
-                _search(s);
-                setState(() {});
-              })
-            : TabBarView(
-                controller: _tabCtrl,
-                children: [
-                  _AllResults(
-                    pros: _filteredPros,
-                    products: _products,
-                    openNow: _openNow,
-                    onToggleOpen: (v) => setState(() => _openNow = v),
-                  ),
-                  _RestaurantResults(pros: _filteredPros),
-                  _ProductResults(products: _products),
-                ],
-              ),
-  );
+      body: !hasQuery
+          ? _SuggestionsPanel(onTap: _setQuery)
+          : _buildResults(context),
+    );
+  }
+
+  Widget _buildResults(BuildContext context) {
+    if (_loading && _suggestions.isEmpty) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary));
+    }
+    if (_errorMsg != null && _suggestions.isEmpty) {
+      return _ErrorState(message: _errorMsg!, onRetry: () => _runSuggest(_lastQuery));
+    }
+    if (_suggestions.isEmpty) {
+      return _EmptyResults(query: _lastQuery, onPickHint: _setQuery);
+    }
+
+    return ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        if (_loading)
+          const LinearProgressIndicator(
+              minHeight: 2,
+              color: AppColors.primary,
+              backgroundColor: Colors.transparent),
+        // ── Catégories (chips horizontales) ─────────────────────────────────
+        if (_suggestions.categories.isNotEmpty) ...[
+          _SectionHeader(
+              label: 'Catégories', count: _suggestions.categories.length),
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: _suggestions.categories.map((c) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ActionChip(
+                  avatar: c.icon != null
+                      ? Text(c.icon!, style: const TextStyle(fontSize: 14))
+                      : null,
+                  label: Text(c.name,
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+                  onPressed: () => _setQuery(c.name),
+                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                  side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+                  labelStyle: const TextStyle(color: AppColors.primary),
+                ),
+              )).toList(),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        // ── Établissements ──────────────────────────────────────────────────
+        if (_suggestions.establishments.isNotEmpty) ...[
+          _SectionHeader(
+              label: 'Établissements', count: _suggestions.establishments.length),
+          ..._suggestions.establishments.map((p) => _EstablishmentTile(pro: p)),
+          const SizedBox(height: 12),
+        ],
+        // ── Produits ────────────────────────────────────────────────────────
+        if (_suggestions.products.isNotEmpty) ...[
+          _SectionHeader(
+              label: 'Plats / Produits', count: _suggestions.products.length),
+          ..._suggestions.products.map((p) => _ProductTile(product: p)),
+        ],
+      ],
+    );
+  }
 }
 
-// ── Panneau suggestions ───────────────────────────────────────────────────────
+// ── Panneau suggestions (avant frappe) ───────────────────────────────────────
 
 class _SuggestionsPanel extends StatelessWidget {
   final ValueChanged<String> onTap;
@@ -214,123 +346,84 @@ class _SuggestionsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16),
+    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
     children: [
       Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: Text('Suggestions',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-              fontWeight: FontWeight.w800, color: context.textMuted, letterSpacing: 0.5))),
-      ..._suggestions.map((item) => Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: context.cardColor, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.borderColor.withOpacity(0.8))),
-        child: ListTile(
-          leading: Text(item.$1, style: const TextStyle(fontSize: 22)),
-          title: Text(item.$2,
-            style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600)),
-          trailing: Icon(Icons.north_west_rounded, size: 16, color: context.textMuted),
+        child: Text('IDÉES DE RECHERCHE',
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                fontWeight: FontWeight.w800, color: context.textMuted,
+                letterSpacing: 0.8))),
+      Wrap(
+        spacing: 8, runSpacing: 8,
+        children: _kSuggestions.map((item) => GestureDetector(
           onTap: () => onTap(item.$2),
-        ),
-      )),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: context.cardColor, borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: context.borderColor.withOpacity(0.8))),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text(item.$1, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(item.$2,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                    fontWeight: FontWeight.w700, color: context.textPrimary)),
+            ]),
+          ),
+        )).toList(),
+      ),
+      const SizedBox(height: 24),
+      Center(child: Text('Tape un mot pour voir des suggestions',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+            color: context.textMuted))),
     ],
   );
 }
 
-// ── Onglet Tout ───────────────────────────────────────────────────────────────
+// ── Header de section ────────────────────────────────────────────────────────
 
-class _AllResults extends StatelessWidget {
-  final List<Professional> pros;
-  final List<Product>      products;
-  final bool               openNow;
-  final ValueChanged<bool> onToggleOpen;
-  const _AllResults({
-    required this.pros, required this.products,
-    required this.openNow, required this.onToggleOpen,
-  });
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  final int    count;
+  const _SectionHeader({required this.label, required this.count});
 
   @override
-  Widget build(BuildContext context) {
-    if (pros.isEmpty && products.isEmpty) return _emptyState(context);
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      // Toggle ouvert maintenant
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(children: [
+      Text(label.toUpperCase(),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+            fontWeight: FontWeight.w800, color: context.textMuted,
+            letterSpacing: 0.8)),
+      const SizedBox(width: 8),
       Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
         decoration: BoxDecoration(
-          color: context.cardColor, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.borderColor.withOpacity(0.8))),
-        child: Row(children: [
-          const Icon(Icons.store_rounded, color: AppColors.primary, size: 18),
-          const SizedBox(width: 10),
-          Expanded(child: Text('Ouvert maintenant',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700,
-                fontSize: 14, color: context.textPrimary))),
-          Switch(value: openNow, onChanged: onToggleOpen, activeColor: AppColors.primary),
-        ]),
+          color: AppColors.primary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(8)),
+        child: Text('$count',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+              fontWeight: FontWeight.w800, color: AppColors.primary)),
       ),
-      if (pros.isNotEmpty) ...[
-        _SectionHeader(label: 'Établissements', count: pros.length),
-        ...pros.take(4).map((p) => _ProTile(pro: p)),
-        if (pros.length > 4)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: GestureDetector(
-              onTap: () {},
-              child: const Text('Voir les autres →',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                    fontWeight: FontWeight.w700, color: AppColors.primary)),
-            ),
-          ),
-        const SizedBox(height: 8),
-      ],
-      if (products.isNotEmpty) ...[
-        _SectionHeader(label: 'Produits', count: products.length),
-        ...products.take(6).map((p) => _ProductTile(product: p)),
-      ],
-    ]);
-  }
+    ]),
+  );
 }
 
-// ── Onglet Établissements ─────────────────────────────────────────────────────
+// ── Tuiles ────────────────────────────────────────────────────────────────────
 
-class _RestaurantResults extends StatelessWidget {
-  final List<Professional> pros;
-  const _RestaurantResults({required this.pros});
+class _EstablishmentTile extends StatelessWidget {
+  final _Establishment pro;
+  const _EstablishmentTile({required this.pro});
 
-  @override
-  Widget build(BuildContext context) {
-    if (pros.isEmpty) return _emptyState(context);
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: pros.length,
-      itemBuilder: (_, i) => _ProTile(pro: pros[i]),
-    );
-  }
-}
-
-// ── Onglet Produits ───────────────────────────────────────────────────────────
-
-class _ProductResults extends StatelessWidget {
-  final List<Product> products;
-  const _ProductResults({required this.products});
-
-  @override
-  Widget build(BuildContext context) {
-    if (products.isEmpty) return _emptyState(context);
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: products.length,
-      itemBuilder: (_, i) => _ProductTile(product: products[i]),
-    );
-  }
-}
-
-// ── Tuiles de résultats ───────────────────────────────────────────────────────
-
-class _ProTile extends StatelessWidget {
-  final Professional pro;
-  const _ProTile({required this.pro});
+  String get _catLabel => switch (pro.category) {
+    'RESTAURANT'  => 'Restaurant',
+    'BAKERY'      => 'Boulangerie',
+    'GROCERY'     => 'Épicerie',
+    'SUPERMARKET' => 'Supermarché',
+    'PHARMACY'    => 'Pharmacie',
+    _             => pro.category.isEmpty ? '' : pro.category,
+  };
 
   @override
   Widget build(BuildContext context) => Container(
@@ -342,12 +435,12 @@ class _ProTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: (pro.coverImageUrl ?? pro.logoUrl) != null
+        child: (pro.logoUrl ?? pro.coverImageUrl) != null
             ? CachedNetworkImage(
-                imageUrl: (pro.coverImageUrl ?? pro.logoUrl)!,
-                width: 52, height: 52, fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => _EmojiBox(pro.categoryEmoji))
-            : _EmojiBox(pro.categoryEmoji),
+                imageUrl: (pro.logoUrl ?? pro.coverImageUrl)!,
+                width: 48, height: 48, fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => const _EmojiBox('🏪'))
+            : const _EmojiBox('🏪'),
       ),
       title: Text(pro.businessName,
         style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700,
@@ -366,29 +459,20 @@ class _ProTile extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: pro.isOpen ? AppColors.success : AppColors.grey)),
         ),
-        if (pro.city != null)
-          Expanded(child: Text(pro.city!,
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                color: context.textMuted), overflow: TextOverflow.ellipsis)),
+        Expanded(child: Text(
+          [_catLabel, if (pro.city != null) pro.city!]
+              .where((s) => s.isNotEmpty).join(' • '),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+              color: context.textMuted), overflow: TextOverflow.ellipsis)),
       ]),
-      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (pro.avgRating != null && (pro.avgRating ?? 0) > 0) ...[
-          const Icon(Icons.star_rounded, color: AppColors.yellow, size: 14),
-          const SizedBox(width: 2),
-          Text(pro.avgRating!.toStringAsFixed(1),
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                fontWeight: FontWeight.w700, color: context.textPrimary)),
-          const SizedBox(width: 4),
-        ],
-        Icon(Icons.chevron_right_rounded, color: context.borderColor),
-      ]),
+      trailing: Icon(Icons.chevron_right_rounded, color: context.borderColor),
       onTap: () => context.push('/restaurant/${pro.id}'),
     ),
   );
 }
 
 class _ProductTile extends StatelessWidget {
-  final Product product;
+  final _SuggestProduct product;
   const _ProductTile({required this.product});
 
   @override
@@ -404,47 +488,29 @@ class _ProductTile extends StatelessWidget {
         child: product.imageUrl != null
             ? CachedNetworkImage(
                 imageUrl: product.imageUrl!,
-                width: 52, height: 52, fit: BoxFit.cover,
+                width: 48, height: 48, fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => const _EmojiBox('🍽️'))
             : const _EmojiBox('🍽️'),
       ),
-      title: Text(product.localizedName('fr'),
+      title: Text(product.nameFr,
         style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700,
             fontSize: 15, color: context.textPrimary)),
-      subtitle: Text(product.formattedPrice,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-            color: AppColors.primary, fontWeight: FontWeight.w800)),
+      subtitle: Row(children: [
+        Text(
+          product.currency == 'XOF'
+              ? '${product.price.toStringAsFixed(0)} F'
+              : '${product.price.toStringAsFixed(0)} ${product.currency}',
+          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+              color: AppColors.primary, fontWeight: FontWeight.w800)),
+        const Text(' · ', style: TextStyle(color: Colors.grey)),
+        Flexible(child: Text(product.professionalName,
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                color: context.textMuted),
+            overflow: TextOverflow.ellipsis)),
+      ]),
       trailing: Icon(Icons.chevron_right_rounded, color: context.borderColor),
       onTap: () => context.push('/restaurant/${product.professionalId}'),
     ),
-  );
-}
-
-// ── Widgets utilitaires ───────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final String label;
-  final int    count;
-  const _SectionHeader({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Row(children: [
-      Text(label.toUpperCase(),
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-            fontWeight: FontWeight.w800, color: context.textMuted, letterSpacing: 0.8)),
-      const SizedBox(width: 6),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6)),
-        child: Text('$count',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-              fontWeight: FontWeight.w700, color: AppColors.primary)),
-      ),
-    ]),
   );
 }
 
@@ -454,24 +520,73 @@ class _EmojiBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 52, height: 52,
+    width: 48, height: 48,
     color: AppColors.primary.withOpacity(0.08),
-    child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))));
+    child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))));
 }
 
-Widget _emptyState(BuildContext context) => Center(
-  child: Padding(
-    padding: const EdgeInsets.all(40),
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Text('🔍', style: TextStyle(fontSize: 48)),
-      const SizedBox(height: 12),
-      Text('Aucun résultat',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-            fontWeight: FontWeight.w700, color: context.textPrimary)),
-      const SizedBox(height: 8),
-      Text('Essayez avec un autre mot-clé',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textMuted),
-        textAlign: TextAlign.center),
+// ── États ────────────────────────────────────────────────────────────────────
+
+class _EmptyResults extends StatelessWidget {
+  final String query;
+  final ValueChanged<String> onPickHint;
+  const _EmptyResults({required this.query, required this.onPickHint});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(32),
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text('🔍', style: TextStyle(fontSize: 56)),
+      const SizedBox(height: 14),
+      Text('Aucun résultat pour « $query »',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
+            fontWeight: FontWeight.w800, color: context.textPrimary)),
+      const SizedBox(height: 6),
+      Text('Essaie un autre mot-clé ou parmi les idées :',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+            color: context.textMuted)),
+      const SizedBox(height: 16),
+      Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
+        children: _kSuggestions.take(6).map((s) => ActionChip(
+          avatar: Text(s.$1, style: const TextStyle(fontSize: 14)),
+          label: Text(s.$2,
+            style: const TextStyle(fontFamily: 'Nunito',
+                fontWeight: FontWeight.w700)),
+          onPressed: () => onPickHint(s.$2),
+        )).toList(),
+      ),
     ]),
-  ),
-);
+  );
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(32),
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      const Text('📡', style: TextStyle(fontSize: 48)),
+      const SizedBox(height: 12),
+      Text('Recherche indisponible',
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
+            fontWeight: FontWeight.w800, color: context.textPrimary)),
+      const SizedBox(height: 6),
+      Text(message,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+            color: context.textMuted)),
+      const SizedBox(height: 14),
+      ElevatedButton.icon(
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh_rounded, size: 18),
+        label: const Text('Réessayer'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+      ),
+    ]),
+  );
+}

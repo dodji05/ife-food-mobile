@@ -343,6 +343,25 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                   innerBoxIsScrolled: innerScrolled,
                 ),
               ),
+
+              // DIAG TEMPORAIRE : compteur produits TOUJOURS VISIBLE,
+              // hors du TabBarView, pour confirmer que le payload arrive
+              // bien côté mobile (à retirer après résolution).
+              SliverToBoxAdapter(
+                child: Container(
+                  width: double.infinity,
+                  color: AppColors.danger.withOpacity(0.12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text(
+                    'DEBUG products=${prodList.length} '
+                    'groupedKeys=${grouped.keys.length} '
+                    'catKeys=${catKeys.length} '
+                    'rawType=${(json['products']).runtimeType}',
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                        fontWeight: FontWeight.w700, color: AppColors.danger),
+                  ),
+                ),
+              ),
             ],
 
             body: TabBarView(

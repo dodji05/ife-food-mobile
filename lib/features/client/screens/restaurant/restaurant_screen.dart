@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -56,7 +57,43 @@ class _Review {
 final restaurantDetailProvider =
     FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
   final res = await ApiClient.instance.get('/professionals/$id');
-  return res['data'] as Map<String, dynamic>;
+  // Le payload peut arriver soit aplati ({success, data: {...}}) soit double-wrappé
+  // ({success, data: {data: {...}}}) selon les versions du backend / cache CDN.
+  // On cherche le premier niveau qui contient les clés métier attendues.
+  Map<String, dynamic> data = (res['data'] as Map).cast<String, dynamic>();
+  if (data['businessName'] == null && data['data'] is Map) {
+    data = (data['data'] as Map).cast<String, dynamic>();
+  }
+
+  // Fallback : si la réponse n'embarque pas la liste `products` (ancien backend
+  // ou JSON tronqué côté réseau), on récupère les produits via l'endpoint
+  // standalone `/products/professional/:id`. Cela évite "Aucun produit
+  // disponible" alors que la BDD contient bien des produits.
+  final rawProducts = data['products'];
+  final isEmpty = rawProducts is! List || rawProducts.isEmpty;
+  developer.log(
+    'restaurantDetailProvider id=$id products=${rawProducts is List ? rawProducts.length : "absent"}',
+    name: 'restaurant',
+  );
+  if (isEmpty) {
+    try {
+      final pres = await ApiClient.instance.get('/products/professional/$id');
+      final praw = pres['data'];
+      final plist = praw is List
+          ? praw
+          : (praw is Map<String, dynamic> ? praw['data'] as List? : null) ?? [];
+      if (plist.isNotEmpty) {
+        data = {...data, 'products': plist};
+        developer.log(
+          'restaurantDetailProvider id=$id fallback products=${plist.length}',
+          name: 'restaurant',
+        );
+      }
+    } catch (e) {
+      developer.log('restaurantDetailProvider fallback error: $e', name: 'restaurant');
+    }
+  }
+  return data;
 });
 
 // ⚠️ Ce provider est conservé pour rétro-compatibilité (ex. home_screen) mais
@@ -167,13 +204,22 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
           // (tous, y compris rupture/indisponibles) arrivent dans la même
           // réponse. Cela évite les désynchronisations et les cas où le
           // second appel retournait vide alors que les produits existent.
+          // ⚠️ Robustesse : `whereType<Map<String, dynamic>>()` filtre les items
+          // si Dio a décodé certains objets comme Map<dynamic, dynamic>. On
+          // accepte tout `Map` et on cast en Map<String, dynamic> à la volée.
           final rawProducts = json['products'];
           final prodList = rawProducts is List
               ? rawProducts
-                  .whereType<Map<String, dynamic>>()
-                  .map(Product.fromJson)
+                  .whereType<Map>()
+                  .map((e) => Product.fromJson(e.cast<String, dynamic>()))
                   .toList()
               : <Product>[];
+          developer.log(
+            'RestaurantScreen build pro=${widget.restaurantId} '
+            'rawProducts=${rawProducts is List ? rawProducts.length : "absent"} '
+            'parsed=${prodList.length}',
+            name: 'restaurant',
+          );
 
           // Groupement par catégorie
           final grouped = <String, List<Product>>{};

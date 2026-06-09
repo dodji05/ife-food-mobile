@@ -194,6 +194,10 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
               catLabels[id] = nm.toString();
             }
           }
+          // Produits sans catégorie → label "Autres" pour le chip de filtre
+          if (grouped.containsKey('__other__')) {
+            catLabels['__other__'] = 'Autres';
+          }
           final catKeys = grouped.keys.toList();
 
           return NestedScrollView(

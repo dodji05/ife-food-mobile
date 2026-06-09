@@ -344,24 +344,6 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                 ),
               ),
 
-              // DIAG TEMPORAIRE : compteur produits TOUJOURS VISIBLE,
-              // hors du TabBarView, pour confirmer que le payload arrive
-              // bien côté mobile (à retirer après résolution).
-              SliverToBoxAdapter(
-                child: Container(
-                  width: double.infinity,
-                  color: AppColors.danger.withOpacity(0.12),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Text(
-                    'DEBUG products=${prodList.length} '
-                    'groupedKeys=${grouped.keys.length} '
-                    'catKeys=${catKeys.length} '
-                    'rawType=${(json['products']).runtimeType}',
-                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                        fontWeight: FontWeight.w700, color: AppColors.danger),
-                  ),
-                ),
-              ),
             ],
 
             body: TabBarView(
@@ -660,10 +642,15 @@ class _MenuTab extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Catégories chips (si plusieurs catégories)
+            // ⚠️ NE PAS utiliser SliverPersistentHeader pinned ici : combo
+            // SliverPersistentHeader(pinned) + CustomScrollView + TabBarView
+            // + NestedScrollView casse silencieusement le layout (les slivers
+            // en aval ne se rendent plus). On utilise SliverToBoxAdapter
+            // non-pinned : on perd le sticky des chips au scroll mais on
+            // récupère l'affichage des produits.
             if (catKeys.length > 1)
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _CatChipsDelegate(
+              SliverToBoxAdapter(
+                child: _CatChipsBar(
                   keys: ['__all__', ...catKeys],
                   labels: {'__all__': 'Tous', ...catLabels},
                   selected: selectedCatId,
@@ -687,17 +674,6 @@ class _MenuTab extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
                           color: context.textMuted)),
-                    const SizedBox(height: 8),
-                    // DIAG TEMPORAIRE : compteur visible. À retirer une fois
-                    // le bug menu vide résolu et confirmé en prod.
-                    Text(
-                      'DEBUG products.length=${products.length} '
-                      'grouped.keys=${grouped.keys.length} '
-                      'selectedCat=$selectedCatId '
-                      'filtered=${filtered.length}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                          color: AppColors.danger)),
                   ]),
                 )),
               )
@@ -1259,25 +1235,20 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
       );
 }
 
-class _CatChipsDelegate extends SliverPersistentHeaderDelegate {
+class _CatChipsBar extends StatelessWidget {
   final List<String>        keys;
   final Map<String, String> labels;
   final String              selected;
   final ValueChanged<String> onSelect;
-  const _CatChipsDelegate({
+  const _CatChipsBar({
     required this.keys, required this.labels,
     required this.selected, required this.onSelect,
   });
 
-  @override double get minExtent => 56;
-  @override double get maxExtent => 56;
-  @override bool shouldRebuild(_CatChipsDelegate old) =>
-      old.selected != selected || old.keys.length != keys.length;
-
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      Container(
+  Widget build(BuildContext context) => Container(
         color: context.bgColor,
+        height: 56,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

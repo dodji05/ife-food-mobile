@@ -668,6 +668,17 @@ class _MenuTab extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
                           color: context.textMuted)),
+                    const SizedBox(height: 8),
+                    // DIAG TEMPORAIRE : compteur visible. À retirer une fois
+                    // le bug menu vide résolu et confirmé en prod.
+                    Text(
+                      'DEBUG products.length=${products.length} '
+                      'grouped.keys=${grouped.keys.length} '
+                      'selectedCat=$selectedCatId '
+                      'filtered=${filtered.length}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                          color: AppColors.danger)),
                   ]),
                 )),
               )

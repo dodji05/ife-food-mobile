@@ -110,20 +110,15 @@ class _Suggestions {
   static const empty = _Suggestions([], [], []);
 }
 
-// ── Suggestions hors-recherche (mots-clés prédéfinis) ────────────────────────
+// ── Trending depuis la BDD ───────────────────────────────────────────────────
 
-const _kSuggestions = [
-  ('🍕', 'Pizza'),
-  ('🍔', 'Burger'),
-  ('🍜', 'Riz / pâtes'),
-  ('🥗', 'Salade'),
-  ('🥖', 'Pain / boulangerie'),
-  ('🍣', 'Poisson'),
-  ('🍗', 'Poulet'),
-  ('🥤', 'Boisson'),
-  ('💊', 'Pharmacie'),
-  ('🛒', 'Épicerie'),
-];
+class _Trending {
+  final List<_SuggestCategory> categories;
+  final List<_Establishment>   establishments;
+  const _Trending(this.categories, this.establishments);
+  static const empty = _Trending([], []);
+  bool get isEmpty => categories.isEmpty && establishments.isEmpty;
+}
 
 // ── Écran ────────────────────────────────────────────────────────────────────
 
@@ -144,10 +139,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool           _loading     = false;
   String?        _errorMsg;
 
+  _Trending      _trending    = _Trending.empty;
+  bool           _trendingLoading = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    _loadTrending();
+  }
+
+  Future<void> _loadTrending() async {
+    setState(() => _trendingLoading = true);
+    try {
+      final res = await ApiClient.instance.get('/search/trending');
+      final data = res['data'] as Map<String, dynamic>? ?? {};
+      final cats = (data['categories'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => _SuggestCategory.fromJson(e.cast<String, dynamic>()))
+          .toList();
+      final pros = (data['establishments'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => _Establishment.fromJson(e.cast<String, dynamic>()))
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _trending = _Trending(cats, pros);
+        _trendingLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _trendingLoading = false);
+    }
   }
 
   @override
@@ -266,7 +289,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
       ),
       body: !hasQuery
-          ? _SuggestionsPanel(onTap: _setQuery)
+          ? _TrendingPanel(
+              loading: _trendingLoading,
+              trending: _trending,
+              onPickQuery: _setQuery,
+            )
           : _buildResults(context),
     );
   }
@@ -337,48 +364,85 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-// ── Panneau suggestions (avant frappe) ───────────────────────────────────────
+// ── Panneau d'idées (avant frappe) — peuplé depuis la BDD ────────────────────
 
-class _SuggestionsPanel extends StatelessWidget {
-  final ValueChanged<String> onTap;
-  const _SuggestionsPanel({required this.onTap});
+class _TrendingPanel extends StatelessWidget {
+  final bool       loading;
+  final _Trending  trending;
+  final ValueChanged<String> onPickQuery;
+  const _TrendingPanel({
+    required this.loading,
+    required this.trending,
+    required this.onPickQuery,
+  });
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16),
-    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-    children: [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Text('IDÉES DE RECHERCHE',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                fontWeight: FontWeight.w800, color: context.textMuted,
-                letterSpacing: 0.8))),
-      Wrap(
-        spacing: 8, runSpacing: 8,
-        children: _kSuggestions.map((item) => GestureDetector(
-          onTap: () => onTap(item.$2),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: context.cardColor, borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: context.borderColor.withOpacity(0.8))),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(item.$1, style: const TextStyle(fontSize: 18)),
-              const SizedBox(width: 6),
-              Text(item.$2,
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                    fontWeight: FontWeight.w700, color: context.textPrimary)),
-            ]),
+  Widget build(BuildContext context) {
+    if (loading && trending.isEmpty) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
+    final cats = trending.categories;
+    final pros = trending.establishments;
+
+    if (cats.isEmpty && pros.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('🔍', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text('Tape un mot pour rechercher',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w700, color: context.textPrimary)),
+            const SizedBox(height: 6),
+            Text('Établissements, plats, catégories…',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textMuted)),
+          ]),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      children: [
+        if (cats.isNotEmpty) ...[
+          _SectionHeader(label: 'Catégories', count: cats.length),
+          Wrap(
+            spacing: 8, runSpacing: 8,
+            children: cats.map((c) => GestureDetector(
+              onTap: () => onPickQuery(c.name),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: context.cardColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: context.borderColor.withOpacity(0.8))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (c.icon != null && c.icon!.isNotEmpty) ...[
+                    Text(c.icon!, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(c.name,
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                        fontWeight: FontWeight.w700, color: context.textPrimary)),
+                ]),
+              ),
+            )).toList(),
           ),
-        )).toList(),
-      ),
-      const SizedBox(height: 24),
-      Center(child: Text('Tape un mot pour voir des suggestions',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-            color: context.textMuted))),
-    ],
-  );
+          const SizedBox(height: 20),
+        ],
+        if (pros.isNotEmpty) ...[
+          _SectionHeader(label: 'Populaires', count: pros.length),
+          ...pros.map((p) => _EstablishmentTile(pro: p)),
+        ],
+      ],
+    );
+  }
 }
 
 // ── Header de section ────────────────────────────────────────────────────────
@@ -543,19 +607,9 @@ class _EmptyResults extends StatelessWidget {
         style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
             fontWeight: FontWeight.w800, color: context.textPrimary)),
       const SizedBox(height: 6),
-      Text('Essaie un autre mot-clé ou parmi les idées :',
+      Text('Essaie un autre mot-clé',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
             color: context.textMuted)),
-      const SizedBox(height: 16),
-      Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
-        children: _kSuggestions.take(6).map((s) => ActionChip(
-          avatar: Text(s.$1, style: const TextStyle(fontSize: 14)),
-          label: Text(s.$2,
-            style: const TextStyle(fontFamily: 'Nunito',
-                fontWeight: FontWeight.w700)),
-          onPressed: () => onPickHint(s.$2),
-        )).toList(),
-      ),
     ]),
   );
 }

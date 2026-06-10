@@ -48,15 +48,17 @@ class _CategoryDef {
   const _CategoryDef(this.id, this.label, this.emoji, this.color);
 }
 
-const _kCategories = [
-  _CategoryDef('all',         'Tout',     '🌟', Color(0xFF1A6B3C)),
-  _CategoryDef('RESTAURANT',  'Restos',   '🍽️', Color(0xFFE85D04)),
-  _CategoryDef('GROCERY',     'Épicerie', '🛒', Color(0xFF2196F3)),
-  _CategoryDef('SUPERMARKET', 'Super',    '🏪', Color(0xFF9C27B0)),
-  _CategoryDef('BAKERY',      'Boulang.', '🥖', Color(0xFFFF9800)),
-  _CategoryDef('PHARMACY',    'Pharma',   '💊', Color(0xFF00BCD4)),
-  _CategoryDef('other',       'Divers',   '🏬', Color(0xFF607D8B)),
-];
+/// Lookup statique id → métadonnées. Sert de référence pour construire
+/// dynamiquement les catégories visibles (uniquement celles avec ≥1 établissement).
+const _kCategoryMeta = <String, _CategoryDef>{
+  'all':         _CategoryDef('all',         'Tout',     '🌟', Color(0xFF1A6B3C)),
+  'RESTAURANT':  _CategoryDef('RESTAURANT',  'Restos',   '🍽️', Color(0xFFE85D04)),
+  'GROCERY':     _CategoryDef('GROCERY',     'Épicerie', '🛒', Color(0xFF2196F3)),
+  'SUPERMARKET': _CategoryDef('SUPERMARKET', 'Super',    '🏪', Color(0xFF9C27B0)),
+  'BAKERY':      _CategoryDef('BAKERY',      'Boulang.', '🥖', Color(0xFFFF9800)),
+  'PHARMACY':    _CategoryDef('PHARMACY',    'Pharma',   '💊', Color(0xFF00BCD4)),
+  'other':       _CategoryDef('other',       'Divers',   '🏬', Color(0xFF607D8B)),
+};
 
 const _kRadiusOptions = [
   (label: 'Tout',   km: 0),
@@ -140,6 +142,36 @@ class _HomeScreenV2State extends ConsumerState<HomeScreenV2> {
     final unread          = ref.watch(unreadCountProvider);
     final defaultAddr     = ref.watch(defaultAddressProvider);
 
+    // ── Catégories visibles : "Tout" + celles ayant ≥1 établissement proche ─
+    final List<_CategoryDef> visibleCategories = [
+      _kCategoryMeta['all']!,
+      ...professionals.maybeWhen(
+        data: (list) {
+          final seen   = <String>{};
+          final defs   = <_CategoryDef>[];
+          bool hasOther = false;
+          for (final p in list) {
+            final cat = p.category;
+            if (seen.add(cat)) {
+              final def = _kCategoryMeta[cat];
+              if (def != null) defs.add(def);
+              else hasOther = true;
+            }
+          }
+          if (hasOther) defs.add(_kCategoryMeta['other']!);
+          return defs;
+        },
+        orElse: () => <_CategoryDef>[],
+      ),
+    ];
+    // Si la catégorie sélectionnée disparaît (ex : changement de rayon), reset.
+    if (_selectedCategory != 'all' &&
+        visibleCategories.every((c) => c.id != _selectedCategory)) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) { if (mounted) setState(() => _selectedCategory = 'all'); },
+      );
+    }
+
     return CustomScrollView(
       slivers: [
         // ── 1. Header gradient ───────────────────────────────────────────────
@@ -168,7 +200,7 @@ class _HomeScreenV2State extends ConsumerState<HomeScreenV2> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
-                children: _kCategories.map((c) {
+                children: visibleCategories.map((c) {
                   final sel = c.id == _selectedCategory;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedCategory = c.id),

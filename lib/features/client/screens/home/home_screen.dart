@@ -139,15 +139,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     (label: '20 km', km: 20),
   ];
 
-  static const _categories = [
-    {'id': 'all',         'label': 'Tout',     'emoji': '🌟'},
-    {'id': 'RESTAURANT',  'label': 'Restos',   'emoji': '🍽️'},
-    {'id': 'GROCERY',     'label': 'Épicerie', 'emoji': '🛒'},
-    {'id': 'SUPERMARKET', 'label': 'Super',    'emoji': '🏪'},
-    {'id': 'BAKERY',      'label': 'Boulang.', 'emoji': '🥖'},
-    {'id': 'PHARMACY',    'label': 'Pharma',   'emoji': '💊'},
-    {'id': 'other',       'label': 'Divers',   'emoji': '🏬'},
-  ];
+  /// Lookup statique : sert à construire dynamiquement les catégories visibles.
+  static const _kCategoryMeta = <String, Map<String, String>>{
+    'all':         {'id': 'all',         'label': 'Tout',     'emoji': '🌟'},
+    'RESTAURANT':  {'id': 'RESTAURANT',  'label': 'Restos',   'emoji': '🍽️'},
+    'GROCERY':     {'id': 'GROCERY',     'label': 'Épicerie', 'emoji': '🛒'},
+    'SUPERMARKET': {'id': 'SUPERMARKET', 'label': 'Super',    'emoji': '🏪'},
+    'BAKERY':      {'id': 'BAKERY',      'label': 'Boulang.', 'emoji': '🥖'},
+    'PHARMACY':    {'id': 'PHARMACY',    'label': 'Pharma',   'emoji': '💊'},
+    'other':       {'id': 'other',       'label': 'Divers',   'emoji': '🏬'},
+  };
 
   void _showFilters() {
     showModalBottomSheet(
@@ -179,6 +180,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final banners     = ref.watch(bannersProvider);
     final unread      = ref.watch(unreadCountProvider);
     final defaultAddress = ref.watch(defaultAddressProvider);
+
+    // ── Catégories visibles : "Tout" + celles ayant ≥1 établissement proche ─
+    final List<Map<String, String>> visibleCategories = [
+      _kCategoryMeta['all']!,
+      ...professionals.maybeWhen(
+        data: (list) {
+          final seen    = <String>{};
+          final result  = <Map<String, String>>[];
+          bool hasOther = false;
+          for (final p in list) {
+            final cat = p.category;
+            if (seen.add(cat)) {
+              final meta = _kCategoryMeta[cat];
+              if (meta != null) result.add(meta);
+              else hasOther = true;
+            }
+          }
+          if (hasOther) result.add(_kCategoryMeta['other']!);
+          return result;
+        },
+        orElse: () => <Map<String, String>>[],
+      ),
+    ];
+    // Si la catégorie sélectionnée disparaît (ex : changement de rayon), reset.
+    if (_selectedCategory != 'all' &&
+        visibleCategories.every((c) => c['id'] != _selectedCategory)) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) { if (mounted) setState(() => _selectedCategory = 'all'); },
+      );
+    }
 
     return CustomScrollView(
       slivers: [
@@ -348,7 +379,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
-                children: _categories.map((c) {
+                children: visibleCategories.map((c) {
                   final sel = c['id'] == _selectedCategory;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedCategory = c['id']!),

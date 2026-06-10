@@ -422,7 +422,7 @@ class _RejectDialogState extends State<_RejectDialog> {
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Annuler',
+        child: Text('Annuler',
           style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textSecondary)),
       ),
       ElevatedButton.icon(

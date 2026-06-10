@@ -74,7 +74,7 @@ class _Body extends StatelessWidget {
             border: Border.all(color: AppColors.primary.withOpacity(0.3)),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Revenus nets — 30 derniers jours',
+            Text('Revenus nets — 30 derniers jours',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             Text('${_fmt(data.month.net)} F',

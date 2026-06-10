@@ -122,7 +122,7 @@ class _TileState extends ConsumerState<_Tile> {
                 )),
                 const SizedBox(width: 6),
                 Text(widget.notif.relativeTime,
-                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                       fontWeight: FontWeight.w600, color: context.textSecondary)),
               ]),
               const SizedBox(height: 2),

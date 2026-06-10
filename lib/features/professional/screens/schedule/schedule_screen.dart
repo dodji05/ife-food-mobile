@@ -81,7 +81,7 @@ class _State extends ConsumerState<ScheduleScreen> {
       ),
     ),
     body: ListView(padding: const EdgeInsets.all(16), children: [
-          const Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
+          Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary, height: 1.5)),
           const SizedBox(height: 20),
           ..._dayKeys.asMap().entries.map((e) {

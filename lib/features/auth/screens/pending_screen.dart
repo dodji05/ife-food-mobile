@@ -109,9 +109,9 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.warning.withOpacity(0.4)),
             ),
-            child: const Row(children: [
-              Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
-              SizedBox(width: 10),
+            child: Row(children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
+              const SizedBox(width: 10),
               Expanded(child: Text(
                 'Profil incomplet : il manque les infos de votre véhicule.',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 13,

@@ -13,6 +13,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/utils/location_utils.dart';
 import '../../providers/pro_provider.dart';
 
@@ -111,8 +112,8 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
 
     if (delta.isEmpty) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Aucune modification à enregistrer'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Aucune modification à enregistrer'),
         backgroundColor: context.textSecondary,
       ));
       return;
@@ -185,13 +186,13 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
         builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-            title: const Text('Choisir depuis la galerie',
+            title: Text('Choisir depuis la galerie',
               style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
             onTap: () => Navigator.pop(context, 'gallery'),
           ),
           ListTile(
             leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-            title: const Text('Prendre une photo',
+            title: Text('Prendre une photo',
               style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
             onTap: () => Navigator.pop(context, 'camera'),
           ),

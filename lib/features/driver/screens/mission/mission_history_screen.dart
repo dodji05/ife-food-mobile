@@ -29,7 +29,6 @@ class MissionHistoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
         elevation: 0,
         title: Text('Mes missions',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
@@ -197,7 +196,7 @@ class _MissionCardState extends State<_MissionCard>
 
     final Color statusColor = isDelivered
         ? AppColors.success
-        : isFailed ? AppColors.danger : AppColors.darkSubtext;
+        : isFailed ? AppColors.danger : context.textSecondary;
 
     return GestureDetector(
       onTap: _toggle,
@@ -346,9 +345,9 @@ class _ExpandedDetail extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
-      ), // darkSurface conservé : c'est la couche de surface in-card, pas le fond principal
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
         // Itinéraire

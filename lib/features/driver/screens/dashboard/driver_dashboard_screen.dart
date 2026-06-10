@@ -29,7 +29,7 @@ class DriverDashboardScreen extends ConsumerWidget {
 
         // ── App bar ───────────────────────────────────────────────────────────
         SliverToBoxAdapter(child: Container(
-          color: AppColors.darkSurface,
+          color: Theme.of(context).appBarTheme.backgroundColor,
           child: SafeArea(bottom: false, child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             child: Row(children: [

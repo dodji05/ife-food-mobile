@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_colors.dart';
 import '../../../shared/models/mission.dart';
 import '../providers/driver_provider.dart';
 
@@ -126,8 +127,8 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
               const SizedBox(width: 8),
               Expanded(child: Text(m.professionalName,
                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w800, color: AppColors.darkText))),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w800, color: context.textPrimary))),
             ]),
             const SizedBox(height: 6),
             // Livraison
@@ -136,8 +137,8 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
               const SizedBox(width: 8),
               Expanded(child: Text(m.clientAddress,
                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: AppColors.darkSubtext))),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textSecondary))),
             ]),
             const SizedBox(height: 12),
             // Métriques — Wrap évite le débordement si les 3 chips sont présents
@@ -181,15 +182,15 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
   Widget _chip(String emoji, String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: AppColors.driverCard,
+      color: context.cardColor,
       borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: AppColors.driverBorder),
+      border: Border.all(color: context.borderColor),
     ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Text(emoji, style: const TextStyle(fontSize: 12)),
       const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-        fontWeight: FontWeight.w700, color: AppColors.darkText)),
+      Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+        fontWeight: FontWeight.w700, color: context.textPrimary)),
     ]),
   );
 }

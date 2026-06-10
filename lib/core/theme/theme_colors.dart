@@ -2,10 +2,9 @@
 // ifè FOOD — Extension ThemeX sur BuildContext
 //
 // Fournit des couleurs sémantiques réactives au thème actif (light / dark).
-// Le thème est sélectionné par rôle dans main.dart :
-//   - Client     : AppTheme.light  / AppTheme.dark
-//   - Livreur    : AppTheme.light  / AppTheme.driver  (vert électrique sombre)
-//   - Pro        : AppTheme.light  / AppTheme.dark    (navy sombre)
+// Le thème est unifié pour tous les rôles dans main.dart :
+//   - Clair  : AppTheme.light  (tous rôles)
+//   - Sombre : AppTheme.dark   (tous rôles — navy)
 //
 // Usage dans les widgets :
 //   backgroundColor: context.bgColor

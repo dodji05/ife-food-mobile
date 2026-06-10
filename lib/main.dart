@@ -117,11 +117,6 @@ class IfeFoodApp extends ConsumerWidget {
     // sur tap → lit ref.read(routerProvider)).
     ref.watch(fcmBootstrapProvider);
 
-    // Choisit le bon thème sombre selon le profil connecté
-    final darkTheme = authState.role == UserRole.driver
-        ? AppTheme.driver   // Dark électrique pour les livreurs
-        : AppTheme.dark;    // Dark navy pour les autres
-
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
@@ -130,9 +125,9 @@ class IfeFoodApp extends ConsumerWidget {
       // quelle couche (ex: AuthEvents session expirée) sans BuildContext.
       scaffoldMessengerKey: AppMessenger.scaffoldMessengerKey,
 
-      // Thèmes
+      // Thèmes — identiques pour tous les rôles (client, livreur, professionnel)
       theme:     AppTheme.light,
-      darkTheme: darkTheme,
+      darkTheme: AppTheme.dark,
       themeMode: themeState.themeMode,
 
       // Navigation

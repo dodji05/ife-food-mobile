@@ -97,7 +97,7 @@ class ProProfileScreen extends ConsumerWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: context.borderColor),
           ),
-          child: const ThemeSelectorTile(darkSurface: true),
+          child: ThemeSelectorTile(darkSurface: context.isDark),
         ),
         const SizedBox(height: 12),
 

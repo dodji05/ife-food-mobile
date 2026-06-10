@@ -342,7 +342,7 @@ class _ProductDetailSheetState extends ConsumerState<_ProductDetailSheet> {
                               backgroundColor: AppColors.primary,
                               disabledBackgroundColor: product.isOutOfStock
                                   ? AppColors.warning.withOpacity(0.15)
-                                  : AppColors.grey.withOpacity(0.2),
+                                  : context.textMuted.withOpacity(0.2),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14)),

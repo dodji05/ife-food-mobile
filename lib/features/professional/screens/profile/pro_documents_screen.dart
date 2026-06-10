@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 
 // Provider pour les documents du pro
 final _docsProvider = FutureProvider.autoDispose<List<_DocEntry>>((ref) async {
@@ -35,16 +36,16 @@ class _State extends ConsumerState<ProDocumentsScreen> {
   Future<void> _upload(String docType) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.darkCard,
+      backgroundColor: context.cardColor,
       builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-          title: const Text('Galerie', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Galerie', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.gallery),
         ),
         ListTile(
           leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-          title: const Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+          title: Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
           onTap: () => Navigator.pop(context, ImageSource.camera),
         ),
         const SizedBox(height: 8),
@@ -90,7 +91,7 @@ class _State extends ConsumerState<ProDocumentsScreen> {
   Widget build(BuildContext context) {
     final async = ref.watch(_docsProvider);
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Mes documents'),
         leading: BackButton(
@@ -153,9 +154,9 @@ class _DocCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: hasDoc ? AppColors.primary.withOpacity(0.25) : AppColors.darkBorder),
+        border: Border.all(color: hasDoc ? AppColors.primary.withOpacity(0.25) : context.borderColor),
       ),
       child: Row(children: [
         // Icône ou aperçu
@@ -172,7 +173,7 @@ class _DocCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(info.label,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
           const SizedBox(height: 4),
           if (hasDoc) ...[
             Row(children: [
@@ -191,7 +192,7 @@ class _DocCard extends StatelessWidget {
               ),
             ]),
           ] else
-            const Text('Non fourni', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+            Text('Non fourni', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         ])),
         // Bouton upload
         const SizedBox(width: 8),

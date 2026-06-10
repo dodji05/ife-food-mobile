@@ -24,7 +24,7 @@ class _State extends ConsumerState<DriverEarningsScreen> {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         title: Text('Mes gains',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 17,
@@ -352,7 +352,7 @@ class _WithdrawalCard extends StatelessWidget {
             minimumSize: const Size(double.infinity, 48),
             backgroundColor: AppColors.success,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.darkBorder,
+            disabledBackgroundColor: context.borderColor,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
             textStyle: const TextStyle(
@@ -518,9 +518,9 @@ class _WithdrawalModalState extends ConsumerState<_WithdrawalModal> {
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.darkSurface,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),

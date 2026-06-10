@@ -429,12 +429,12 @@ class _InfoSectionState extends State<_InfoSection> {
           decoration: BoxDecoration(
             color: pro.isOpen
                 ? AppColors.success.withOpacity(0.12)
-                : AppColors.grey.withOpacity(0.12),
+                : context.textMuted.withOpacity(0.12),
             borderRadius: BorderRadius.circular(8)),
           child: Text(pro.isOpen ? '● Ouvert' : '● Fermé',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: pro.isOpen ? AppColors.success : AppColors.grey)),
+                color: pro.isOpen ? AppColors.success : context.textMuted)),
         ),
       ]),
       const SizedBox(height: 4),
@@ -1177,8 +1177,8 @@ class _CartFab extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: AppColors.yellow, shape: BoxShape.circle),
               child: Text('${cart.totalItems}',
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 10,
-                    fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 10,
+                    fontWeight: FontWeight.w900, color: context.textPrimary)),
             ),
           ),
         ]),
@@ -1224,7 +1224,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
           unselectedLabelStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
               fontWeight: FontWeight.w500),
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.grey,
+          unselectedLabelColor: context.textMuted,
           indicatorColor: AppColors.primary,
           indicatorWeight: 2.5,
           tabs: [
@@ -1328,7 +1328,7 @@ class _CircleBtn extends StatelessWidget {
       width: 36, height: 36,
       decoration: const BoxDecoration(
           color: Colors.white, shape: BoxShape.circle),
-      child: Icon(icon, color: AppColors.nearBlack, size: 20)),
+      child: Icon(icon, color: context.textPrimary, size: 20)),
   );
 }
 

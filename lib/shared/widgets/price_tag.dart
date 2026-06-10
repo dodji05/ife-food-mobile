@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 class PriceTag extends StatelessWidget {
   final double amount;
@@ -14,6 +15,6 @@ class PriceTag extends StatelessWidget {
     TextSpan(text: amount.toStringAsFixed(0),
       style: TextStyle(fontFamily: 'Nunito', fontSize: fontSize, fontWeight: FontWeight.w800, color: color ?? AppColors.primary)),
     TextSpan(text: ' $currency',
-      style: TextStyle(fontFamily: 'Nunito', fontSize: fontSize * 0.7, fontWeight: FontWeight.w600, color: color ?? AppColors.grey)),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: fontSize * 0.7, fontWeight: FontWeight.w600, color: color ?? context.textMuted)),
   ]));
 }

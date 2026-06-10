@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 
 class ScheduleScreen extends ConsumerStatefulWidget {
@@ -53,7 +54,7 @@ class _State extends ConsumerState<ScheduleScreen> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: int.tryParse(parts[0]) ?? 8, minute: int.tryParse(parts[1]) ?? 0),
-      builder: (ctx, child) => Theme(data: ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: AppColors.primary, surface: AppColors.darkCard)), child: child!),
+      builder: (ctx, child) => Theme(data: ThemeData.dark().copyWith(colorScheme: ColorScheme.dark(primary: AppColors.primary, surface: ctx.cardColor)), child: child!),
     );
     if (time != null) {
       setState(() => _hours[day]?[type] = '${time.hour.toString().padLeft(2,'0')}:${time.minute.toString().padLeft(2,'0')}');
@@ -62,7 +63,7 @@ class _State extends ConsumerState<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.darkBg,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
       title: const Text('Horaires d\'ouverture'),
       leading: BackButton(
@@ -81,7 +82,7 @@ class _State extends ConsumerState<ScheduleScreen> {
     ),
     body: ListView(padding: const EdgeInsets.all(16), children: [
           const Text('Définissez vos horaires d\'ouverture par jour. Votre établissement sera automatiquement ouvert/fermé selon ces horaires.',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, height: 1.5)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary, height: 1.5)),
           const SizedBox(height: 20),
           ..._dayKeys.asMap().entries.map((e) {
             final idx = e.key; final key = e.value;
@@ -89,19 +90,19 @@ class _State extends ConsumerState<ScheduleScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+              decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
               child: Row(children: [
-                SizedBox(width: 36, child: Text(_days[idx], style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.darkText))),
+                SizedBox(width: 36, child: Text(_days[idx], style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w800, color: context.textPrimary))),
                 const SizedBox(width: 8),
                 // Expanded empêche le débordement (overflow) sur petits écrans.
                 Expanded(
                   child: Row(children: [
                     if (isOpen) ...[
                       GestureDetector(onTap: () => _pickTime(key, 'open'), child: _TimeChip(_hours[key]?['open'] ?? '08:00', Icons.wb_sunny_rounded)),
-                      const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('—', style: TextStyle(color: AppColors.darkSubtext))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text('—', style: TextStyle(color: context.textSecondary))),
                       GestureDetector(onTap: () => _pickTime(key, 'close'), child: _TimeChip(_hours[key]?['close'] ?? '22:00', Icons.nights_stay_rounded)),
                     ] else
-                      const Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkMuted)),
+                      Text('Fermé', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
                   ]),
                 ),
                 Switch(
@@ -115,8 +116,8 @@ class _State extends ConsumerState<ScheduleScreen> {
                   }),
                   activeColor: Colors.white,
                   activeTrackColor: AppColors.primary,
-                  inactiveThumbColor: AppColors.darkMuted,
-                  inactiveTrackColor: AppColors.darkBorder,
+                  inactiveThumbColor: context.textMuted,
+                  inactiveTrackColor: context.borderColor,
                   trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
                 ),
               ]),

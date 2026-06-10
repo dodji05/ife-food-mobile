@@ -159,7 +159,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     if (widget.order.isDelivered) return AppColors.success;
     if (widget.order.isCancelled) return AppColors.error;
     if (widget.order.isActive) return AppColors.primary;
-    return AppColors.grey;
+    return context.textMuted;
   }
 
   /// Recharge les items dans le panier puis push /cart. Confirme via dialog

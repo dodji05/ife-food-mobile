@@ -164,7 +164,7 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
         ),
         const SizedBox(height: 20),
 
-        _Label('Prénom *'),
+        _Label('Prénom *', context),
         const SizedBox(height: 8),
         TextField(
           controller: _firstName,
@@ -176,7 +176,7 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
         ),
         const SizedBox(height: 16),
 
-        _Label('Nom (optionnel)'),
+        _Label('Nom (optionnel)', context),
         const SizedBox(height: 8),
         TextField(
           controller: _name,
@@ -188,7 +188,7 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
         ),
         const SizedBox(height: 16),
 
-        _Label('Email (optionnel)'),
+        _Label('Email (optionnel)', context),
         const SizedBox(height: 8),
         TextField(
           controller: _email,
@@ -215,6 +215,6 @@ class _State extends ConsumerState<ClientEditProfileScreen> {
   }
 }
 
-Widget _Label(String t) => Text(t,
-  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-      fontWeight: FontWeight.w700, color: AppColors.lightSubtext, letterSpacing: 0.3));
+Widget _Label(String t, BuildContext context) => Text(t,
+  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+      fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.3));

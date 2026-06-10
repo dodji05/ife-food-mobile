@@ -525,7 +525,7 @@ class _StatusBadge extends StatelessWidget {
     final (label, color) = switch (status) {
       'DELIVERED' => ('Livrée', AppColors.success),
       'FAILED'    => ('Échouée', AppColors.danger),
-      _           => (status, AppColors.darkSubtext),
+      _           => (status, context.textSecondary),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),

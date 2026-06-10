@@ -84,15 +84,15 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
           onTap: () => Navigator.pop(context),
           child: Container(
             margin: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-                color: AppColors.darkSurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: context.surfaceColor, shape: BoxShape.circle),
             child: Icon(Icons.arrow_back_rounded, color: context.textPrimary),
           ),
         ),
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.darkSurface.withOpacity(0.9),
+            color: context.surfaceColor.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20)),
           child: Text(widget.label,
             style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
@@ -122,15 +122,15 @@ class _DriverNavigationScreenState extends ConsumerState<DriverNavigationScreen>
         // ── Panel bas ───────────────────────────────────────────────────────
         Positioned(bottom: 0, left: 0, right: 0, child: Container(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
-          decoration: const BoxDecoration(
-            color: AppColors.darkSurface,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24), topRight: Radius.circular(24)),
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 36, height: 4,
               decoration: BoxDecoration(
-                  color: AppColors.darkSurface,
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             Row(children: [

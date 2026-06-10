@@ -156,7 +156,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     return Scaffold(
       backgroundColor: context.bgColor,
       bottomNavigationBar: Container(
-        color: AppColors.darkSurface,
+        color: context.surfaceColor,
         child: SafeArea(
           top: false,
           child: Padding(
@@ -220,7 +220,7 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
         // ── Sélecteur de missions ─────────────────────────────────────────────
         if (missions.length > 1)
           Container(
-            color: AppColors.darkSurface,
+            color: context.surfaceColor,
             child: Column(children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
@@ -334,10 +334,10 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurface.withOpacity(0.9),
+                  color: context.surfaceColor.withOpacity(0.9),
                   shape: BoxShape.circle),
-                child: const Icon(Icons.keyboard_arrow_up_rounded,
-                    color: AppColors.darkText),
+                child: Icon(Icons.keyboard_arrow_up_rounded,
+                    color: context.textPrimary),
               ),
             )),
             Positioned(bottom: 12, right: 12, child: ElevatedButton.icon(
@@ -661,7 +661,7 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
                 fontSize: 28, letterSpacing: 12,
                 color: context.borderColor),
               filled: true,
-              fillColor: AppColors.darkSurface,
+              fillColor: context.surfaceColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: context.borderColor)),

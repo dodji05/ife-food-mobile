@@ -434,7 +434,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           content: Text(cancelled
               ? 'Paiement annulé.'
               : 'Paiement refusé : ${e.error.localizedMessage ?? e.error.message ?? ''}'),
-          backgroundColor: cancelled ? AppColors.darkSubtext : AppColors.error,
+          backgroundColor: cancelled ? context.textSecondary : AppColors.error,
         ));
       }
     } catch (e) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 import '../../../../core/api/api_client.dart';
 
@@ -13,7 +14,7 @@ class ReviewsScreen extends ConsumerWidget {
     final data = ref.watch(reviewsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Avis clients')),
       body: data.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -28,7 +29,7 @@ class ReviewsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [AppColors.accent.withOpacity(0.15), AppColors.darkCard], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                gradient: LinearGradient(colors: [AppColors.accent.withOpacity(0.15), context.cardColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.accent.withOpacity(0.3)),
               ),
               child: Row(children: [
@@ -36,7 +37,7 @@ class ReviewsScreen extends ConsumerWidget {
                   Text(avg.toStringAsFixed(1), style: const TextStyle(fontFamily: 'Nunito', fontSize: 48, fontWeight: FontWeight.w900, color: AppColors.accent)),
                   RatingBarIndicator(rating: avg.toDouble(), itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: AppColors.accent), itemSize: 20, itemCount: 5),
                   const SizedBox(height: 4),
-                  Text('$count avis clients', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+                  Text('$count avis clients', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
                 ]),
                 const Spacer(),
                 const Text('⭐', style: TextStyle(fontSize: 64)),
@@ -44,13 +45,13 @@ class ReviewsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            if (reviews.isEmpty) const Center(child: Column(children: [
-              SizedBox(height: 40),
-              Text('💬', style: TextStyle(fontSize: 48)),
-              SizedBox(height: 12),
-              Text('Aucun avis pour le moment', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.darkText)),
-              SizedBox(height: 6),
-              Text('Les avis apparaîtront après les premières livraisons', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext), textAlign: TextAlign.center),
+            if (reviews.isEmpty) Center(child: Column(children: [
+              const SizedBox(height: 40),
+              const Text('💬', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text('Aucun avis pour le moment', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700, color: context.textPrimary)),
+              const SizedBox(height: 6),
+              Text('Les avis apparaîtront après les premières livraisons', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary), textAlign: TextAlign.center),
             ])),
 
             ...reviews.map((r) => _ReviewCard(review: r, ref: ref)).toList(),
@@ -92,7 +93,7 @@ class _RCS extends State<_ReviewCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.darkBorder)),
+      decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           CircleAvatar(radius: 18, backgroundColor: AppColors.primary.withOpacity(0.2),
@@ -100,14 +101,14 @@ class _RCS extends State<_ReviewCard> {
               style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 14))),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(reviewer['name'] ?? 'Client', style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.darkText)),
-            Text('${date.day}/${date.month}/${date.year}', style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext)),
+            Text(reviewer['name'] ?? 'Client', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: context.textPrimary)),
+            Text('${date.day}/${date.month}/${date.year}', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
           ])),
           RatingBarIndicator(rating: rating.toDouble(), itemBuilder: (_, __) => const Icon(Icons.star_rounded, color: AppColors.accent), itemSize: 16, itemCount: 5),
         ]),
         if (r['professionalComment'] != null) ...[
           const SizedBox(height: 10),
-          Text(r['professionalComment'], style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkSubtext, height: 1.5)),
+          Text(r['professionalComment'], style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary, height: 1.5)),
         ],
         // Existing reply
         if (r['professionalReply'] != null) ...[
@@ -118,7 +119,7 @@ class _RCS extends State<_ReviewCard> {
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('🏪', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 8),
-              Expanded(child: Text(r['professionalReply'], style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkText, height: 1.4))),
+              Expanded(child: Text(r['professionalReply'], style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textPrimary, height: 1.4))),
             ]),
           ),
         ],
@@ -133,7 +134,7 @@ class _RCS extends State<_ReviewCard> {
           ) else Column(children: [
             TextField(
               controller: _replyCtrl, maxLines: 3,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkText),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textPrimary),
               decoration: const InputDecoration(hintText: 'Votre réponse au client…'),
             ),
             const SizedBox(height: 8),

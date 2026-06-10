@@ -516,12 +516,12 @@ class _EstablishmentTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: pro.isOpen
                 ? AppColors.success.withOpacity(0.12)
-                : AppColors.grey.withOpacity(0.12),
+                : context.textMuted.withOpacity(0.12),
             borderRadius: BorderRadius.circular(6)),
           child: Text(pro.isOpen ? 'Ouvert' : 'Fermé',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: pro.isOpen ? AppColors.success : AppColors.grey)),
+                color: pro.isOpen ? AppColors.success : context.textMuted)),
         ),
         Expanded(child: Text(
           [_catLabel, if (pro.city != null) pro.city!]

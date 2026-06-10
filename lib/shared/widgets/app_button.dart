@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 enum AppButtonVariant { primary, secondary, outline, ghost, danger }
 
@@ -23,7 +24,7 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg, border) = switch (variant) {
       AppButtonVariant.primary  => (AppColors.primary, Colors.white, AppColors.primary),
-      AppButtonVariant.secondary=> (AppColors.yellow, AppColors.nearBlack, AppColors.yellow),
+      AppButtonVariant.secondary=> (AppColors.yellow, context.textPrimary, AppColors.yellow),
       AppButtonVariant.outline  => (Colors.transparent, AppColors.primary, AppColors.primary),
       AppButtonVariant.ghost    => (Colors.transparent, AppColors.primary, Colors.transparent),
       AppButtonVariant.danger   => (AppColors.error, Colors.white, AppColors.error),

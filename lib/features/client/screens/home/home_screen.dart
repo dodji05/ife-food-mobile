@@ -256,13 +256,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             blurRadius: 12, offset: const Offset(0, 4))],
                         ),
                         child: Row(children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 16),
-                            child: Icon(Icons.search, color: AppColors.grey, size: 22)),
-                          const Expanded(child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: Icon(Icons.search, color: context.textMuted, size: 22)),
+                          Expanded(child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                             child: Text('Plat, restaurant, boutique…',
-                              style: TextStyle(color: AppColors.grey,
+                              style: TextStyle(color: context.textMuted,
                                   fontFamily: 'Nunito', fontSize: 15)))),
                           Container(
                             margin: const EdgeInsets.only(right: 8),
@@ -867,7 +867,7 @@ class _StatusBadge extends StatelessWidget {
     final Color bg;
     final String label;
     if (!isOpen) {
-      bg = AppColors.grey; label = 'Fermé';
+      bg = context.textMuted; label = 'Fermé';
     } else if (closingSoon) {
       bg = AppColors.warning; label = 'Ferme bientôt';
     } else {

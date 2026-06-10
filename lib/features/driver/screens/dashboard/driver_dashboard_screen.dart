@@ -345,7 +345,7 @@ class _AvailabilityToggle extends StatelessWidget {
         gradient: LinearGradient(
           colors: isOnline
             ? [AppColors.primary, AppColors.primary.withOpacity(0.7)]
-            : [context.cardColor, AppColors.darkSurface],
+            : [context.cardColor, context.surfaceColor],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),

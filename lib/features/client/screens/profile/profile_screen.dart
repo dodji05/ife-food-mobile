@@ -482,13 +482,13 @@ Future<void> _contactSupport(BuildContext context) async {
           decoration: BoxDecoration(
               color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text('Contacter le support',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-                    fontWeight: FontWeight.w900, color: AppColors.nearBlack)),
+                    fontWeight: FontWeight.w900, color: ctx.textPrimary)),
           ),
         ),
         ListTile(
@@ -502,8 +502,8 @@ Future<void> _contactSupport(BuildContext context) async {
           ),
           title: const Text('WhatsApp',
               style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
-          subtitle: const Text('Réponse rapide en journée',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.grey)),
+          subtitle: Text('Réponse rapide en journée',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: ctx.textMuted)),
           onTap: () async {
             Navigator.pop(ctx);
             await _openWhatsApp(context);
@@ -521,8 +521,8 @@ Future<void> _contactSupport(BuildContext context) async {
           title: const Text('Email',
               style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
           subtitle: Text(AppConstants.supportEmail,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                  color: AppColors.grey)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                  color: ctx.textMuted)),
           onTap: () async {
             Navigator.pop(ctx);
             await _openEmail(context);
@@ -562,7 +562,7 @@ Future<void> _openEmail(BuildContext context) async {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
           'Aucune app email configurée. Écrivez-nous à ${AppConstants.supportEmail}'),
-      backgroundColor: AppColors.grey,
+      backgroundColor: context.textMuted,
     ));
   }
 }

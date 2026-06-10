@@ -66,8 +66,8 @@ class _Body extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2A14), AppColors.darkCard],
+            gradient: LinearGradient(
+              colors: [const Color(0xFF0A2A14), context.cardColor],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
@@ -75,7 +75,7 @@ class _Body extends StatelessWidget {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Revenus nets — 30 derniers jours',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             Text('${_fmt(data.month.net)} F',
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 36, fontWeight: FontWeight.w900, color: AppColors.primary)),
@@ -98,7 +98,7 @@ class _Body extends StatelessWidget {
             ),
           const Spacer(),
           Text('${data.periodOrders} cmd',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, fontWeight: FontWeight.w600)),
         ]),
         const SizedBox(height: 14),
 
@@ -113,7 +113,7 @@ class _Body extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('DÉTAIL FINANCIER', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w800, color: ctx.textSecondary, letterSpacing: 0.6)),
             const SizedBox(height: 12),
-            _BreakRow('Sous-total brut', '${_fmt(data.periodGross)} F', color: AppColors.darkText),
+            _BreakRow('Sous-total brut', '${_fmt(data.periodGross)} F', color: context.textPrimary),
             _BreakRow(
               data.commissionRate > 0
                 ? 'Commission plateforme (${data.commissionRate.toStringAsFixed(0)}%)'
@@ -121,7 +121,7 @@ class _Body extends StatelessWidget {
               '-${_fmt(data.periodCommission)} F',
               color: AppColors.danger,
             ),
-            const Divider(color: AppColors.darkBorder, height: 20),
+            Divider(color: ctx.borderColor, height: 20),
             _BreakRow('Vos revenus nets', '${_fmt(data.periodNet)} F', color: AppColors.primary, bold: true),
           ]),
         )),
@@ -397,7 +397,7 @@ class _ProWithdrawalCard extends StatelessWidget {
             minimumSize: const Size(double.infinity, 48),
             backgroundColor: AppColors.success,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.darkBorder,
+            disabledBackgroundColor: context.borderColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             textStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
         ),
@@ -474,16 +474,16 @@ class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.darkSurface,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 36, height: 4,
             decoration: BoxDecoration(
-              color: AppColors.darkBorder,
+              color: context.borderColor,
               borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
 
@@ -526,7 +526,7 @@ class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
             decoration: InputDecoration(
               hintText: 'Ex: MTN 0022966XXXXXX ou IBAN…',
               hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: AppColors.darkBorder),
+                  color: context.borderColor),
               labelText: 'Numéro Mobile Money / Coordonnées bancaires',
               labelStyle: TextStyle(fontFamily: 'Nunito', fontSize: 13,
                   color: context.textSecondary),
@@ -536,10 +536,10 @@ class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
               fillColor: context.bgColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.darkBorder)),
+                borderSide: BorderSide(color: context.borderColor)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppColors.darkBorder)),
+                borderSide: BorderSide(color: context.borderColor)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.primary, width: 2)),
@@ -560,7 +560,7 @@ class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
             decoration: InputDecoration(
               hintText: '0',
               hintStyle: TextStyle(fontFamily: 'Nunito', fontSize: 24,
-                  fontWeight: FontWeight.w900, color: AppColors.darkBorder),
+                  fontWeight: FontWeight.w900, color: context.borderColor),
               suffixText: 'F CFA',
               suffixStyle: TextStyle(fontFamily: 'Nunito', fontSize: 16,
                   color: context.textSecondary, fontWeight: FontWeight.w700),
@@ -569,11 +569,11 @@ class _ProWithdrawalModalState extends ConsumerState<_ProWithdrawalModal> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+                    color: overflow ? AppColors.danger : context.borderColor)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                    color: overflow ? AppColors.danger : AppColors.darkBorder)),
+                    color: overflow ? AppColors.danger : context.borderColor)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(

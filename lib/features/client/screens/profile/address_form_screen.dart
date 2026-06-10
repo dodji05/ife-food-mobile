@@ -205,9 +205,9 @@ class _State extends ConsumerState<AddressFormScreen> {
       ),
       body: ListView(padding: const EdgeInsets.all(20), children: [
         // ── Label avec chips suggestions ─────────────────────────────────
-        _Label('Étiquette *'),
+        _Label('Étiquette *', context),
         const SizedBox(height: 8),
-        _TF(_label, 'Ex: Maison, Bureau…', onChanged: (_) => setState(() {})),
+        _TF(_label, 'Ex: Maison, Bureau…', context, onChanged: (_) => setState(() {})),
         const SizedBox(height: 8),
         Wrap(spacing: 6, children: ['Maison', 'Bureau', 'Autre'].map((sug) =>
           ActionChip(
@@ -219,9 +219,9 @@ class _State extends ConsumerState<AddressFormScreen> {
         ).toList()),
         const SizedBox(height: 20),
 
-        _Label('Adresse complète *'),
+        _Label('Adresse complète *', context),
         const SizedBox(height: 8),
-        _TF(_address, 'Ex: Carré 1234, Quartier Cadjèhoun', maxLines: 2,
+        _TF(_address, 'Ex: Carré 1234, Quartier Cadjèhoun', context, maxLines: 2,
             onChanged: (_) => setState(() {})),
         const SizedBox(height: 8),
         // Bouton GPS — remplit _lat/_lng et pré-remplit l'adresse si vide
@@ -255,14 +255,14 @@ class _State extends ConsumerState<AddressFormScreen> {
         ]),
         const SizedBox(height: 16),
 
-        _Label('Ville *'),
+        _Label('Ville *', context),
         const SizedBox(height: 8),
-        _TF(_city, 'Ex: Cotonou', onChanged: (_) => setState(() {})),
+        _TF(_city, 'Ex: Cotonou', context, onChanged: (_) => setState(() {})),
         const SizedBox(height: 16),
 
-        _Label('Instructions livreur (optionnel)'),
+        _Label('Instructions livreur (optionnel)', context),
         const SizedBox(height: 8),
-        _TF(_instructions, 'Ex: Sonner 2 fois, code 1234, portail bleu',
+        _TF(_instructions, 'Ex: Sonner 2 fois, code 1234, portail bleu', context,
             maxLines: 2),
         const SizedBox(height: 20),
 
@@ -297,17 +297,17 @@ class _State extends ConsumerState<AddressFormScreen> {
   }
 }
 
-Widget _Label(String t) => Text(t,
-  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-      fontWeight: FontWeight.w700, color: AppColors.lightSubtext, letterSpacing: 0.3));
+Widget _Label(String t, BuildContext context) => Text(t,
+  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+      fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.3));
 
-Widget _TF(TextEditingController ctrl, String hint,
+Widget _TF(TextEditingController ctrl, String hint, BuildContext context,
     {int? maxLines, void Function(String)? onChanged}) => TextField(
   controller: ctrl,
   maxLines: maxLines ?? 1,
   onChanged: onChanged,
   textCapitalization: TextCapitalization.sentences,
-  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-      fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+      fontWeight: FontWeight.w600, color: context.textPrimary),
   decoration: InputDecoration(hintText: hint),
 );

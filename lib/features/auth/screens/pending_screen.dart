@@ -115,7 +115,7 @@ class _PendingScreenState extends ConsumerState<PendingScreen> {
               Expanded(child: Text(
                 'Profil incomplet : il manque les infos de votre véhicule.',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  fontWeight: FontWeight.w600, color: AppColors.nearBlack),
+                  fontWeight: FontWeight.w600, color: context.textPrimary),
               )),
             ]),
           ),

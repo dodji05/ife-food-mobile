@@ -16,7 +16,7 @@ class DriverZonesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -109,7 +109,7 @@ class _ZoneTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: zone.selected
               ? AppColors.primary.withOpacity(0.08)
-              : AppColors.darkSurface,
+              : context.surfaceColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: zone.selected

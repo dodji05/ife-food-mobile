@@ -345,7 +345,7 @@ Future<void> _openEmail(BuildContext context) async {
   } else if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Aucune app email configurée. Écrivez-nous à ${AppConstants.supportEmail}'),
-      backgroundColor: AppColors.darkMuted,
+      backgroundColor: context.textMuted,
     ));
   }
 }
@@ -473,9 +473,9 @@ class _VehicleSheetState extends ConsumerState<_VehicleSheet> {
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.darkSurface,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24)),
         ),

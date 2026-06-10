@@ -114,7 +114,7 @@ class _State extends ConsumerState<ProOrdersScreen> with SingleTickerProviderSta
         controller: _tabs,
         isScrollable: true, tabAlignment: TabAlignment.start,
         indicatorColor: AppColors.primary,
-        labelColor: AppColors.primary, unselectedLabelColor: AppColors.darkSubtext,
+        labelColor: AppColors.primary, unselectedLabelColor: context.textSecondary,
         labelStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13),
         unselectedLabelStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w500, fontSize: 13),
         tabs: _tabLabels.map((l) => Tab(text: l)).toList(),
@@ -255,7 +255,7 @@ class _OrderCard extends ConsumerWidget {
                 icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.danger),
                 label: const Text('Refuser', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.danger)),
               )),
-              Container(width: 1, height: 40, color: AppColors.darkBorder),
+              Container(width: 1, height: 40, color: context.borderColor),
               Expanded(child: TextButton.icon(
                 onPressed: () async {
                   await ref.read(proProvider.notifier).acceptOrder(order.id);
@@ -367,10 +367,10 @@ class _RejectDialogState extends State<_RejectDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    backgroundColor: AppColors.darkCard,
-    title: const Text(
+    backgroundColor: context.cardColor,
+    title: Text(
       'Refuser la commande ?',
-      style: TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.darkText),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w900, color: context.textPrimary),
     ),
     contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
     content: SingleChildScrollView(
@@ -378,7 +378,7 @@ class _RejectDialogState extends State<_RejectDialog> {
         Text(
           'Le client ${widget.clientName} recevra le motif. '
           'Sélectionnez la raison la plus précise pour qu\'il comprenne.',
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.4),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.4),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -390,13 +390,13 @@ class _RejectDialogState extends State<_RejectDialog> {
                 fontFamily: 'Nunito',
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : AppColors.darkText,
+                color: selected ? Colors.white : context.textPrimary,
               )),
               selected: selected,
               onSelected: (_) => setState(() => _selected = p),
-              backgroundColor: AppColors.darkBg,
+              backgroundColor: context.bgColor,
               selectedColor: AppColors.danger,
-              side: BorderSide(color: selected ? AppColors.danger : AppColors.darkBorder),
+              side: BorderSide(color: selected ? AppColors.danger : context.borderColor),
             );
           }).toList(),
         ),
@@ -408,12 +408,12 @@ class _RejectDialogState extends State<_RejectDialog> {
           maxLength: 200,
           textCapitalization: TextCapitalization.sentences,
           onChanged: (_) => setState(() {}), // refresh _canSubmit
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, color: AppColors.darkText),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary),
           decoration: InputDecoration(
             hintText: _isOther
                 ? 'Précisez la raison (obligatoire)…'
                 : 'Précisions (optionnel)…',
-            counterStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 10, color: AppColors.darkMuted),
+            counterStyle: TextStyle(fontFamily: 'Nunito', fontSize: 10, color: context.textMuted),
           ),
         ),
       ]),
@@ -423,7 +423,7 @@ class _RejectDialogState extends State<_RejectDialog> {
       TextButton(
         onPressed: () => Navigator.pop(context),
         child: const Text('Annuler',
-          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textSecondary)),
       ),
       ElevatedButton.icon(
         onPressed: _canSubmit ? () => Navigator.pop(context, _composeReason()) : null,
@@ -562,7 +562,7 @@ class _StatusBadge extends StatelessWidget {
       'IN_DELIVERY'      => (AppColors.primary, 'En livraison'),
       'DELIVERED'        => (AppColors.success, 'Livrée'),
       'CANCELLED'        => (AppColors.danger, 'Annulée'),
-      _                  => (AppColors.darkSubtext, status),
+      _                  => (context.textSecondary, status),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/notifications_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 import '../models/app_notification.dart';
 
 class NotificationsListWidget extends ConsumerWidget {
@@ -77,10 +78,10 @@ class _TileState extends ConsumerState<_Tile> {
       opacity: widget.notif.read ? 0.65 : 1.0,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: widget.notif.read ? AppColors.darkBorder : AppColors.primary.withOpacity(0.4),
+            color: widget.notif.read ? context.borderColor : AppColors.primary.withOpacity(0.4),
             width: widget.notif.read ? 1 : 1.5,
           ),
         ),
@@ -116,19 +117,19 @@ class _TileState extends ConsumerState<_Tile> {
                   style: TextStyle(
                     fontFamily: 'Nunito', fontSize: 14,
                     fontWeight: widget.notif.read ? FontWeight.w700 : FontWeight.w900,
-                    color: AppColors.darkText,
+                    color: context.textPrimary,
                   ),
                 )),
                 const SizedBox(width: 6),
                 Text(widget.notif.relativeTime,
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                      fontWeight: FontWeight.w600, color: AppColors.darkSubtext)),
+                      fontWeight: FontWeight.w600, color: context.textSecondary)),
               ]),
               const SizedBox(height: 2),
               Text(widget.notif.body,
                 maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                    color: AppColors.darkSubtext, height: 1.3)),
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    color: context.textSecondary, height: 1.3)),
             ]),
           )),
           const SizedBox(width: 8),
@@ -144,15 +145,15 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
-        Icon(Icons.notifications_none_rounded, size: 64, color: AppColors.darkMuted),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.notifications_none_rounded, size: 64, color: context.textMuted),
         SizedBox(height: 16),
         Text('Aucune notification',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.darkText)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w800, color: context.textPrimary)),
         SizedBox(height: 6),
         Text('Les nouvelles commandes et alertes apparaîtront ici.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext, height: 1.5)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary, height: 1.5)),
       ]),
     ),
   );
@@ -171,7 +172,7 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: 12),
         Text(message.replaceAll('Exception: ', ''),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRetry,
@@ -203,7 +204,7 @@ class NotifBellBadge extends ConsumerWidget {
             padding: const EdgeInsets.all(6),
             child: Icon(
               unread > 0 ? Icons.notifications_active_rounded : Icons.notifications_none_rounded,
-              color: unread > 0 ? AppColors.accent : AppColors.darkSubtext,
+              color: unread > 0 ? AppColors.accent : context.textSecondary,
               size: 26,
             ),
           ),
@@ -217,7 +218,7 @@ class NotifBellBadge extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.danger,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.darkSurface, width: 1.5),
+            border: Border.all(color: context.surfaceColor, width: 1.5),
           ),
           alignment: Alignment.center,
           child: Text(unread > 99 ? '99+' : '$unread',

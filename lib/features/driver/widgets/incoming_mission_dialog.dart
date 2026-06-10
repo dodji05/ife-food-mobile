@@ -142,7 +142,7 @@ class _IncomingMissionDialogState extends ConsumerState<IncomingMissionDialog>
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: AppColors.darkSurface, borderRadius: BorderRadius.circular(14)),
+                  color: context.surfaceColor, borderRadius: BorderRadius.circular(14)),
               child: Column(children: [
                 _Row(Icons.store_rounded, 'Établissement', mission.professionalName,
                     color: AppColors.yellow),
@@ -290,7 +290,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 9),
     decoration: BoxDecoration(
-        color: AppColors.darkSurface, borderRadius: BorderRadius.circular(10)),
+        color: context.surfaceColor, borderRadius: BorderRadius.circular(10)),
     child: Column(children: [
       Text(emoji, style: const TextStyle(fontSize: 15)),
       const SizedBox(height: 2),

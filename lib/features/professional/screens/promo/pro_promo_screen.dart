@@ -485,14 +485,14 @@ class _TypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : AppColors.darkCard,
+          color: active ? AppColors.primary : context.cardColor,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: active ? AppColors.primary : AppColors.darkBorder),
+          border: Border.all(color: active ? AppColors.primary : context.borderColor),
         ),
         child: Text(label,
           style: TextStyle(
             fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700,
-            color: active ? Colors.white : AppColors.darkSubtext)),
+            color: active ? Colors.white : context.textSecondary)),
       ),
     );
   }
@@ -506,15 +506,15 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) => Center(child: Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Icon(Icons.discount_outlined, size: 56, color: AppColors.darkMuted),
+      Icon(Icons.discount_outlined, size: 56, color: context.textMuted),
       const SizedBox(height: 16),
-      const Text('Aucun code promo',
+      Text('Aucun code promo',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-            fontWeight: FontWeight.w700, color: AppColors.darkText)),
+            fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 6),
-      const Text('Créez votre premier code pour fidéliser vos clients',
+      Text('Créez votre premier code pour fidéliser vos clients',
         textAlign: TextAlign.center,
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
       const SizedBox(height: 20),
       ElevatedButton.icon(
         onPressed: onAdd,
@@ -539,7 +539,7 @@ class _ErrorState extends StatelessWidget {
       const SizedBox(height: 12),
       Text(message,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
       const SizedBox(height: 16),
       ElevatedButton(onPressed: onRetry,
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),

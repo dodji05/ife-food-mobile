@@ -58,7 +58,7 @@ class ProDashboardScreen extends ConsumerWidget {
           slivers: [
             // ── Header ────────────────────────────────────────────────────────
             SliverToBoxAdapter(child: Container(
-              color: AppColors.darkSurface,
+              color: context.surfaceColor,
               child: SafeArea(bottom: false, child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                 child: Row(children: [
@@ -218,7 +218,7 @@ class _DashboardBody extends StatelessWidget {
             label: 'À traiter',
             value: '$pending',
             sub: pending > 0 ? 'Voir les commandes' : 'Tout est à jour',
-            color: pending > 0 ? AppColors.accent : AppColors.darkSubtext,
+            color: pending > 0 ? AppColors.accent : context.textSecondary,
           )),
         ]),
         const SizedBox(height: 10),

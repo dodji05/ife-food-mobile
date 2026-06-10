@@ -113,7 +113,7 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Aucune modification à enregistrer'),
-        backgroundColor: AppColors.darkSubtext,
+        backgroundColor: context.textSecondary,
       ));
       return;
     }
@@ -181,18 +181,18 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
   Future<String?> _showPhotoAction({required bool hasCurrentImage}) =>
       showModalBottomSheet<String>(
         context: context,
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.cardColor,
         builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
             title: const Text('Choisir depuis la galerie',
-              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
             onTap: () => Navigator.pop(context, 'gallery'),
           ),
           ListTile(
             leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
             title: const Text('Prendre une photo',
-              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: AppColors.darkText)),
+              style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: context.textPrimary)),
             onTap: () => Navigator.pop(context, 'camera'),
           ),
           if (hasCurrentImage) ...[
@@ -314,7 +314,7 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
     // (la cover/logo affichée se met à jour avec la nouvelle URL Cloudinary).
     final pro = ref.watch(proProvider).professional;
     return Scaffold(
-    backgroundColor: AppColors.darkBg,
+    backgroundColor: context.bgColor,
     appBar: AppBar(
       title: const Text('Mes informations'),
       leading: BackButton(
@@ -335,25 +335,25 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       const SizedBox(height: 24),
 
       const _Section('Établissement'),
-      _Label("Nom de l'établissement *"),
-      _TF(_businessName, 'Ex: Chez Maman Adèle'),
+      _Label("Nom de l'établissement *", context),
+      _TF(_businessName, 'Ex: Chez Maman Adèle', context),
       const SizedBox(height: 16),
-      _Label('Description (optionnel)'),
-      _TF(_description, 'Spécialités, ambiance, à propos…', maxLines: 3),
+      _Label('Description (optionnel)', context),
+      _TF(_description, 'Spécialités, ambiance, à propos…', context, maxLines: 3),
       const SizedBox(height: 24),
 
       const _Section('Adresse'),
-      _Label('Adresse'),
-      _TF(_address, 'Ex: Carré 1234, Cotonou'),
+      _Label('Adresse', context),
+      _TF(_address, 'Ex: Carré 1234, Cotonou', context),
       const SizedBox(height: 16),
-      _Label('Ville'),
-      _TF(_city, 'Ex: Cotonou'),
+      _Label('Ville', context),
+      _TF(_city, 'Ex: Cotonou', context),
       const SizedBox(height: 16),
-      _Label('Rayon de livraison (km)'),
-      _TF(_radius, 'Ex: 5', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+      _Label('Rayon de livraison (km)', context),
+      _TF(_radius, 'Ex: 5', context, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
       const SizedBox(height: 16),
 
-      _Label('Coordonnées GPS (optionnel)'),
+      _Label('Coordonnées GPS (optionnel)', context),
       const SizedBox(height: 8),
       Row(children: [
         OutlinedButton.icon(
@@ -368,7 +368,7 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
           ),
           style: OutlinedButton.styleFrom(
             foregroundColor: _lat != null ? AppColors.success : AppColors.primary,
-            side: BorderSide(color: _lat != null ? AppColors.success : AppColors.darkBorder),
+            side: BorderSide(color: _lat != null ? AppColors.success : context.borderColor),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
@@ -377,11 +377,11 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
           const SizedBox(width: 10),
           Expanded(child: Text(
             '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkSubtext),
+            style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary),
             overflow: TextOverflow.ellipsis,
           )),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.darkSubtext),
+            icon: Icon(Icons.close_rounded, size: 16, color: context.textSecondary),
             tooltip: 'Effacer les coordonnées',
             onPressed: () => setState(() { _lat = null; _lng = null; }),
           ),
@@ -390,11 +390,11 @@ class _State extends ConsumerState<EditBusinessInfoScreen> {
       const SizedBox(height: 24),
 
       const _Section('Contact'),
-      _Label('Téléphone'),
-      _TF(_phone, 'Ex: +229 90 00 00 00', keyboardType: TextInputType.phone),
+      _Label('Téléphone', context),
+      _TF(_phone, 'Ex: +229 90 00 00 00', context, keyboardType: TextInputType.phone),
       const SizedBox(height: 16),
-      _Label('Email'),
-      _TF(_email, 'Ex: contact@etablissement.com', keyboardType: TextInputType.emailAddress),
+      _Label('Email', context),
+      _TF(_email, 'Ex: contact@etablissement.com', context, keyboardType: TextInputType.emailAddress),
       const SizedBox(height: 32),
 
       ElevatedButton(
@@ -434,9 +434,9 @@ class _CoverWithLogo extends StatelessWidget {
       child: Container(
         height: 140,
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: context.borderColor),
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(fit: StackFit.expand, children: [
@@ -447,10 +447,10 @@ class _CoverWithLogo extends StatelessWidget {
               placeholder: (_, __) => const Center(
                 child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
               ),
-              errorWidget: (_, __, ___) => _placeholderCover(),
+              errorWidget: (_, __, ___) => _placeholderCover(context),
             )
           else
-            _placeholderCover(),
+            _placeholderCover(context),
           if (uploadingCover)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -485,9 +485,9 @@ class _CoverWithLogo extends StatelessWidget {
         child: Container(
           width: 72, height: 72,
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: context.cardColor,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.darkBg, width: 3),
+            border: Border.all(color: context.bgColor, width: 3),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2)),
             ],
@@ -517,7 +517,7 @@ class _CoverWithLogo extends StatelessWidget {
                   width: 22, height: 22,
                   decoration: BoxDecoration(
                     color: AppColors.primary, shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.darkBg, width: 1.5),
+                    border: Border.all(color: context.bgColor, width: 1.5),
                   ),
                   child: const Icon(Icons.camera_alt_rounded, size: 11, color: Colors.white),
                 ),
@@ -528,14 +528,14 @@ class _CoverWithLogo extends StatelessWidget {
     ),
   ]);
 
-  Widget _placeholderCover() => Container(
-    color: AppColors.darkCard,
+  Widget _placeholderCover(BuildContext context) => Container(
+    color: context.cardColor,
     alignment: Alignment.center,
-    child: Column(mainAxisSize: MainAxisSize.min, children: const [
-      Icon(Icons.image_rounded, color: AppColors.darkMuted, size: 32),
-      SizedBox(height: 6),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.image_rounded, color: context.textMuted, size: 32),
+      const SizedBox(height: 6),
       Text('Toucher pour ajouter une couverture',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: AppColors.darkSubtext, fontWeight: FontWeight.w600)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, fontWeight: FontWeight.w600)),
     ]),
   );
 
@@ -559,20 +559,20 @@ class _Section extends StatelessWidget {
   );
 }
 
-Widget _Label(String t) => Padding(
+Widget _Label(String t, BuildContext context) => Padding(
   padding: const EdgeInsets.only(bottom: 6),
   child: Text(t,
-    style: const TextStyle(
+    style: TextStyle(
       fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
-      color: AppColors.darkSubtext, letterSpacing: 0.3)),
+      color: context.textSecondary, letterSpacing: 0.3)),
 );
 
-Widget _TF(TextEditingController ctrl, String hint,
+Widget _TF(TextEditingController ctrl, String hint, BuildContext context,
     {TextInputType? keyboardType, int? maxLines}) => TextField(
   controller: ctrl,
   keyboardType: keyboardType,
   maxLines: maxLines ?? 1,
-  style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-      fontWeight: FontWeight.w600, color: AppColors.darkText),
+  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
+      fontWeight: FontWeight.w600, color: context.textPrimary),
   decoration: InputDecoration(hintText: hint),
 );

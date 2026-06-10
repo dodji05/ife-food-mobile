@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 
 class ProReferralScreen extends ConsumerWidget {
@@ -19,7 +20,7 @@ class ProReferralScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncCode = ref.watch(referralCodeProvider);
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mon code de parrainage')),
       body: asyncCode.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -51,16 +52,16 @@ class _ReferralBody extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
         // ── Titre ──────────────────────────────────────────────────────────
-        const Text('Partagez votre code',
+        Text('Partagez votre code',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 22,
-              fontWeight: FontWeight.w900, color: AppColors.darkText)),
+              fontWeight: FontWeight.w900, color: context.textPrimary)),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Invitez vos clients et partenaires à rejoindre ifè FOOD '
           'avec votre lien personnel.',
           textAlign: TextAlign.center,
           style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-              color: AppColors.darkSubtext, height: 1.4)),
+              color: context.textSecondary, height: 1.4)),
         const SizedBox(height: 36),
 
         // ── Code en grand ──────────────────────────────────────────────────
@@ -84,8 +85,8 @@ class _ReferralBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Text('Toucher pour copier',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: AppColors.darkMuted)),
+        Text('Toucher pour copier',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
         const SizedBox(height: 36),
 
         // ── QR Code ────────────────────────────────────────────────────────
@@ -109,8 +110,8 @@ class _ReferralBody extends StatelessWidget {
         const SizedBox(height: 10),
         Text(_link,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-              color: AppColors.darkMuted, letterSpacing: 0.3)),
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
+              color: context.textMuted, letterSpacing: 0.3)),
         const SizedBox(height: 36),
 
         // ── Boutons partage ────────────────────────────────────────────────
@@ -151,14 +152,14 @@ class _ReferralBody extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: context.borderColor),
           ),
-          child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Comment ça marche ?',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                  fontWeight: FontWeight.w900, color: AppColors.darkText)),
+                  fontWeight: FontWeight.w900, color: context.textPrimary)),
             SizedBox(height: 10),
             _InfoRow(Icons.share_rounded,
               'Partagez votre lien à vos clients ou partenaires'),
@@ -200,8 +201,8 @@ class _InfoRow extends StatelessWidget {
     Icon(icon, size: 16, color: AppColors.primary),
     const SizedBox(width: 10),
     Expanded(child: Text(text,
-      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-          fontWeight: FontWeight.w600, color: AppColors.darkSubtext))),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+          fontWeight: FontWeight.w600, color: context.textSecondary))),
   ]);
 }
 
@@ -217,7 +218,7 @@ class _ErrorState extends StatelessWidget {
       const SizedBox(height: 12),
       Text(message,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.darkSubtext)),
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
       const SizedBox(height: 16),
       ElevatedButton(onPressed: onRetry,
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),

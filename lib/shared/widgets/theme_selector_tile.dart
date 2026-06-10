@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_colors.dart';
 
 /// Tuile de sélection du thème (Auto / Clair / Sombre).
 /// S'intègre dans n'importe quelle section de profil.
@@ -15,9 +16,9 @@ class ThemeSelectorTile extends ConsumerWidget {
     final theme   = ref.watch(themeProvider);
     final notifier = ref.read(themeProvider.notifier);
 
-    final labelColor   = darkSurface ? AppColors.darkText    : AppColors.nearBlack;
-    final subColor     = darkSurface ? AppColors.darkSubtext : AppColors.lightSubtext;
-    final chipBg       = darkSurface ? AppColors.darkMuted   : AppColors.lightBg;
+    final labelColor   = context.textPrimary;
+    final subColor     = context.textSecondary;
+    final chipBg       = context.bgColor;
     const activeBg     = AppColors.primary;
     const activeFg     = Colors.white;
 
@@ -31,7 +32,7 @@ class ThemeSelectorTile extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(children: [
         Icon(Icons.brightness_auto_rounded, size: 22,
-            color: darkSurface ? AppColors.darkSubtext : AppColors.lightSubtext),
+            color: context.textSecondary),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Apparence', style: TextStyle(

@@ -43,4 +43,8 @@ extension ThemeX on BuildContext {
 
   /// Texte très atténué (placeholders, métadonnées).
   Color get textMuted => isDark ? AppColors.darkMuted : AppColors.grey;
+
+  // ── Surfaces ─────────────────────────────────────────────────────────────
+  /// Fond des AppBar / headers — suit appBarTheme.backgroundColor du thème actif.
+  Color get surfaceColor => _t.appBarTheme.backgroundColor ?? cardColor;
 }

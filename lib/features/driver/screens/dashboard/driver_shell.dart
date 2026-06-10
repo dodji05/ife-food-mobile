@@ -53,10 +53,10 @@ class _DNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(child: InkWell(onTap: onTap, child: Column(
     mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, color: sel ? AppColors.driverGreen : context.textMuted, size: 22),
+      Icon(icon, color: sel ? AppColors.primary : context.textMuted, size: 22),
       const SizedBox(height: 2),
       Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 9,
         fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-        color: sel ? AppColors.driverGreen : context.textMuted)),
+        color: sel ? AppColors.primary : context.textMuted)),
     ])));
 }

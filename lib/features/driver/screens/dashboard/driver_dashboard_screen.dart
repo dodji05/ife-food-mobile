@@ -73,11 +73,11 @@ class DriverDashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Icon(Icons.bolt_rounded, size: 18, color: AppColors.driverGreen),
+              const Icon(Icons.bolt_rounded, size: 18, color: AppColors.primary),
               const SizedBox(width: 6),
               Text('Missions disponibles (${driver.availableMissions.length})',
                 style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                  fontWeight: FontWeight.w900, color: AppColors.driverGreen)),
+                  fontWeight: FontWeight.w900, color: AppColors.primary)),
             ]),
             const SizedBox(height: 12),
             ...driver.availableMissions.map((m) => AvailableMissionCard(mission: m)),
@@ -243,7 +243,7 @@ class _EarningsCard extends StatelessWidget {
     padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
-        colors: [Color(0xFF1A4D2E), Color(0xFF0D2B1A)],
+        colors: [AppColors.primary, AppColors.primaryLight],
         begin: Alignment.topLeft, end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(20),
@@ -255,22 +255,22 @@ class _EarningsCard extends StatelessWidget {
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         const Icon(Icons.account_balance_wallet_rounded,
-            color: AppColors.primary, size: 18),
+            color: Colors.white, size: 18),
         const SizedBox(width: 8),
         const Text('Mes gains', style: TextStyle(fontFamily: 'Nunito',
-            fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary,
+            fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white,
             letterSpacing: 0.3)),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.15),
+            color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
           ),
           child: Text('Total : ${_fmt(data['totalEarnings'])}',
             style: const TextStyle(fontFamily: 'Nunito', fontSize: 11,
-                fontWeight: FontWeight.w700, color: AppColors.primary)),
+                fontWeight: FontWeight.w700, color: Colors.white)),
         ),
       ]),
       const SizedBox(height: 16),
@@ -364,12 +364,12 @@ class _AvailabilityToggle extends StatelessWidget {
           Text(isOnline ? 'EN LIGNE' : 'HORS LIGNE',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
               fontWeight: FontWeight.w900,
-              color: isOnline ? Colors.black : context.textMuted,
+              color: isOnline ? Colors.white : context.textMuted,
               letterSpacing: 1.5)),
           const SizedBox(height: 4),
           Text(isOnline ? 'Vous recevez des missions' : 'Appuyez pour vous mettre en ligne',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700,
-              color: isOnline ? Colors.black.withOpacity(0.8) : context.textSecondary)),
+              color: isOnline ? Colors.white.withOpacity(0.9) : context.textSecondary)),
         ])),
         const SizedBox(width: 16),
         loading
@@ -379,7 +379,7 @@ class _AvailabilityToggle extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               width: 64, height: 34,
               decoration: BoxDecoration(
-                color: isOnline ? Colors.black.withOpacity(0.25) : context.borderColor,
+                color: isOnline ? Colors.white.withOpacity(0.25) : context.borderColor,
                 borderRadius: BorderRadius.circular(17),
               ),
               child: AnimatedAlign(
@@ -388,7 +388,7 @@ class _AvailabilityToggle extends StatelessWidget {
                 child: Container(
                   width: 28, height: 28, margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
-                    color: isOnline ? Colors.black : context.textSecondary,
+                    color: isOnline ? Colors.white : context.textSecondary,
                     shape: BoxShape.circle),
                   child: Icon(
                     isOnline ? Icons.power_settings_new_rounded : Icons.power_off_rounded,

@@ -85,13 +85,13 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
     final m = widget.mission;
     final remaining = _remainingSeconds;
     // Couleur distincte (vert électrique livreur) + urgence (rouge) si <15s.
-    final accent = remaining <= 15 ? AppColors.danger : AppColors.driverGreen;
+    final accent = remaining <= 15 ? AppColors.danger : AppColors.primary;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         // Fond distinct des missions normales (teinte verte électrique).
-        color: AppColors.driverGreen.withOpacity(0.08),
+        color: AppColors.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withOpacity(0.6), width: 1.5),
       ),
@@ -159,8 +159,8 @@ class _AvailableMissionCardState extends ConsumerState<AvailableMissionCard> {
               child: ElevatedButton(
                 onPressed: (_accepting || remaining <= 0) ? null : _accept,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.driverGreen,
-                  disabledBackgroundColor: AppColors.driverGreen.withOpacity(0.4),
+                  backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.primary.withOpacity(0.4),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

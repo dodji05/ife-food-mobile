@@ -46,11 +46,11 @@ class MissionHistoryScreen extends ConsumerWidget {
             // ── Missions disponibles (en premier, couleur distincte) ─────────
             if (available.isNotEmpty) ...[
               Row(children: [
-                const Icon(Icons.bolt_rounded, size: 18, color: AppColors.driverGreen),
+                const Icon(Icons.bolt_rounded, size: 18, color: AppColors.primary),
                 const SizedBox(width: 6),
                 Text('Missions disponibles (${available.length})',
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                    fontWeight: FontWeight.w900, color: AppColors.driverGreen)),
+                    fontWeight: FontWeight.w900, color: AppColors.primary)),
               ]),
               const SizedBox(height: 12),
               ...available.map((m) => AvailableMissionCard(mission: m)),

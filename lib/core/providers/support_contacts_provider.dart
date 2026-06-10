@@ -32,10 +32,9 @@ class SupportContact {
 /// Cache automatique Riverpod — 1 seul appel réseau par session.
 final supportContactsProvider =
     FutureProvider.autoDispose<List<SupportContact>>((ref) async {
-  final res = await ApiClient.instance.get('/config/support-contacts');
-  // Pattern TransformInterceptor : r?.data?.data ?? r?.data ?? r
-  final raw = (res?.data?['data'] ?? res?.data ?? res) as Map<String, dynamic>?;
-  final list = (raw?['contacts'] as List<dynamic>?) ?? [];
+  final res  = await ApiClient.instance.get('/config/support-contacts');
+  final raw  = res['data'] as Map<String, dynamic>? ?? {};
+  final list = (raw['contacts'] as List<dynamic>?) ?? [];
   return list
       .whereType<Map<String, dynamic>>()
       .map(SupportContact.fromJson)

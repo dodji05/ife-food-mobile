@@ -30,7 +30,7 @@ import '../../features/auth/screens/complete_profile_screen.dart';
 import '../../features/auth/screens/pending_screen.dart';
 
 // CLIENT screens
-import '../../features/client/screens/home/home_screen.dart';
+import '../../features/client/screens/home/home_screen_wrapper.dart';
 import '../../features/client/screens/home/main_shell.dart';
 import '../../features/client/screens/restaurant/restaurant_screen.dart';
 import '../../features/client/screens/cart/cart_screen.dart';
@@ -290,7 +290,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (_, __, child) => ClientMainShell(child: child),
         routes: [
-          GoRoute(path: '/home',    builder: (_, __) => const HomeScreen()),
+          GoRoute(path: '/home',    builder: (_, __) => const HomeScreenWrapper()),
           GoRoute(path: '/orders',  builder: (_, __) => const OrderHistoryScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ClientProfileScreen()),
         ],

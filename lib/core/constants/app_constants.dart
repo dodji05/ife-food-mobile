@@ -19,6 +19,7 @@ class AppConstants {
   static const String lastPhoneKey    = 'ife_last_phone';
   static const String notifEnabledKey = 'ife_notif_enabled';
   static const String onboardedKey    = 'ife_onboarded';
+  static const String homeLayoutKey   = 'ife_home_layout'; // 'v1' | 'v2'
 
   // Auth
   static const int otpLength          = 6;

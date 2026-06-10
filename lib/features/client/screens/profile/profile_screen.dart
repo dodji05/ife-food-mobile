@@ -19,6 +19,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/notifications/fcm_service.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/home_layout_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
@@ -260,6 +261,15 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             sub: '${user?.countryCode ?? 'BJ'} • ${user?.currency ?? 'XOF'}',
             onTap: () => showCountryCurrencyPicker(context, ref,
                 currentCountryCode: user?.countryCode ?? 'BJ', darkTheme: false),
+          ),
+          _MenuToggle(
+            icon: Icons.auto_awesome_rounded,
+            label: 'Nouveau design (Bêta)',
+            sub: ref.watch(homeLayoutProvider)
+                ? 'Interface v2 activée ✨'
+                : 'Interface classique',
+            value: ref.watch(homeLayoutProvider),
+            onChanged: (_) => ref.read(homeLayoutProvider.notifier).toggle(),
           ),
         ]),
         const SizedBox(height: 8),

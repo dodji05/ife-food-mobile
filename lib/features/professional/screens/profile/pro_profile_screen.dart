@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/notifications/fcm_service.dart';
+import '../../../../shared/widgets/contact_support_sheet.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -123,7 +122,7 @@ class ProProfileScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         _Section('Aide & Légal', [
-          _Item(Icons.support_agent_rounded, 'Contacter le support', () => _showSupportSheet(context)),
+          _Item(Icons.support_agent_rounded, 'Contacter le support', () => showContactSupportSheet(context, ref, whatsappContext: "Bonjour, j'ai besoin d'aide avec mon compte ifè PRO.")),
           _Item(Icons.description_rounded, 'Charte du professionnel', () => context.push('/legal/professional-charter')),
           _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', () => context.push('/legal/privacy')),
           _Item(Icons.gavel_rounded, 'Conditions générales', () => context.push('/legal/terms')),
@@ -146,47 +145,7 @@ class ProProfileScreen extends ConsumerWidget {
   }
 }
 
-void _showSupportSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: context.cardColor,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (sheetCtx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: sheetCtx.borderColor, borderRadius: BorderRadius.circular(2))),
-          Text('Contacter le support', style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w900, color: sheetCtx.textPrimary)),
-          const SizedBox(height: 16),
-          ListTile(
-            leading: Container(width: 36, height: 36,
-              decoration: BoxDecoration(color: const Color(0xFF25D366).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 18)),
-            title: Text('WhatsApp', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
-            subtitle: Text('+229 90 00 00 00', style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
-            onTap: () async {
-              final uri = Uri.parse('https://wa.me/${AppConstants.supportWhatsapp}?text=Bonjour%2C%20j%27ai%20besoin%20d%27aide%20avec%20mon%20compte%20ifè%20PRO.');
-              if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
-            },
-          ),
-          ListTile(
-            leading: Container(width: 36, height: 36,
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.email_rounded, color: AppColors.primary, size: 18)),
-            title: Text('Email', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
-            subtitle: Text(AppConstants.supportEmail, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
-            onTap: () async {
-              final uri = Uri(scheme: 'mailto', path: AppConstants.supportEmail, queryParameters: {'subject': 'Support ifè PRO'});
-              if (await canLaunchUrl(uri)) await launchUrl(uri);
-            },
-          ),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    ),
-  );
-}
+// Supprimé : _showSupportSheet → remplacé par showContactSupportSheet
 
 class _Section extends StatelessWidget {
   final String title; final List<_Item> items;

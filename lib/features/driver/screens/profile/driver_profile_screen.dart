@@ -14,10 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/notifications/fcm_service.dart';
+import '../../../../shared/widgets/contact_support_sheet.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/router/route_params.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -184,7 +184,7 @@ class DriverProfileScreen extends ConsumerWidget {
         // ── Aide & Légal ─────────────────────────────────────────────────
         _Section('Aide & Légal', [
           _Item(Icons.support_agent_rounded, 'Contacter le support',
-              onTap: () => _contactSupport(context)),
+              onTap: () => showContactSupportSheet(context, ref, whatsappContext: "Bonjour, je suis livreur ifè FOOD et j'ai besoin d'aide.")),
           _Item(Icons.description_rounded, 'Charte du livreur',
               onTap: () => context.push('/legal/CGU')),
           _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité',
@@ -254,101 +254,8 @@ Future<void> _showVehicleSheet(
   );
 }
 
-// ── Bottom sheet contact support (WhatsApp / Email) ──────────────────────
-Future<void> _contactSupport(BuildContext context) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: context.cardColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (sheetCtx) => SafeArea(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 36, height: 4,
-          margin: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: sheetCtx.borderColor,
-            borderRadius: BorderRadius.circular(2)),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Align(alignment: Alignment.centerLeft, child: Text(
-            'Contacter le support',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 16,
-              fontWeight: FontWeight.w900, color: sheetCtx.textPrimary))),
-        ),
-        ListTile(
-          leading: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFF25D366).withOpacity(0.18),
-              borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
-          ),
-          title: Text('WhatsApp',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
-          subtitle: Text('Réponse rapide en journée',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
-          onTap: () async {
-            Navigator.pop(sheetCtx);
-            await _openWhatsApp(context);
-          },
-        ),
-        ListTile(
-          leading: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.email_rounded, color: AppColors.primary, size: 20),
-          ),
-          title: Text('Email',
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: sheetCtx.textPrimary)),
-          subtitle: Text(AppConstants.supportEmail,
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: sheetCtx.textSecondary)),
-          onTap: () async {
-            Navigator.pop(sheetCtx);
-            await _openEmail(context);
-          },
-        ),
-        const SizedBox(height: 12),
-      ]),
-    ),
-  );
-}
-
-Future<void> _openWhatsApp(BuildContext context) async {
-  final uri = Uri.parse('https://wa.me/${AppConstants.supportWhatsapp}'
-      '?text=${Uri.encodeComponent("Bonjour, je suis livreur ifè FOOD et j'ai besoin d'aide.")}');
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } else if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Impossible d\'ouvrir WhatsApp'),
-      backgroundColor: AppColors.danger,
-    ));
-  }
-}
-
-Future<void> _openEmail(BuildContext context) async {
-  final uri = Uri(
-    scheme: 'mailto',
-    path: AppConstants.supportEmail,
-    queryParameters: {
-      'subject': 'Support ifè FOOD — Livreur',
-      'body': 'Bonjour,\n\nJe suis livreur ifè FOOD et je vous contacte concernant :\n\n',
-    },
-  );
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri);
-  } else if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Aucune app email configurée. Écrivez-nous à ${AppConstants.supportEmail}'),
-      backgroundColor: context.textMuted,
-    ));
-  }
-}
+// Supprimé : _contactSupport, _openWhatsApp, _openEmail
+// → remplacé par showContactSupportSheet (contact_support_sheet.dart)
 
 class _Section extends StatelessWidget {
   final String title;

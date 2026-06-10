@@ -320,6 +320,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         return;
       }
 
+      // PayPal : navigateur intégré → approbation → capture côté serveur.
+      if (payData['paypal'] == true) {
+        await _handlePaypal(orderId, payData);
+        if (mounted) context.go('/order/$orderId');
+        return;
+      }
+
       // FedaPay : navigateur intégré (inAppBrowserView = Chrome Custom Tab /
       // SFSafariViewController) → bouton "Fermer" visible, l'utilisateur
       // revient automatiquement dans l'app en appuyant dessus.
@@ -444,6 +451,40 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           backgroundColor: AppColors.error,
         ));
       }
+    }
+  }
+
+  /// Ouvre la page d'approbation PayPal dans le navigateur in-app, attend la
+  /// fermeture, puis déclenche la capture côté backend.
+  Future<void> _handlePaypal(String orderId, Map<String, dynamic> payData) async {
+    // L'URL d'approbation est dans payData['approvalUrl'] (backend extrait
+    // depuis PayPal links[rel='approve']).
+    final approvalUrl = payData['approvalUrl'] as String?;
+    if (approvalUrl == null || approvalUrl.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("PayPal non configuré — URL d'approbation manquante."),
+          backgroundColor: AppColors.error,
+        ));
+      }
+      return;
+    }
+
+    final uri = Uri.parse(approvalUrl);
+    if (await canLaunchUrl(uri)) {
+      // Ouvre dans le navigateur in-app (Chrome Custom Tab / SFSafariViewController)
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    }
+
+    // Dès que l'utilisateur referme le navigateur, on tente la capture.
+    // L'appel est idempotent : si l'ordre n'a pas encore été approuvé
+    // (utilisateur qui annule), la capture échouera silencieusement et
+    // le suivi de commande proposera "Vérifier le statut".
+    try {
+      await ApiClient.instance.post('/payments/$orderId/capture-paypal');
+    } catch (_) {
+      // Best-effort : le bouton "J'ai payé — Vérifier le statut" du suivi
+      // de commande appellera /payments/:orderId/check qui retente la capture.
     }
   }
 

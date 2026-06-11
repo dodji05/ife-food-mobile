@@ -64,7 +64,14 @@ class _LegalScreenState extends State<LegalScreen> {
     try {
       final uri = Uri.parse('${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}');
       final ok  = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-      if (mounted) setState(() { _loading = false; _error = !ok; });
+      if (!mounted) return;
+      if (ok) {
+        // Navigateur ouvert — on dépile cet écran pour qu'à la fermeture
+        // du navigateur l'utilisateur revienne directement sur l'app
+        Navigator.of(context).pop();
+      } else {
+        setState(() { _loading = false; _error = true; });
+      }
     } catch (_) {
       if (mounted) setState(() { _loading = false; _error = true; });
     }

@@ -86,8 +86,8 @@ class ProProfileScreen extends ConsumerWidget {
         ),
 
         _Section('Établissement', [
-          _Item(Icons.store_rounded, 'Modifier mes informations', () => context.push('/pro/edit-info')),
-          _Item(Icons.schedule_rounded, 'Horaires d\'ouverture', () => context.push('/pro/schedule')),
+          _Item(Icons.store_rounded, 'Modifier mes informations', onTap: () => context.push('/pro/edit-info')),
+          _Item(Icons.schedule_rounded, 'Horaires d\'ouverture', onTap: () => context.push('/pro/schedule')),
         ]),
         const SizedBox(height: 12),
 

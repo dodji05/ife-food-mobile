@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:country_picker/country_picker.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_colors.dart';
 
 /// Saisie du numéro de téléphone pour les utilisateurs existants.
@@ -35,7 +36,7 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
     final phone = '+${_country.phoneCode}${_ctrl.text.trim()}';
     setState(() { _loading = true; _errorMsg = null; });
     try {
-      final res = await ApiClient.instance.get('/auth/exists', queryParameters: {'phone': phone});
+      final res = await ApiClient.instance.get('/auth/exists', params: {'phone': phone});
       final exists = res.data['exists'] == true || res.data['data']?['exists'] == true;
       if (!mounted) return;
       if (!exists) {

@@ -102,7 +102,7 @@ class ProProfileScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         _Section('Compte', [
-          _Item(Icons.lock_rounded, 'Modifier le PIN', () {
+          _Item(Icons.lock_rounded, 'Modifier le PIN', onTap: () {
             final phone = user?.phone;
             if (phone == null || phone.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -113,34 +113,28 @@ class ProProfileScreen extends ConsumerWidget {
             }
             context.push('/auth/pin', extra: PinRouteParams(mode: 'set', phone: phone));
           }),
-          // TODO: réactiver quand la gestion multilingue est finalisée
-          // _Item(Icons.language_rounded, 'Langue',
-          //     () => showLanguagePicker(context, ref, currentLang: user?.lang ?? 'fr', darkTheme: true)),
-          _Item(Icons.badge_rounded, 'Mes documents', () => context.push('/pro/documents')),
-          _Item(Icons.notifications_rounded, 'Notifications', () => context.push('/pro/notifications')),
-          _Item(Icons.notifications_active_rounded, 'État des notifications', () => FcmService.showDiagnosticDialog(context, ref)),
+          _Item(Icons.badge_rounded, 'Mes documents', onTap: () => context.push('/pro/documents')),
+          _Item(Icons.notifications_rounded, 'Notifications', onTap: () => context.push('/pro/notifications')),
+          _Item(Icons.notifications_active_rounded, 'État des notifications', onTap: () => FcmService.showDiagnosticDialog(context, ref)),
         ]),
         const SizedBox(height: 12),
 
         _Section('Aide & Légal', [
-          _Item(Icons.support_agent_rounded, 'Contacter le support', () => showContactSupportSheet(context, ref, whatsappContext: "Bonjour, j'ai besoin d'aide avec mon compte ifè PRO.")),
-          _Item(Icons.description_rounded, 'Charte du professionnel', () => context.push('/legal/PRO_CHARTER')),
-          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', () => context.push('/legal/PRIVACY')),
-          _Item(Icons.gavel_rounded, "Conditions d'utilisation", () => context.push('/legal/CGU')),
-          _Item(Icons.info_rounded, 'À propos', () => context.push('/legal/ABOUT')),
+          _Item(Icons.support_agent_rounded, 'Contacter le support', onTap: () => showContactSupportSheet(context, ref, whatsappContext: "Bonjour, j'ai besoin d'aide avec mon compte ifè PRO.")),
+          _Item(Icons.description_rounded, 'Charte du professionnel', onTap: () => context.push('/legal/PRO_CHARTER')),
+          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', onTap: () => context.push('/legal/PRIVACY')),
+          _Item(Icons.gavel_rounded, "Conditions d'utilisation", onTap: () => context.push('/legal/CGU')),
+          _Item(Icons.info_rounded, 'À propos', onTap: () => context.push('/legal/ABOUT')),
         ]),
         const SizedBox(height: 12),
 
-        Container(
-          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
-          child: ListTile(
-            leading: const Icon(Icons.logout_rounded, color: AppColors.danger),
-            title: const Text('Se déconnecter', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.danger)),
-            onTap: () async { await ref.read(authProvider.notifier).logout(); if (context.mounted) context.go('/onboarding'); },
-          ),
-        ),
-        const SizedBox(height: 40),
-        Text('ifè PRO v1.0.0 • Ets SWK FAKEYE', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
+        _Section('Danger', [
+          _Item(Icons.logout_rounded, 'Se déconnecter', danger: true,
+            onTap: () async { await ref.read(authProvider.notifier).logout(); if (context.mounted) context.go('/onboarding'); }),
+        ]),
+        const SizedBox(height: 24),
+        Center(child: Text('ifè PRO v1.0.0 • Ets SWK FAKEYE',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),
     );
@@ -150,25 +144,30 @@ class ProProfileScreen extends ConsumerWidget {
 // Supprimé : _showSupportSheet → remplacé par showContactSupportSheet
 
 class _Section extends StatelessWidget {
-  final String title; final List<_Item> items;
+  final String title; final List<Widget> items;
   const _Section(this.title, this.items);
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Padding(padding: const EdgeInsets.only(bottom: 8, left: 4), child: Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700, color: context.textSecondary, letterSpacing: 0.5))),
-    Container(decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
-      child: Column(children: items.asMap().entries.map((e) => Column(children: [if (e.key > 0) Divider(height: 1, color: context.borderColor, indent: 54), e.value])).toList())),
+    Padding(padding: const EdgeInsets.only(bottom: 8, left: 4),
+      child: Text(title, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted, letterSpacing: 0.5))),
+    Container(decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor.withOpacity(0.8))),
+      child: Column(children: items.asMap().entries.map((e) => Column(children: [if (e.key > 0) const Divider(height: 1, indent: 54), e.value])).toList())),
   ]);
 }
 
 class _Item extends StatelessWidget {
-  final IconData icon; final String label; final VoidCallback onTap;
-  const _Item(this.icon, this.label, this.onTap);
+  final IconData icon; final String label; final String? sub;
+  final bool danger; final VoidCallback onTap;
+  const _Item(this.icon, this.label, {this.sub, this.danger = false, required this.onTap});
   @override
   Widget build(BuildContext context) => ListTile(
-    leading: Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-      child: Icon(icon, color: AppColors.primary, size: 18)),
-    title: Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600, color: context.textPrimary)),
-    trailing: Icon(Icons.chevron_right_rounded, color: context.textMuted, size: 18),
+    leading: Container(width: 36, height: 36,
+      decoration: BoxDecoration(color: (danger ? AppColors.danger : AppColors.primary).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+      child: Icon(icon, color: danger ? AppColors.danger : AppColors.primary, size: 18)),
+    title: Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600,
+      color: danger ? AppColors.danger : context.textPrimary)),
+    subtitle: sub != null ? Text(sub!, style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)) : null,
+    trailing: Icon(Icons.chevron_right_rounded, color: context.borderColor, size: 20),
     onTap: onTap,
   );
 }

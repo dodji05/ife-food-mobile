@@ -165,7 +165,7 @@ class DriverProfileScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: context.cardColor,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.borderColor),
+            border: Border.all(color: context.borderColor.withOpacity(0.8)),
           ),
           child: ThemeSelectorTile(darkSurface: context.isDark),
         ),
@@ -196,23 +196,13 @@ class DriverProfileScreen extends ConsumerWidget {
         const SizedBox(height: 12),
 
         // ── Logout ────────────────────────────────────────────────────────
-        Container(
-          decoration: BoxDecoration(
-            color: context.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.borderColor),
-          ),
-          child: ListTile(
-            leading: const Icon(Icons.logout_rounded, color: AppColors.danger),
-            title: const Text('Se déconnecter',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                fontWeight: FontWeight.w700, color: AppColors.danger)),
+        _Section('Danger', [
+          _Item(Icons.logout_rounded, 'Se déconnecter', danger: true,
             onTap: () async {
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) context.go('/onboarding');
-            },
-          ),
-        ),
+            }),
+        ]),
         const SizedBox(height: 24),
         Center(child: Text('ifè Livreur v1.0.0 • Ets SWK FAKEYE',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
@@ -266,17 +256,17 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
-      child: Text(title.toUpperCase(),
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
-          fontWeight: FontWeight.w800, color: context.textSecondary, letterSpacing: 0.5)),
+      child: Text(title,
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+          fontWeight: FontWeight.w700, color: context.textMuted, letterSpacing: 0.5)),
     ),
     Container(
       decoration: BoxDecoration(
         color: context.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.borderColor)),
+        border: Border.all(color: context.borderColor.withOpacity(0.8))),
       child: Column(children: items.asMap().entries.map((e) => Column(children: [
-        if (e.key > 0) Divider(height: 1, color: context.borderColor, indent: 54),
+        if (e.key > 0) const Divider(height: 1, indent: 54),
         e.value,
       ])).toList()),
     ),
@@ -287,23 +277,25 @@ class _Item extends StatelessWidget {
   final IconData icon;
   final String  label;
   final String? sub;
+  final bool danger;
   final VoidCallback onTap;
-  const _Item(this.icon, this.label, {this.sub, required this.onTap});
+  const _Item(this.icon, this.label, {this.sub, this.danger = false, required this.onTap});
   @override
   Widget build(BuildContext context) => ListTile(
     leading: Container(
       width: 36, height: 36,
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.12),
+        color: (danger ? AppColors.danger : AppColors.primary).withOpacity(0.1),
         borderRadius: BorderRadius.circular(10)),
-      child: Icon(icon, color: AppColors.primary, size: 18),
+      child: Icon(icon, color: danger ? AppColors.danger : AppColors.primary, size: 18),
     ),
     title: Text(label,
       style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-        fontWeight: FontWeight.w600, color: context.textPrimary)),
+        fontWeight: FontWeight.w600,
+        color: danger ? AppColors.danger : context.textPrimary)),
     subtitle: sub != null ? Text(sub!,
-      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)) : null,
-    trailing: Icon(Icons.chevron_right_rounded, color: context.textMuted, size: 18),
+      style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted)) : null,
+    trailing: Icon(Icons.chevron_right_rounded, color: context.borderColor, size: 20),
     onTap: onTap,
   );
 }

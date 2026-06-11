@@ -151,22 +151,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   fontWeight: FontWeight.w900, color: context.textPrimary)),
               const SizedBox(height: 8),
 
-              // Numéro de téléphone affiché
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: context.bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.borderColor),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.phone_rounded, size: 16, color: context.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(_phone, style: TextStyle(
-                      fontFamily: 'Nunito', fontSize: 16,
-                      fontWeight: FontWeight.w700, color: context.textPrimary)),
-                ]),
-              ),
+              // Nom ou numéro de téléphone
+              Builder(builder: (context) {
+                final user = ref.watch(authProvider).user;
+                final hasName = (user?.firstName ?? '').trim().isNotEmpty
+                    || (user?.name ?? '').trim().isNotEmpty;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: context.bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.borderColor),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(hasName ? Icons.person_rounded : Icons.phone_rounded,
+                        size: 16, color: context.textSecondary),
+                    const SizedBox(width: 8),
+                    Text(hasName ? (user!.displayName) : _phone,
+                        style: TextStyle(
+                            fontFamily: 'Nunito', fontSize: 16,
+                            fontWeight: FontWeight.w700, color: context.textPrimary)),
+                  ]),
+                );
+              }),
               const SizedBox(height: 6),
               TextButton(
                 onPressed: () => context.go('/onboarding'),

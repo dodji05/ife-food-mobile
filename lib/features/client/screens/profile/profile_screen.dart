@@ -318,8 +318,13 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
           ),
           _MenuItem(
             icon: Icons.description_rounded,
-            label: "Conditions d'utilisation",
+            label: "Conditions d'utilisation (CGU)",
             onTap: () => context.push('/legal/CGU'),
+          ),
+          _MenuItem(
+            icon: Icons.receipt_long_rounded,
+            label: 'Conditions de vente (CGV)',
+            onTap: () => context.push('/legal/CGV'),
           ),
           _MenuItem(
             icon: Icons.privacy_tip_rounded,

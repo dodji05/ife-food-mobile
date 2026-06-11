@@ -9,6 +9,8 @@ class AppConstants {
     'API_URL', defaultValue: 'https://ifeapi.associationireni.org/api/v1');
   static const String wsUrl = String.fromEnvironment(
     'WS_URL', defaultValue: 'https://ifeapi.associationireni.org');
+  static const String adminUrl = String.fromEnvironment(
+    'ADMIN_URL', defaultValue: 'https://ifeadmin.associationireni.org');
 
   // Storage keys
   static const String accessTokenKey  = 'ife_access_token';

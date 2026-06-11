@@ -123,9 +123,10 @@ class ProProfileScreen extends ConsumerWidget {
 
         _Section('Aide & Légal', [
           _Item(Icons.support_agent_rounded, 'Contacter le support', () => showContactSupportSheet(context, ref, whatsappContext: "Bonjour, j'ai besoin d'aide avec mon compte ifè PRO.")),
-          _Item(Icons.description_rounded, 'Charte du professionnel', () => context.push('/legal/professional-charter')),
-          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', () => context.push('/legal/privacy')),
-          _Item(Icons.gavel_rounded, 'Conditions générales', () => context.push('/legal/terms')),
+          _Item(Icons.description_rounded, 'Charte du professionnel', () => context.push('/legal/PRO_CHARTER')),
+          _Item(Icons.privacy_tip_rounded, 'Politique de confidentialité', () => context.push('/legal/PRIVACY')),
+          _Item(Icons.gavel_rounded, "Conditions d'utilisation", () => context.push('/legal/CGU')),
+          _Item(Icons.info_rounded, 'À propos', () => context.push('/legal/ABOUT')),
         ]),
         const SizedBox(height: 12),
 

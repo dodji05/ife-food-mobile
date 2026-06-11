@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -112,9 +113,24 @@ class _State extends ConsumerState<CompleteProfileScreen> {
                     color: _accepted ? AppColors.primary : context.borderColor, width: 1.5)),
               child: _accepted ? const Icon(Icons.check, color: Colors.white, size: 14) : null),
             const SizedBox(width: 10),
-            Expanded(child: Text(
-              'J\'accepte les CGU et la Politique de confidentialité d\'ifè FOOD.',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textPrimary, height: 1.4))),
+            Expanded(child: RichText(text: TextSpan(
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textPrimary, height: 1.4),
+              children: [
+                const TextSpan(text: "J'accepte les "),
+                TextSpan(
+                  text: 'Conditions d\'utilisation',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/legal/CGU'),
+                ),
+                const TextSpan(text: ' et la '),
+                TextSpan(
+                  text: 'Politique de confidentialité',
+                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/legal/PRIVACY'),
+                ),
+                const TextSpan(text: " d'ifè FOOD."),
+              ],
+            ))),
           ]),
         ),
       ],

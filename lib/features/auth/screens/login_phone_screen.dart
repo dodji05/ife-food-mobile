@@ -37,7 +37,7 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
     setState(() { _loading = true; _errorMsg = null; });
     try {
       final res = await ApiClient.instance.get('/auth/exists', params: {'phone': phone});
-      final exists = res.data['exists'] == true || res.data['data']?['exists'] == true;
+      final exists = res['exists'] == true || (res['data'] as Map?)?['exists'] == true;
       if (!mounted) return;
       if (!exists) {
         setState(() {

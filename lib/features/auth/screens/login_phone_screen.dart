@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:country_picker/country_picker.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/theme_colors.dart';
 
@@ -15,6 +16,9 @@ class LoginPhoneScreen extends ConsumerStatefulWidget {
 
 class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
   final _ctrl = TextEditingController();
+  bool _loading = false;
+  String? _errorMsg;
+
   Country _country = Country(
     phoneCode: '229', countryCode: 'BJ', e164Sc: 0, geographic: true,
     level: 1, name: 'Bénin', example: '', displayName: 'Bénin',
@@ -29,13 +33,28 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
 
   Future<void> _continue() async {
     final phone = '+${_country.phoneCode}${_ctrl.text.trim()}';
-    await ref.read(authProvider.notifier).savePhone(phone, _country.countryCode);
-    if (mounted) context.go('/login');
+    setState(() { _loading = true; _errorMsg = null; });
+    try {
+      final res = await ApiClient.instance.get('/auth/exists', queryParameters: {'phone': phone});
+      final exists = res.data['exists'] == true || res.data['data']?['exists'] == true;
+      if (!mounted) return;
+      if (!exists) {
+        setState(() {
+          _loading = false;
+          _errorMsg = 'Ce numéro n\'est pas associé à un compte.';
+        });
+        return;
+      }
+      await ref.read(authProvider.notifier).savePhone(phone, _country.countryCode);
+      if (mounted) context.go('/login');
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; _errorMsg = 'Erreur réseau. Vérifiez votre connexion.'; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = _ctrl.text.trim().isNotEmpty;
+    final canSubmit = _ctrl.text.trim().isNotEmpty && !_loading;
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
@@ -49,7 +68,10 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
           child: ElevatedButton(
             onPressed: canSubmit ? _continue : null,
-            child: const Text('Continuer'),
+            child: _loading
+                ? const SizedBox(width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Continuer'),
           ),
         ),
       ),
@@ -97,7 +119,7 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
                     controller: _ctrl,
                     keyboardType: TextInputType.phone,
                     autofocus: true,
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setState(() { _errorMsg = null; }),
                     onSubmitted: (_) { if (canSubmit) _continue(); },
                     style: const TextStyle(
                         fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w700),
@@ -111,6 +133,38 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
                   )),
                 ]),
               ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.danger.withOpacity(0.25)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.info_outline_rounded, color: AppColors.danger, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(_errorMsg!,
+                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                          fontWeight: FontWeight.w600, color: AppColors.danger, height: 1.4))),
+                  ]),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => context.go('/auth/role'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Créer un compte',
+                      style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 14)),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

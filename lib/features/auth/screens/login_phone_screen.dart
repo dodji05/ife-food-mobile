@@ -154,7 +154,7 @@ class _LoginPhoneScreenState extends ConsumerState<LoginPhoneScreen> {
                 const SizedBox(height: 16),
                 SizedBox(width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () => context.go('/auth/role'),
+                    onPressed: () => context.push('/auth/role'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       side: const BorderSide(color: AppColors.primary),

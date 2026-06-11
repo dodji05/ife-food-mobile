@@ -37,7 +37,7 @@ class _State extends State<OnboardingScreen> {
           ElevatedButton(
             onPressed: () => _page < 2
                 ? _ctrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease)
-                : context.go('/auth/role'),
+                : context.push('/auth/role'),
             child: Text(_page < 2 ? 'Suivant →' : 'Commencer'),
           ),
           const SizedBox(height: 6),
@@ -62,7 +62,7 @@ class _State extends State<OnboardingScreen> {
           )),
           const Spacer(),
           TextButton(
-            onPressed: () => context.go('/auth/role'),
+            onPressed: () => context.push('/auth/role'),
             child: Text('Passer', style: TextStyle(
                 fontFamily: 'Nunito', color: context.textSecondary,
                 fontWeight: FontWeight.w600, fontSize: 14)),

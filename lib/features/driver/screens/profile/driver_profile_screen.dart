@@ -46,12 +46,11 @@ class DriverProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [const Color(0xFF0D3320), context.cardColor],
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, Color(0xFF2E8B57)],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(children: [
             // Avatar + dot online en bas-droite
@@ -60,40 +59,40 @@ class DriverProfileScreen extends ConsumerWidget {
                 currentUrl: user?.avatarUrl,
                 fallbackText: user?.displayName ?? '?',
                 radius: 36,
-                backgroundColor: AppColors.primary.withOpacity(0.2),
-                textColor: AppColors.primary,
+                backgroundColor: Colors.white.withOpacity(0.25),
+                textColor: Colors.white,
               ),
               Positioned(bottom: 0, right: 0, child: Container(
                 width: 22, height: 22,
                 decoration: BoxDecoration(
-                  color: driverState.isOnline ? AppColors.success : context.textMuted,
+                  color: driverState.isOnline ? AppColors.success : Colors.white.withOpacity(0.4),
                   shape: BoxShape.circle,
-                  border: Border.all(color: context.cardColor, width: 2),
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
               )),
             ]),
             const SizedBox(height: 12),
             Text(user?.displayName ?? 'Livreur',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
-                fontWeight: FontWeight.w900, color: context.textPrimary)),
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 20,
+                fontWeight: FontWeight.w900, color: Colors.white)),
             const SizedBox(height: 2),
             Text(user?.phone ?? '',
               style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-                color: context.textSecondary)),
+                color: Colors.white.withOpacity(0.8))),
             const SizedBox(height: 12),
             // Badge véhicule (lit driver.vehicleEmoji + vehicleType)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3))),
+              ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(driver?.vehicleEmoji ?? '🛵', style: const TextStyle(fontSize: 16)),
                 const SizedBox(width: 6),
                 Text(_vehicleLabel(driver?.vehicleType),
                   style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                    fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    fontWeight: FontWeight.w700, color: Colors.white)),
               ]),
             ),
           ]),

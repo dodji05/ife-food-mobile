@@ -29,43 +29,44 @@ class ProProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [const Color(0xFF0A2030), context.cardColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            gradient: const LinearGradient(
+                colors: [AppColors.primary, Color(0xFF2E8B57)],
+                begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Container(width: 56, height: 56, decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.3))),
+              Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(14)),
                 child: Center(child: Text(pro?.categoryEmoji ?? '🏪', style: const TextStyle(fontSize: 28)))),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(pro?.businessName ?? 'Mon établissement', style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: context.textPrimary)),
+                Text(pro?.businessName ?? 'Mon établissement', style: const TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
                 const SizedBox(height: 2),
-                Text(user?.displayName ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
+                Text(user?.displayName ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
               ])),
               if (pro != null) Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: pro.isValidated ? AppColors.success.withOpacity(0.12) : AppColors.warning.withOpacity(0.12),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(pro.statusLabel, style: TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w700,
-                  color: pro.isValidated ? AppColors.success : AppColors.warning)),
+                child: Text(pro.statusLabel, style: const TextStyle(fontFamily: 'Nunito', fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
               ),
             ]),
             if (pro != null) ...[
               const SizedBox(height: 16),
-              Divider(color: context.borderColor),
+              Divider(color: Colors.white.withOpacity(0.3)),
               const SizedBox(height: 12),
               Row(children: [
-                const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
+                Icon(Icons.location_on_rounded, size: 14, color: Colors.white.withOpacity(0.8)),
                 const SizedBox(width: 6),
-                Expanded(child: Text(pro.address ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary))),
+                Expanded(child: Text(pro.address ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8)))),
               ]),
               const SizedBox(height: 6),
               Row(children: [
-                const Icon(Icons.phone_rounded, size: 14, color: AppColors.primary),
+                Icon(Icons.phone_rounded, size: 14, color: Colors.white.withOpacity(0.8)),
                 const SizedBox(width: 6),
-                Text(pro.phone ?? user?.phone ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
+                Text(pro.phone ?? user?.phone ?? '', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: Colors.white.withOpacity(0.8))),
               ]),
             ],
           ]),

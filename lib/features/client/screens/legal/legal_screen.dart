@@ -1,31 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/api/api_client.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 
-final _legalProvider = FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((ref, type) async {
-  try {
-    final res = await ApiClient.instance.get('/config/legal/$type/fr');
-    return res['data'] as Map<String, dynamic>?;
-  } catch (_) { return null; }
-});
+// ── Helpers publics ────────────────────────────────────────────────────────────
 
-// ── Public helpers ─────────────────────────────────────────────────────────────
-
-/// Ouvre une page légale dans le navigateur intégré (SFSafari / Chrome Custom Tab).
-/// Retourne false si l'URL ne peut pas être ouverte.
-Future<bool> openLegalPage(String type) async {
-  final slug = _legalSlug(type);
-  final uri = Uri.parse('${AppConstants.adminUrl}/legal/$slug');
-  try {
-    return launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-  } catch (_) { return false; }
-}
-
-String _legalSlug(String type) => switch (type.toUpperCase()) {
+String legalSlug(String type) => switch (type.toUpperCase()) {
   'CGU'            => 'cgu',
   'CGV'            => 'cgv',
   'PRIVACY'        => 'privacy',
@@ -35,7 +16,7 @@ String _legalSlug(String type) => switch (type.toUpperCase()) {
   _                => type.toLowerCase(),
 };
 
-String _legalLabel(String type) => switch (type.toUpperCase()) {
+String legalLabel(String type) => switch (type.toUpperCase()) {
   'CGU'            => "Conditions d'utilisation",
   'CGV'            => 'Conditions de vente',
   'PRIVACY'        => 'Politique de confidentialité',
@@ -45,153 +26,134 @@ String _legalLabel(String type) => switch (type.toUpperCase()) {
   _                => type,
 };
 
-// Retire les balises HTML pour l'affichage natif en fallback.
-String _stripHtml(String html) => html
-  .replaceAll(RegExp(r'<br\s*/?>',          caseSensitive: false), '\n')
-  .replaceAll(RegExp(r'</p>',               caseSensitive: false), '\n\n')
-  .replaceAll(RegExp(r'</h[1-6]>',          caseSensitive: false), '\n\n')
-  .replaceAll(RegExp(r'</li>',              caseSensitive: false), '\n')
-  .replaceAll(RegExp(r'<[^>]+>'),           '')
-  .replaceAll(RegExp(r'&nbsp;'),            ' ')
-  .replaceAll(RegExp(r'&amp;'),             '&')
-  .replaceAll(RegExp(r'&lt;'),              '<')
-  .replaceAll(RegExp(r'&gt;'),              '>')
-  .replaceAll(RegExp(r'&quot;'),            '"')
-  .replaceAll(RegExp(r'&#39;'),             "'")
-  .replaceAll(RegExp(r'\n{3,}'),            '\n\n')
-  .trim();
+IconData legalIcon(String type) => switch (type.toUpperCase()) {
+  'CGU'            => Icons.gavel_rounded,
+  'CGV'            => Icons.receipt_long_rounded,
+  'PRIVACY'        => Icons.privacy_tip_rounded,
+  'ABOUT'          => Icons.info_rounded,
+  'DRIVER_CHARTER' => Icons.two_wheeler_rounded,
+  'PRO_CHARTER'    => Icons.store_rounded,
+  _                => Icons.description_rounded,
+};
+
+Future<void> openLegalPage(String type) async {
+  final uri = Uri.parse('${AppConstants.adminUrl}/legal/${legalSlug(type)}');
+  await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+}
 
 // ── Widget ─────────────────────────────────────────────────────────────────────
 
-class LegalScreen extends ConsumerStatefulWidget {
+class LegalScreen extends StatefulWidget {
   final String type;
   const LegalScreen({super.key, required this.type});
-  @override ConsumerState<LegalScreen> createState() => _LegalScreenState();
+  @override State<LegalScreen> createState() => _LegalScreenState();
 }
 
-class _LegalScreenState extends ConsumerState<LegalScreen> {
-  bool _browserOpened = false;
+class _LegalScreenState extends State<LegalScreen> {
+  bool _loading = true;
+  bool _error   = false;
 
   @override
   void initState() {
     super.initState();
-    // Tente d'ouvrir le navigateur intégré dès l'affichage de l'écran.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tryBrowser());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
 
-  Future<void> _tryBrowser() async {
-    final opened = await openLegalPage(widget.type);
-    if (mounted) setState(() => _browserOpened = opened);
+  Future<void> _open() async {
+    setState(() { _loading = true; _error = false; });
+    try {
+      final uri = Uri.parse('${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}');
+      final ok  = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      if (mounted) setState(() { _loading = false; _error = !ok; });
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; _error = true; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = ref.watch(_legalProvider(widget.type));
-    final label = _legalLabel(widget.type);
+    final label = legalLabel(widget.type);
+    final icon  = legalIcon(widget.type);
 
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(
-        title: Text(label),
+        title: Text(label,
+          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
         leading: const BackButton(),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.open_in_browser_rounded),
-            tooltip: 'Ouvrir dans le navigateur',
-            onPressed: _tryBrowser,
-          ),
-        ],
       ),
-      body: data.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (_, __) => _ErrorView(onRetry: () => ref.invalidate(_legalProvider(widget.type))),
-        data: (page) {
-          if (page == null) {
-            return Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('Contenu non disponible.', style: TextStyle(fontFamily: 'Nunito', fontSize: 15, color: context.textSecondary)),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: _tryBrowser,
-                  icon: const Icon(Icons.open_in_browser_rounded, size: 16),
-                  label: const Text('Ouvrir dans le navigateur'),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                ),
-              ]),
-            );
-          }
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
 
-          final plainText = _stripHtml(page['content'] as String? ?? '');
-
-          return ListView(padding: const EdgeInsets.all(24), children: [
-            // Bandeau "version navigateur disponible" si le browser s'est ouvert
-            if (_browserOpened) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                ),
-                child: Row(children: [
-                  const Icon(Icons.check_circle_outline_rounded, color: AppColors.primary, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('Page ouverte dans le navigateur intégré.',
-                    style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary))),
-                  GestureDetector(
-                    onTap: _tryBrowser,
-                    child: Text('Rouvrir', style: const TextStyle(fontFamily: 'Nunito', fontSize: 12,
-                      fontWeight: FontWeight.w700, color: AppColors.primary)),
-                  ),
-                ]),
+            // Icône du document
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.10),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 20),
-            ],
-
-            Text(page['title'] as String? ?? label,
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 22,
-                fontWeight: FontWeight.w900, color: context.textPrimary, height: 1.3)),
-            const SizedBox(height: 8),
-            if (page['version'] != null)
-              Text('Version ${page['version']}',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted)),
-            const SizedBox(height: 20),
-
-            SelectableText(plainText,
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                color: context.textSecondary, height: 1.75)),
-
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
-              onPressed: _tryBrowser,
-              icon: const Icon(Icons.open_in_browser_rounded, size: 16),
-              label: const Text('Voir la version mise en forme', style: TextStyle(fontFamily: 'Nunito', fontSize: 13)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              child: Icon(icon, size: 38, color: AppColors.primary),
             ),
-            const SizedBox(height: 40),
-          ]);
-        },
+            const SizedBox(height: 24),
+
+            Text(label,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
+                fontWeight: FontWeight.w900, color: context.textPrimary)),
+            const SizedBox(height: 10),
+
+            if (_loading) ...[
+              const SizedBox(height: 8),
+              const SizedBox(
+                width: 24, height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
+              ),
+              const SizedBox(height: 12),
+              Text('Ouverture en cours…',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
+            ] else if (_error) ...[
+              const SizedBox(height: 8),
+              Text('Impossible d\'ouvrir ce document.\nVérifiez votre connexion.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                  color: context.textSecondary, height: 1.5)),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _open,
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Réessayer',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ] else ...[
+              // Navigateur ouvert — affiche un bouton pour rouvrir si besoin
+              Text('Document ouvert dans le navigateur.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: _open,
+                icon: const Icon(Icons.open_in_browser_rounded, size: 16),
+                label: const Text('Rouvrir',
+                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ]),
+        ),
       ),
     );
   }
-}
-
-class _ErrorView extends StatelessWidget {
-  final VoidCallback onRetry;
-  const _ErrorView({required this.onRetry});
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.wifi_off_rounded, color: context.textMuted, size: 40),
-      const SizedBox(height: 12),
-      Text('Impossible de charger cette page.',
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
-      const SizedBox(height: 12),
-      TextButton(onPressed: onRetry, child: const Text('Réessayer')),
-    ]),
-  );
 }

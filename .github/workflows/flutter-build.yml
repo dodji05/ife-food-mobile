@@ -40,12 +40,19 @@ jobs:
       - name: 📦 Install dependencies
         run: flutter pub get
 
-      # ── 6. Analyse statique (non bloquante) ────────────────────────────────
+      # ── 6. Génération icônes launcher + splash ─────────────────────────────
+      - name: 🖼️ Generate launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: 💫 Generate native splash
+        run: dart run flutter_native_splash:create
+
+      # ── 7. Analyse statique (non bloquante) ────────────────────────────────
       - name: 🔍 Flutter analyze
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
-      # ── 7. Build APK debug ─────────────────────────────────────────────────
+      # ── 8. Build APK debug ─────────────────────────────────────────────────
       - name: 🏗️ Build APK debug
         run: |
           flutter build apk --debug \
@@ -53,7 +60,7 @@ jobs:
             --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
             --dart-define=WS_URL=https://ifeapi.associationireni.org
 
-      # ── 7. Upload artifact ─────────────────────────────────────────────────
+      # ── 9. Upload artifact ─────────────────────────────────────────────────
       - name: 📤 Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -61,7 +68,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
 
-      # ── 8. Résumé ──────────────────────────────────────────────────────────
+      # ── 10. Résumé ─────────────────────────────────────────────────────────
       - name: ✅ Build successful
         if: success()
         run: |

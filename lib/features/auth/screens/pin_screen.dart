@@ -177,8 +177,15 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               fontWeight: FontWeight.w900, color: context.textPrimary)),
           if (!_isSetting) ...[
             const SizedBox(height: 6),
-            Text('Bonjour ${ref.watch(authProvider).user?.firstName ?? ''} !',
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
+            Builder(builder: (_) {
+              final user = ref.watch(authProvider).user;
+              final hasName = (user?.firstName ?? '').trim().isNotEmpty
+                  || (user?.name ?? '').trim().isNotEmpty;
+              return Text(
+                hasName ? 'Bonjour ${user!.displayName} !' : 'Entrez votre code PIN',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary),
+              );
+            }),
           ],
           const SizedBox(height: 40),
           Pinput(controller: _ctrl, length: 4, obscureText: true, autofocus: true,

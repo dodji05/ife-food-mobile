@@ -1,6 +1,4 @@
-// home_screen_v2.dart — Proposition de redesign de l'accueil client
-// ⚠️  FICHIER PROPOSITIF — Ne pas fusionner sans validation UI
-// L'original (home_screen.dart) n'est PAS modifié.
+// home_screen_v2.dart — Dashboard principal client
 //
 // Améliorations vs v1 :
 //  1. Header gradient + salutation personnalisée

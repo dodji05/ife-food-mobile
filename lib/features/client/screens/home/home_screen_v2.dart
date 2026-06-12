@@ -786,10 +786,9 @@ class _BannersV2State extends State<_BannersV2> {
                   width: double.infinity, height: 170,
                   fit: BoxFit.cover,
                   errorWidget: (_, __, ___) => Container(
-                    color: AppColors.primary.withOpacity(0.15),
-                    child: const Center(child: Text('ifè FOOD',
-                      style: TextStyle(fontFamily: 'Nunito', fontSize: 22,
-                          fontWeight: FontWeight.w800, color: AppColors.primary))))),
+                    color: AppColors.primary.withOpacity(0.10),
+                    child: Center(child: Image.asset('assets/images/logo.png',
+                        width: 64, height: 64, fit: BoxFit.contain)))),
                 // Gradient overlay bas
                 Positioned.fill(child: DecoratedBox(
                   decoration: BoxDecoration(

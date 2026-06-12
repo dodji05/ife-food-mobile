@@ -110,17 +110,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   // Fallback si l'asset échoue
-  Widget _fallbackLogo() => Container(
+  Widget _fallbackLogo() => SizedBox(
     width: SplashConfig.assetSize, height: SplashConfig.assetSize,
-    decoration: BoxDecoration(
-      color: AppColors.primary, borderRadius: BorderRadius.circular(28),
-    ),
-    child: const Center(
-      child: Text('ifè\nFOOD',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontFamily: 'Nunito', fontSize: 24,
-            fontWeight: FontWeight.w900, color: Colors.white, height: 1.1)),
-    ),
+    child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
   );
 
   @override

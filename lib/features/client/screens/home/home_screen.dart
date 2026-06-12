@@ -1117,10 +1117,9 @@ class _BannersCarouselState extends State<_BannersCarousel> {
               child: CachedNetworkImage(
                 imageUrl: banner['imageUrl'] ?? '', fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => Container(
-                  color: AppColors.primary.withOpacity(0.2),
-                  child: const Center(child: Text('ifè FOOD',
-                    style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800,
-                        color: AppColors.primary, fontSize: 20))))),
+                  color: AppColors.primary.withOpacity(0.10),
+                  child: Center(child: Image.asset('assets/images/logo.png',
+                      width: 64, height: 64, fit: BoxFit.contain)))),
             ),
           );
         },

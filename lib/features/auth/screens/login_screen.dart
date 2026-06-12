@@ -132,17 +132,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 24),
 
               // Logo
-              Container(
+              SizedBox(
                 width: 72, height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Center(
-                  child: Text('ifè', style: TextStyle(
-                      fontFamily: 'Nunito', fontSize: 22,
-                      fontWeight: FontWeight.w900, color: Colors.white)),
-                ),
+                child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
               ),
               const SizedBox(height: 28),
 

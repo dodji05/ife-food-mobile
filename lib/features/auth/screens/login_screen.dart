@@ -151,11 +151,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   fontWeight: FontWeight.w900, color: context.textPrimary)),
               const SizedBox(height: 8),
 
-              // Nom ou numéro de téléphone
+              // Nom, établissement ou numéro de téléphone
               Builder(builder: (context) {
                 final user = ref.watch(authProvider).user;
+                final businessName = user?.isPro == true
+                    ? (user!.professional?['businessName'] as String?)?.trim()
+                    : null;
                 final hasName = (user?.firstName ?? '').trim().isNotEmpty
                     || (user?.name ?? '').trim().isNotEmpty;
+                final label = businessName?.isNotEmpty == true
+                    ? businessName!
+                    : hasName ? user!.displayName : _phone;
+                final icon = businessName?.isNotEmpty == true
+                    ? Icons.store_rounded
+                    : hasName ? Icons.person_rounded : Icons.phone_rounded;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -164,10 +173,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     border: Border.all(color: context.borderColor),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(hasName ? Icons.person_rounded : Icons.phone_rounded,
-                        size: 16, color: context.textSecondary),
+                    Icon(icon, size: 16, color: context.textSecondary),
                     const SizedBox(width: 8),
-                    Text(hasName ? (user!.displayName) : _phone,
+                    Text(label,
                         style: TextStyle(
                             fontFamily: 'Nunito', fontSize: 16,
                             fontWeight: FontWeight.w700, color: context.textPrimary)),

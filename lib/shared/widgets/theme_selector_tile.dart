@@ -5,11 +5,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_colors.dart';
 
 /// Tuile de sélection du thème (Auto / Clair / Sombre).
-/// S'intègre dans n'importe quelle section de profil.
-/// [darkSurface] : true pour les profils sur fond sombre (livreur).
+/// S'intègre dans n'importe quelle section de profil — thème unifié tous rôles.
 class ThemeSelectorTile extends ConsumerWidget {
-  final bool darkSurface;
-  const ThemeSelectorTile({super.key, this.darkSurface = false});
+  const ThemeSelectorTile({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

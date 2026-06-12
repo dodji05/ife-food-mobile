@@ -280,7 +280,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: context.borderColor.withOpacity(0.8)),
           ),
-          child: ThemeSelectorTile(darkSurface: context.isDark),
+          child: ThemeSelectorTile(),
         ),
         const SizedBox(height: 12),
 

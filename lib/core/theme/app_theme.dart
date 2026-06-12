@@ -36,12 +36,6 @@ class AppColors {
   static const Color darkSubtext  = Color(0xFF94A3B8);
   static const Color darkMuted    = Color(0xFF334155);
 
-  // Driver-specific dark
-  static const Color driverBg     = Color(0xFF0A0F0C);
-  static const Color driverCard   = Color(0xFF182019);
-  static const Color driverBorder = Color(0xFF243027);
-  static const Color driverGreen  = Color(0xFF00C853);
-
   // Alias sémantiques
   static const Color accent    = yellow;
   static const Color error     = danger;
@@ -158,19 +152,4 @@ class AppTheme {
     dividerColor: AppColors.darkBorder,
   );
 
-  // ── Thème Livreur (dark électrique) ────────────────────────────────────────
-  static ThemeData get driver => dark.copyWith(
-    scaffoldBackgroundColor: AppColors.driverBg,
-    colorScheme: dark.colorScheme.copyWith(background: AppColors.driverBg),
-    cardTheme: CardTheme(color: AppColors.driverCard, elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.driverBorder))),
-    dividerColor: AppColors.driverBorder,
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: AppColors.driverCard,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.driverBorder,
-      type: BottomNavigationBarType.fixed, elevation: 0,
-    ),
-  );
 }

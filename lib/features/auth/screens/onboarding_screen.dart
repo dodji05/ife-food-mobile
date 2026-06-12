@@ -53,13 +53,7 @@ class _State extends State<OnboardingScreen> {
     body: Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         child: Row(children: [
-          RichText(text: const TextSpan(
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900),
-            children: [
-              TextSpan(text: 'ifè ', style: TextStyle(fontSize: 18, color: AppColors.primary)),
-              TextSpan(text: 'FOOD', style: TextStyle(fontSize: 18, color: AppColors.yellow)),
-            ],
-          )),
+          Image.asset('assets/images/logo.png', height: 36, fit: BoxFit.contain),
           const Spacer(),
           TextButton(
             onPressed: () => context.push('/auth/role'),

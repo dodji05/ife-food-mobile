@@ -236,6 +236,18 @@ class _OrderCard extends ConsumerWidget {
                   ]),
                 ),
               ],
+              if (order.isScheduled) ...[
+                const SizedBox(height: 6),
+                Row(children: [
+                  const Icon(Icons.schedule_rounded, size: 12, color: AppColors.info),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(
+                    'Livraison planifiée le ${order.formattedScheduledAt}',
+                    style: const TextStyle(fontFamily: 'Nunito', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.info),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                  )),
+                ]),
+              ],
               if (order.specialInstructions != null && order.specialInstructions!.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Row(children: [
@@ -267,14 +279,26 @@ class _OrderCard extends ConsumerWidget {
             ]),
           ) else if (order.status == 'ACCEPTED') Container(
             decoration: BoxDecoration(border: Border(top: BorderSide(color: context.borderColor))),
-            child: TextButton.icon(
-              onPressed: () async {
-                await ref.read(proProvider.notifier).markInPreparation(order.id);
-                ref.invalidate(liveOrdersProvider('active'));
-              },
-              icon: const Icon(Icons.restaurant_rounded, size: 16, color: AppColors.primary),
-              label: const Text('Démarrer la préparation', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
-            ),
+            child: order.scheduledNotYet
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.lock_clock_rounded, size: 14, color: context.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Préparation le ${order.formattedScheduledAt.split(' à ').first}',
+                      style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w600, color: context.textSecondary),
+                    ),
+                  ]),
+                )
+              : TextButton.icon(
+                  onPressed: () async {
+                    await ref.read(proProvider.notifier).markInPreparation(order.id);
+                    ref.invalidate(liveOrdersProvider('active'));
+                  },
+                  icon: const Icon(Icons.restaurant_rounded, size: 16, color: AppColors.primary),
+                  label: const Text('Démarrer la préparation', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                ),
           ) else if (order.status == 'IN_PREPARATION') Container(
             decoration: BoxDecoration(border: Border(top: BorderSide(color: context.borderColor))),
             child: TextButton.icon(

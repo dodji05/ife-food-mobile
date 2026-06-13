@@ -121,6 +121,17 @@ class ProOrderDetailScreen extends ConsumerWidget {
             Text('Adresse', style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             Text(o.deliveryAddress, style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w600)),
+            if (o.isScheduled) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                const Icon(Icons.schedule_rounded, size: 14, color: AppColors.info),
+                const SizedBox(width: 6),
+                Expanded(child: Text(
+                  'Livraison planifiée le ${o.formattedScheduledAt}',
+                  style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.info),
+                )),
+              ]),
+            ],
             if (o.estimatedDeliveryMin != null) ...[
               const SizedBox(height: 10),
               Row(children: [

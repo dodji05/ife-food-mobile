@@ -51,6 +51,10 @@ class ProOrder {
   final String  paymentMethod;
   final String? promoCode;
 
+  // ── Livraison planifiée ───────────────────────────────────────────────────
+  /// Date/heure de livraison planifiée. Null = livraison immédiate.
+  final DateTime? scheduledDeliveryAt;
+
   // ── Timestamps ────────────────────────────────────────────────────────────
   final DateTime createdAt;
   /// Date de dernière mise à jour serveur. Utile pour le tri "récent" et
@@ -80,6 +84,7 @@ class ProOrder {
     this.currency      = 'XOF',
     this.paymentMethod = 'STRIPE',
     this.promoCode,
+    this.scheduledDeliveryAt,
     required this.createdAt,
     required this.updatedAt,
     String? flatClientName,
@@ -114,12 +119,37 @@ class ProOrder {
       currency:         j['currency']           as String? ?? 'XOF',
       paymentMethod:    j['paymentMethod']      as String? ?? 'STRIPE',
       promoCode:        j['promoCode']          as String?,
+      scheduledDeliveryAt: j['scheduledDeliveryAt'] != null
+          ? DateTime.tryParse(j['scheduledDeliveryAt'] as String)
+          : null,
       createdAt:        DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
       updatedAt:        DateTime.tryParse(j['updatedAt'] as String? ?? '')
                         ?? DateTime.tryParse(j['createdAt'] as String? ?? '')
                         ?? DateTime.now(),
       flatClientName:   j['clientName']         as String?,
     );
+  }
+
+  // ── Helpers livraison planifiée ──────────────────────────────────────────
+  bool get isScheduled => scheduledDeliveryAt != null;
+
+  /// True si la date planifiée n'est pas encore arrivée (préparation bloquée).
+  bool get scheduledNotYet {
+    if (scheduledDeliveryAt == null) return false;
+    final now = DateTime.now();
+    final scheduled = scheduledDeliveryAt!;
+    return DateTime(scheduled.year, scheduled.month, scheduled.day)
+        .isAfter(DateTime(now.year, now.month, now.day));
+  }
+
+  String get formattedScheduledAt {
+    if (scheduledDeliveryAt == null) return '';
+    final d = scheduledDeliveryAt!;
+    final day  = d.day.toString().padLeft(2, '0');
+    final mon  = d.month.toString().padLeft(2, '0');
+    final h    = d.hour.toString().padLeft(2, '0');
+    final min  = d.minute.toString().padLeft(2, '0');
+    return '$day/$mon à ${h}h$min';
   }
 
   // ── Helpers client ────────────────────────────────────────────────────────

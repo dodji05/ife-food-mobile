@@ -516,18 +516,18 @@ class _EstablishmentTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: pro.isOpen
                 ? AppColors.success.withOpacity(0.12)
-                : context.textMuted.withOpacity(0.12),
+                : context.textSecondary.withOpacity(0.15),
             borderRadius: BorderRadius.circular(6)),
           child: Text(pro.isOpen ? 'Ouvert' : 'Fermé',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: pro.isOpen ? AppColors.success : context.textMuted)),
+                color: pro.isOpen ? AppColors.success : context.textSecondary)),
         ),
         Expanded(child: Text(
           [_catLabel, if (pro.city != null) pro.city!]
               .where((s) => s.isNotEmpty).join(' • '),
           style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
-              color: context.textMuted), overflow: TextOverflow.ellipsis)),
+              color: context.textSecondary), overflow: TextOverflow.ellipsis)),
       ]),
       trailing: Icon(Icons.chevron_right_rounded, color: context.borderColor),
       onTap: () => context.push('/restaurant/${pro.id}'),

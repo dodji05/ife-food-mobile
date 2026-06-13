@@ -1311,7 +1311,9 @@ class _FilterSheetV2State extends State<_FilterSheetV2> {
       color: context.cardColor,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28))),
     padding: EdgeInsets.fromLTRB(
-        24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+        24, 16, 24,
+        MediaQuery.of(context).viewInsets.bottom +
+        MediaQuery.of(context).padding.bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

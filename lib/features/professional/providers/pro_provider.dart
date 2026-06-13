@@ -242,7 +242,8 @@ final liveOrdersProvider = FutureProvider.autoDispose
 });
 
 final categoriesProvider = FutureProvider.autoDispose<List<ProductCategory>>((ref) async {
-  final res = await ApiClient.instance.get('/products/categories/mine');
+  // /all = catégories globales (admin) + catégories propres au pro
+  final res = await ApiClient.instance.get('/products/categories/all');
   final list = res['data'] as List? ?? [];
   return list
       .whereType<Map<String, dynamic>>()

@@ -57,8 +57,8 @@ jobs:
         run: |
           flutter build apk --debug \
             --target-platform android-arm64 \
-            --dart-define=API_URL=https://api.ifefood.bj/api/v1 \
-            --dart-define=WS_URL=https://api.ifefood.bj
+            --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
+            --dart-define=WS_URL=https://ifeapi.associationireni.org
 
       # ── 9. Upload artifact ─────────────────────────────────────────────────
       - name: 📤 Upload APK

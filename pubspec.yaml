@@ -68,6 +68,7 @@ dependencies:
   uuid: ^4.3.3
   timeago: ^3.6.1
   url_launcher: ^6.2.5
+  webview_flutter: ^4.7.0       # pages légales HTML in-app (couleurs/CSS préservés)
   kkiapay: ^1.3.0-dev.14       # widget de paiement KKiaPay (mobile money / carte)
   flutter_stripe: ^10.1.1      # PaymentSheet Stripe (carte internationale / diaspora)
   share_plus: ^7.2.2          # partage social (restaurant_screen + futur)

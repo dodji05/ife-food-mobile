@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
@@ -50,31 +51,35 @@ class LegalScreen extends StatefulWidget {
 }
 
 class _LegalScreenState extends State<LegalScreen> {
-  bool _loading = true;
-  bool _error   = false;
+  late final WebViewController _controller;
+  bool   _loading = true;
+  bool   _error   = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _open());
+    final url = '${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}';
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_)  => setState(() { _loading = true;  _error = false; }),
+        onPageFinished: (_) => setState(() { _loading = false; }),
+        onWebResourceError: (_) => setState(() { _loading = false; _error = true; }),
+        onNavigationRequest: (req) {
+          // Empêche de naviguer vers d'autres domaines depuis la page légale.
+          final allowed = req.url.startsWith(AppConstants.adminUrl) ||
+                          req.url.startsWith('about:');
+          return allowed
+              ? NavigationDecision.navigate
+              : NavigationDecision.prevent;
+        },
+      ))
+      ..loadRequest(Uri.parse(url));
   }
 
-  Future<void> _open() async {
-    setState(() { _loading = true; _error = false; });
-    try {
-      final uri = Uri.parse('${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}');
-      final ok  = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-      if (!mounted) return;
-      if (ok) {
-        // Navigateur ouvert — on dépile cet écran pour qu'à la fermeture
-        // du navigateur l'utilisateur revienne directement sur l'app
-        Navigator.of(context).pop();
-      } else {
-        setState(() { _loading = false; _error = true; });
-      }
-    } catch (_) {
-      if (mounted) setState(() { _loading = false; _error = true; });
-    }
+  Future<void> _openInBrowser() async {
+    final uri = Uri.parse('${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -88,79 +93,83 @@ class _LegalScreenState extends State<LegalScreen> {
         title: Text(label,
           style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
         leading: const BackButton(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.open_in_browser_rounded),
+            tooltip: 'Ouvrir dans le navigateur',
+            onPressed: _openInBrowser,
+          ),
+        ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
+      body: Stack(children: [
 
-            // Icône du document
-            Container(
-              width: 80, height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.10),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 38, color: AppColors.primary),
+        // ── WebView ──────────────────────────────────────────────────────────
+        if (!_error) WebViewWidget(controller: _controller),
+
+        // ── Spinner pendant le chargement ────────────────────────────────────
+        if (_loading && !_error)
+          const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+
+        // ── Écran d'erreur ───────────────────────────────────────────────────
+        if (_error)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 72, height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 34, color: AppColors.danger),
+                ),
+                const SizedBox(height: 20),
+                Text(label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
+                    fontWeight: FontWeight.w900, color: context.textPrimary)),
+                const SizedBox(height: 10),
+                Text('Impossible de charger ce document.\nVérifiez votre connexion.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                    color: context.textSecondary, height: 1.5)),
+                const SizedBox(height: 24),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() => _error = false);
+                      final url = '${AppConstants.adminUrl}/legal/${legalSlug(widget.type)}';
+                      _controller.loadRequest(Uri.parse(url));
+                    },
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('Réessayer',
+                      style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: _openInBrowser,
+                    icon: const Icon(Icons.open_in_browser_rounded, size: 16),
+                    label: const Text('Navigateur',
+                      style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ]),
+              ]),
             ),
-            const SizedBox(height: 24),
-
-            Text(label,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 20,
-                fontWeight: FontWeight.w900, color: context.textPrimary)),
-            const SizedBox(height: 10),
-
-            if (_loading) ...[
-              const SizedBox(height: 8),
-              const SizedBox(
-                width: 24, height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
-              ),
-              const SizedBox(height: 12),
-              Text('Ouverture en cours…',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
-            ] else if (_error) ...[
-              const SizedBox(height: 8),
-              Text('Impossible d\'ouvrir ce document.\nVérifiez votre connexion.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                  color: context.textSecondary, height: 1.5)),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _open,
-                icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('Réessayer',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ] else ...[
-              // Navigateur ouvert — affiche un bouton pour rouvrir si besoin
-              Text('Document ouvert dans le navigateur.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textMuted)),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: _open,
-                icon: const Icon(Icons.open_in_browser_rounded, size: 16),
-                label: const Text('Rouvrir',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 13)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ]),
-        ),
-      ),
+          ),
+      ]),
     );
   }
 }

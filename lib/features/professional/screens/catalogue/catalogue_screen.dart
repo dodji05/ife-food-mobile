@@ -323,11 +323,6 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
                 decoration: unavailable ? TextDecoration.lineThrough : null,
               ),
             )),
-            if (p.isOutOfStock)
-              const Padding(
-                padding: EdgeInsets.only(left: 6),
-                child: _Badge('Rupture', color: AppColors.danger),
-              ),
           ]),
           const SizedBox(height: 4),
           if (p.description != null && p.description!.isNotEmpty)
@@ -337,15 +332,8 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
               style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary, height: 1.3),
             ),
           const SizedBox(height: 6),
-          Row(children: [
-            Text(p.formattedPrice,
-              style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.primary)),
-            if (p.stock != null) ...[
-              const SizedBox(width: 10),
-              Text('Stock : ${p.stock}',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
-            ],
-          ]),
+          Text(p.formattedPrice,
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.primary)),
         ])),
         const SizedBox(width: 6),
         // ── Actions ─────────────────────────────────────────────────────

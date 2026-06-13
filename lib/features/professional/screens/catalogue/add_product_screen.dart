@@ -4,7 +4,7 @@
 // Workflow :
 //   • L'extra de route est un Map<String, dynamic> (sérialisation Product).
 //     Si présent → mode édition. Sinon → mode création.
-//   • Le formulaire saisit nom FR/EN, description FR, prix, stock optionnel,
+//   • Le formulaire saisit nom FR/EN, description FR, prix,
 //     disponibilité, et photo optionnelle (image_picker).
 //   • Sauvegarde en 2 temps :
 //       1. POST /products  ou  PATCH /products/:id  (JSON, sans image)
@@ -39,7 +39,6 @@ class _State extends ConsumerState<AddProductScreen> {
   final _nameEn = TextEditingController();
   final _descFr = TextEditingController();
   final _price  = TextEditingController();
-  final _stock  = TextEditingController();
 
   bool   _available = true;
   bool   _isMenu    = false;
@@ -90,7 +89,6 @@ class _State extends ConsumerState<AddProductScreen> {
         _descFr.text = rawDesc;
       }
       _price.text  = ((p['price'] as num?) ?? 0).toStringAsFixed(0);
-      _stock.text  = p['stock'] != null ? '${p['stock']}' : '';
       _available   = p['isAvailable'] as bool? ?? true;
       _isMenu      = p['isMenu'] as bool? ?? false;
       _existingImageUrl = p['imageUrl'] as String?;
@@ -131,7 +129,6 @@ class _State extends ConsumerState<AddProductScreen> {
     _nameEn.dispose();
     _descFr.dispose();
     _price.dispose();
-    _stock.dispose();
     for (final c in _variantNameCtrls)  { c.dispose(); }
     for (final c in _variantPriceCtrls) { c.dispose(); }
     for (final c in _optionNameCtrls)   { c.dispose(); }
@@ -190,8 +187,6 @@ class _State extends ConsumerState<AddProductScreen> {
     final fr = _nameFr.text.trim();
     final en = _nameEn.text.trim().isEmpty ? fr : _nameEn.text.trim();
     final descFr = _descFr.text.trim();
-    final stockVal = int.tryParse(_stock.text.trim());
-
     // Construction des variantes à partir des controllers
     final variants = <Map<String, dynamic>>[];
     for (var i = 0; i < _variantNameCtrls.length; i++) {
@@ -223,7 +218,6 @@ class _State extends ConsumerState<AddProductScreen> {
       'currency':   'XOF',
       'isAvailable': _available,
       'isMenu':     _isMenu,
-      if (stockVal != null) 'stock': stockVal,
       if (_categoryId != null) 'categoryId': _categoryId,
       if (variants.isNotEmpty) 'variants': variants,
       if (options.isNotEmpty)  'options':  options,
@@ -355,20 +349,12 @@ class _State extends ConsumerState<AddProductScreen> {
         ),
         const SizedBox(height: 16),
 
-        Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _Label('Prix (F CFA) *'),
-            const SizedBox(height: 8),
-            _TF(_price, '2500',
-                keyboardType: TextInputType.number,
-                onChanged: (_) => setState(() {})),
-          ])),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _Label('Stock (optionnel)'),
-            const SizedBox(height: 8),
-            _TF(_stock, '∞', keyboardType: TextInputType.number),
-          ])),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _Label('Prix (F CFA) *'),
+          const SizedBox(height: 8),
+          _TF(_price, '2500',
+              keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {})),
         ]),
         const SizedBox(height: 20),
 

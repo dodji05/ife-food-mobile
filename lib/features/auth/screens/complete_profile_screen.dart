@@ -42,18 +42,20 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         }
       }
       // Cas DRIVER : étape supplémentaire véhicule avant /auth/pending.
-      // On navigue explicitement vers /auth/driver-vehicle (whitelisté
-      // dans le redirect) plutôt que de laisser le redirect aller direct
-      // à /auth/pending. Cf app_router.dart règle 5.
       if (widget.role == UserRole.driver && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) GoRouter.of(context).go('/auth/driver-vehicle');
         });
         return;
       }
-      // Sinon (client / pro) : completeProfile met à jour user.firstName,
-      // donc hasProfile passe à true et le redirect GoRouter envoie
-      // automatiquement vers le dashboard du rôle.
+      // Cas CLIENT : étape adresse obligatoire avant d'accéder au /home.
+      if (widget.role == UserRole.client && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) GoRouter.of(context).go('/auth/setup-address');
+        });
+        return;
+      }
+      // Pro : hasProfile passe à true, redirect GoRouter envoie vers /pro/dashboard.
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);

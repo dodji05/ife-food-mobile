@@ -27,6 +27,7 @@ import '../../features/auth/screens/phone_screen.dart';
 import '../../features/auth/screens/otp_screen.dart';
 import '../../features/auth/screens/pin_screen.dart';
 import '../../features/auth/screens/complete_profile_screen.dart';
+import '../../features/auth/screens/setup_address_screen.dart';
 import '../../features/auth/screens/pending_screen.dart';
 
 // CLIENT screens
@@ -195,6 +196,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Exception : /auth/driver-vehicle est une étape d'onboarding driver
       // qui DOIT s'exécuter avant le redirect /auth/pending (sinon le user
       // ne peut jamais créer son Driver profile). On laisse passer.
+      if (loc == '/auth/setup-address') return null;
+
       if (authState.isPending
           && loc != '/auth/pending'
           && loc != '/auth/driver-vehicle') {
@@ -276,8 +279,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         return CompleteProfileScreen(role: role);
       }),
       GoRoute(path: '/auth/pending', builder: (_, __) => const PendingScreen()),
+      GoRoute(path: '/auth/setup-address', builder: (_, __) => const SetupAddressScreen()),
       // Étape véhicule driver (entre complete-profile et pending).
-      // Sprint 4 : appelle POST /drivers/register puis go /auth/pending.
       GoRoute(path: '/auth/driver-vehicle', builder: (_, __) => const DriverVehicleScreen()),
 
       // ── Legal (partagé) ─────────────────────────────────────────────────────

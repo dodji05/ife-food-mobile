@@ -905,9 +905,11 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(children: [
-    Text(label, style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
-        color: context.textMuted, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500)),
-    const Spacer(),
+    Expanded(child: Text(label,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+            color: context.textMuted, fontWeight: isBold ? FontWeight.w700 : FontWeight.w500))),
+    const SizedBox(width: 8),
     Text(value, style: TextStyle(fontFamily: 'Nunito',
         fontSize: isBold ? 16 : 14,
         fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,

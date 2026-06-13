@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/addresses_provider.dart';
 import '../../../../core/providers/currency_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
@@ -33,7 +34,19 @@ class CartScreen extends ConsumerWidget {
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, -4))],
           ),
           child: ElevatedButton(
-            onPressed: () => context.push('/checkout'),
+            onPressed: () async {
+              bool hasAddress = true;
+              try {
+                final list = await ref.read(addressesProvider.future);
+                hasAddress = list.isNotEmpty;
+              } catch (_) {}
+              if (!context.mounted) return;
+              if (!hasAddress) {
+                context.push('/auth/setup-address', extra: '/checkout');
+              } else {
+                context.push('/checkout');
+              }
+            },
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Text('Passer la commande'),
               const SizedBox(width: 8),

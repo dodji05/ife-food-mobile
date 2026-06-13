@@ -8,7 +8,8 @@ import '../../../core/utils/location_utils.dart';
 import '../../client/providers/addresses_provider.dart';
 
 class SetupAddressScreen extends ConsumerStatefulWidget {
-  const SetupAddressScreen({super.key});
+  final String? returnTo;
+  const SetupAddressScreen({super.key, this.returnTo});
   @override
   ConsumerState<SetupAddressScreen> createState() => _State();
 }
@@ -86,7 +87,7 @@ class _State extends ConsumerState<SetupAddressScreen> {
         lng:     _lng,
         isDefault: true,
       );
-      if (mounted) context.go('/home');
+      if (mounted) context.go(widget.returnTo ?? '/home');
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);

@@ -279,7 +279,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return CompleteProfileScreen(role: role);
       }),
       GoRoute(path: '/auth/pending', builder: (_, __) => const PendingScreen()),
-      GoRoute(path: '/auth/setup-address', builder: (_, __) => const SetupAddressScreen()),
+      GoRoute(path: '/auth/setup-address', builder: (_, state) {
+        final returnTo = state.extra is String ? state.extra as String : null;
+        return SetupAddressScreen(returnTo: returnTo);
+      }),
       // Étape véhicule driver (entre complete-profile et pending).
       GoRoute(path: '/auth/driver-vehicle', builder: (_, __) => const DriverVehicleScreen()),
 

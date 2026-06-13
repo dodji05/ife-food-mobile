@@ -137,14 +137,16 @@ class ProOrder {
   bool get scheduledNotYet {
     if (scheduledDeliveryAt == null) return false;
     final now = DateTime.now();
-    final scheduled = scheduledDeliveryAt!;
+    // toLocal() car le JSON renvoie une date UTC (suffixe Z) :
+    // scheduled.day en UTC ≠ jour local pour les livraisons avant 01h00 heure Bénin.
+    final scheduled = scheduledDeliveryAt!.toLocal();
     return DateTime(scheduled.year, scheduled.month, scheduled.day)
         .isAfter(DateTime(now.year, now.month, now.day));
   }
 
   String get formattedScheduledAt {
     if (scheduledDeliveryAt == null) return '';
-    final d = scheduledDeliveryAt!;
+    final d = scheduledDeliveryAt!.toLocal();
     final day  = d.day.toString().padLeft(2, '0');
     final mon  = d.month.toString().padLeft(2, '0');
     final h    = d.hour.toString().padLeft(2, '0');
@@ -359,11 +361,7 @@ class ProNotifier extends StateNotifier<ProState> {
   }
 
   Future<void> markInPreparation(String id) async {
-    try {
-      await ApiClient.instance.patch('/orders/$id/status', data: {'status': 'IN_PREPARATION'});
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-    }
+    await ApiClient.instance.patch('/orders/$id/status', data: {'status': 'IN_PREPARATION'});
   }
 
   Future<void> markReady(String id) async {

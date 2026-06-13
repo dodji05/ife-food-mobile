@@ -220,6 +220,13 @@ class ApiClient {
     return Exception(msg);
   }
 
+  /// Extrait le message lisible d'une exception levée par [ApiClient].
+  /// Les erreurs sont wrappées en `Exception(msg)` → retire le préfixe "Exception: ".
+  static String extractError(Object e) {
+    final s = e.toString();
+    return s.startsWith('Exception: ') ? s.substring(11) : s;
+  }
+
   // Perf — suppressions en parallèle avec Future.wait
   Future<void> clearAuth() async {
     await Future.wait([

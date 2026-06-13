@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/services/pro_socket_service.dart';
@@ -293,8 +294,17 @@ class _OrderCard extends ConsumerWidget {
                 )
               : TextButton.icon(
                   onPressed: () async {
-                    await ref.read(proProvider.notifier).markInPreparation(order.id);
-                    ref.invalidate(liveOrdersProvider('active'));
+                    try {
+                      await ref.read(proProvider.notifier).markInPreparation(order.id);
+                      ref.invalidate(liveOrdersProvider('active'));
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(ApiClient.extractError(e)),
+                          backgroundColor: AppColors.danger,
+                        ));
+                      }
+                    }
                   },
                   icon: const Icon(Icons.restaurant_rounded, size: 16, color: AppColors.primary),
                   label: const Text('Démarrer la préparation', style: TextStyle(fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primary)),

@@ -27,7 +27,7 @@ class User {
     status: json['status'] ?? 'ACTIVE', lang: json['lang'] ?? 'fr',
     countryCode: json['countryCode'] ?? 'BJ', currency: json['currency'] ?? 'XOF',
     biometricEnabled: json['biometricEnabled'] ?? false, twoFaEnabled: json['twoFaEnabled'] ?? false,
-    createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+    createdAt: (DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now()).toLocal(),
   );
 
   Map<String, dynamic> toJson() => {

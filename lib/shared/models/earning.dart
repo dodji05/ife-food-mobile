@@ -16,7 +16,7 @@ class Earning {
     id: json['id'], type: json['type'] ?? 'DELIVERY_FEE',
     amount: (json['amount'] ?? 0).toDouble(), currency: json['currency'] ?? 'XOF',
     status: json['status'] ?? 'COMPLETED', description: json['description'],
-    createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+    createdAt: (DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now()).toLocal(),
   );
 
   String get typeLabel {

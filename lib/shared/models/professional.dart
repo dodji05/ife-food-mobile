@@ -247,6 +247,58 @@ class Professional {
     return raw is Map<String, dynamic> ? raw : null;
   }
 
+  /// Calcule si l'établissement est ouvert À L'INSTANT en se basant sur
+  /// openingHours. Fuseau : Bénin UTC+1, sans DST.
+  /// - openingHours null/vide → on respecte le toggle `isOpen` de l'API.
+  /// - Sinon : calcul local, indépendant de la valeur DB.
+  bool get isCurrentlyOpen {
+    if (!hasOpeningHours) return isOpen;
+
+    // Heure Bénin (UTC+1)
+    final now = DateTime.now().toUtc().add(const Duration(hours: 1));
+    // DateTime.weekday : 1=Lun … 6=Sam, 7=Dim
+    const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    final todayKey     = keys[now.weekday - 1];
+    final yesterdayKey = keys[(now.weekday - 2 + 7) % 7];
+    final nowMin       = now.hour * 60 + now.minute;
+
+    final slot = hoursFor(todayKey);
+    if (slot != null) {
+      final open  = _hm(slot['open']  as String?);
+      final close = _hm(slot['close'] as String?);
+      if (open != null && close != null) {
+        if (close > open) {
+          if (nowMin >= open && nowMin < close) return true;
+        } else if (close < open && nowMin >= open) {
+          return true; // slot passant minuit, heure d'ouverture ok
+        }
+      }
+    }
+
+    // Slot d'hier passant minuit, encore en cours
+    final ySlot = hoursFor(yesterdayKey);
+    if (ySlot != null) {
+      final open  = _hm(ySlot['open']  as String?);
+      final close = _hm(ySlot['close'] as String?);
+      if (open != null && close != null && close < open && nowMin < close) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Parse `'HH:MM'` → minutes depuis minuit. Null si invalide.
+  static int? _hm(String? s) {
+    if (s == null) return null;
+    final p = s.split(':');
+    if (p.length < 2) return null;
+    final h = int.tryParse(p[0]);
+    final m = int.tryParse(p[1]);
+    if (h == null || m == null) return null;
+    return h * 60 + m;
+  }
+
   /// % de commission affichable (ex: `15 %`). Fallback `—` si non défini.
   String get commissionLabel => commissionRate != null
       ? '${(commissionRate! * 100).toStringAsFixed(0)} %'

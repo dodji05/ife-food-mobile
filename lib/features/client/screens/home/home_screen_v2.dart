@@ -78,19 +78,20 @@ String _firstName(String? displayName) {
 }
 
 bool _isClosingSoon(Professional pro) {
-  if (!pro.isOpen || pro.openingHours == null) return false;
-  final now     = DateTime.now();
+  if (!pro.isCurrentlyOpen || pro.openingHours == null) return false;
+  // Heure Bénin (UTC+1) — weekday: 1=Lun…7=Dim
+  final now = DateTime.now().toUtc().add(const Duration(hours: 1));
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  final dh      = pro.openingHours![dayKeys[now.weekday - 1]];
+  final dh = pro.openingHours![dayKeys[now.weekday - 1]];
   if (dh is! Map) return false;
   final cs = dh['close'] as String?;
   if (cs == null) return false;
   final parts = cs.split(':');
   if (parts.length < 2) return false;
   try {
-    final close = DateTime(
-        now.year, now.month, now.day, int.parse(parts[0]), int.parse(parts[1]));
-    final diff = close.difference(now).inMinutes;
+    final closeMin = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    final nowMin   = now.hour * 60 + now.minute;
+    final diff     = closeMin - nowMin;
     return diff > 0 && diff <= 45;
   } catch (_) {
     return false;
@@ -457,7 +458,7 @@ class _HomeScreenV2State extends ConsumerState<HomeScreenV2> {
   }
 
   List<Widget> _buildPopularSection(List<Professional> list) {
-    final top = list.where((p) => p.isOpen).toList()
+    final top = list.where((p) => p.isCurrentlyOpen).toList()
       ..sort((a, b) => (b.avgRating ?? 0).compareTo(a.avgRating ?? 0));
     final free = list.where((p) => (p.deliveryFee ?? 1) == 0).toList();
     return [
@@ -883,7 +884,7 @@ class _RestaurantMiniCardV2 extends StatelessWidget {
                 ),
               )),
               Positioned(top: 8, left: 8,
-                child: _StatusPill(isOpen: pro.isOpen, closingSoon: closing)),
+                child: _StatusPill(isOpen: pro.isCurrentlyOpen, closingSoon: closing)),
               if ((pro.deliveryFee ?? 1) == 0)
                 Positioned(top: 8, right: 8,
                   child: Container(
@@ -962,7 +963,7 @@ class _RestaurantCardV2 extends StatelessWidget {
                       errorWidget: (_, __, ___) =>
                           _PlaceholderImg(height: 90, width: 90, emoji: pro.categoryEmoji))
                   : _PlaceholderImg(height: 90, width: 90, emoji: pro.categoryEmoji),
-              if (!pro.isOpen) Container(
+              if (!pro.isCurrentlyOpen) Container(
                 height: 90, width: 90, color: Colors.black54,
                 alignment: Alignment.center,
                 child: const Text('FERMÉ',
@@ -1017,7 +1018,7 @@ class _RestaurantCardV2 extends StatelessWidget {
 
               // Badges : statut · temps · frais
               Wrap(spacing: 6, runSpacing: 4, children: [
-                _StatusPill(isOpen: pro.isOpen, closingSoon: closing),
+                _StatusPill(isOpen: pro.isCurrentlyOpen, closingSoon: closing),
                 _PillInfo(
                   icon: Icons.access_time_rounded,
                   label: '${pro.estimatedDeliveryMin ?? 25}-'

@@ -32,9 +32,12 @@ class _Establishment {
   final String? logoUrl;
   final String? coverImageUrl;
   final String? city;
-  final bool    isOpen;
+  final bool    _dbIsOpen;
+  final Map<String, dynamic>? openingHours;
+
   const _Establishment(this.id, this.businessName, this.category,
-      this.logoUrl, this.coverImageUrl, this.city, this.isOpen);
+      this.logoUrl, this.coverImageUrl, this.city, this._dbIsOpen,
+      {this.openingHours});
 
   factory _Establishment.fromJson(Map<String, dynamic> j) => _Establishment(
     j['id'] as String? ?? '',
@@ -44,7 +47,34 @@ class _Establishment {
     j['coverImageUrl'] as String?,
     j['city'] as String?,
     j['isOpen'] as bool? ?? false,
+    openingHours: j['openingHours'] is Map<String, dynamic>
+        ? j['openingHours'] as Map<String, dynamic>
+        : null,
   );
+
+  /// Calcule isOpen localement si openingHours est disponible.
+  bool get isOpen {
+    if (openingHours == null || openingHours!.isEmpty) return _dbIsOpen;
+    // Heure Bénin (UTC+1, sans DST)
+    final now = DateTime.now().toUtc().add(const Duration(hours: 1));
+    const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    final todayKey = keys[now.weekday - 1];
+    final slot = openingHours![todayKey];
+    if (slot is! Map) return false;
+    int? _hm(String? s) {
+      if (s == null) return null;
+      final p = s.split(':');
+      if (p.length < 2) return null;
+      final h = int.tryParse(p[0]); final m = int.tryParse(p[1]);
+      return (h == null || m == null) ? null : h * 60 + m;
+    }
+    final open  = _hm(slot['open']  as String?);
+    final close = _hm(slot['close'] as String?);
+    if (open == null || close == null) return false;
+    final nowMin = now.hour * 60 + now.minute;
+    if (close > open) return nowMin >= open && nowMin < close;
+    return nowMin >= open; // slot passant minuit
+  }
 }
 
 class _SuggestProduct {

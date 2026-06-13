@@ -361,7 +361,7 @@ class _RestaurantScreenState extends ConsumerState<RestaurantScreen>
                   proName: pro.businessName,
                   // produits déjà chargés avec le détail — on wrap en AsyncData
                   productsAsync: AsyncValue.data(prodList),
-                  isProOpen: pro.isOpen,
+                  isProOpen: pro.isCurrentlyOpen,
                   openingHours: pro.openingHours,
                 ),
                 // ── Onglet Avis ──────────────────────────────────────────
@@ -427,14 +427,14 @@ class _InfoSectionState extends State<_InfoSection> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: pro.isOpen
+            color: pro.isCurrentlyOpen
                 ? AppColors.success.withOpacity(0.12)
                 : context.textMuted.withOpacity(0.12),
             borderRadius: BorderRadius.circular(8)),
-          child: Text(pro.isOpen ? '● Ouvert' : '● Fermé',
+          child: Text(pro.isCurrentlyOpen ? '● Ouvert' : '● Fermé',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: pro.isOpen ? AppColors.success : context.textMuted)),
+                color: pro.isCurrentlyOpen ? AppColors.success : context.textMuted)),
         ),
       ]),
       const SizedBox(height: 4),

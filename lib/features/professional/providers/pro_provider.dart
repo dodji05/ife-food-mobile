@@ -122,10 +122,10 @@ class ProOrder {
       scheduledDeliveryAt: j['scheduledDeliveryAt'] != null
           ? DateTime.tryParse(j['scheduledDeliveryAt'] as String)
           : null,
-      createdAt:        (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal(),
+      createdAt:        (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toUtc().add(const Duration(hours: 1)),
       updatedAt:        (DateTime.tryParse(j['updatedAt'] as String? ?? '')
                         ?? DateTime.tryParse(j['createdAt'] as String? ?? '')
-                        ?? DateTime.now()).toLocal(),
+                        ?? DateTime.now()).toUtc().add(const Duration(hours: 1)),
       flatClientName:   j['clientName']         as String?,
     );
   }
@@ -136,17 +136,15 @@ class ProOrder {
   /// True si la date planifiée n'est pas encore arrivée (préparation bloquée).
   bool get scheduledNotYet {
     if (scheduledDeliveryAt == null) return false;
-    final now = DateTime.now();
-    // toLocal() car le JSON renvoie une date UTC (suffixe Z) :
-    // scheduled.day en UTC ≠ jour local pour les livraisons avant 01h00 heure Bénin.
-    final scheduled = scheduledDeliveryAt!.toLocal();
+    final now = DateTime.now().toUtc().add(const Duration(hours: 1));
+    final scheduled = scheduledDeliveryAt!.toUtc().add(const Duration(hours: 1));
     return DateTime(scheduled.year, scheduled.month, scheduled.day)
         .isAfter(DateTime(now.year, now.month, now.day));
   }
 
   String get formattedScheduledAt {
     if (scheduledDeliveryAt == null) return '';
-    final d = scheduledDeliveryAt!.toLocal();
+    final d = scheduledDeliveryAt!.toUtc().add(const Duration(hours: 1));
     final day  = d.day.toString().padLeft(2, '0');
     final mon  = d.month.toString().padLeft(2, '0');
     final h    = d.hour.toString().padLeft(2, '0');

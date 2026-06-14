@@ -141,9 +141,9 @@ class Order {
       // Backend Prisma → promoDiscount. Fallback sur discount.
       discount:        ((j['promoDiscount']  as num?) ?? (j['discount'] as num?))?.toDouble() ?? 0.0,
       tipAmount:       (j['tipAmount']       as num?)?.toDouble() ?? 0.0,
-      createdAt:       (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal(),
+      createdAt:       (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toUtc().add(const Duration(hours: 1)),
       deliveredAt:     j['deliveredAt'] != null
-          ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')?.toLocal()
+          ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')?.toUtc().add(const Duration(hours: 1))
           : null,
     );
   }

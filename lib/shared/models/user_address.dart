@@ -56,10 +56,10 @@ class UserAddress {
     lng:          (j['lng']         as num?)?.toDouble(),
     instructions: j['instructions'] as String?,
     isDefault:    j['isDefault']    as bool?   ?? false,
-    createdAt:    (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal(),
+    createdAt:    (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toUtc().add(const Duration(hours: 1)),
     updatedAt:    (DateTime.tryParse(j['updatedAt'] as String? ?? '')
                   ?? DateTime.tryParse(j['createdAt'] as String? ?? '')
-                  ?? DateTime.now()).toLocal(),
+                  ?? DateTime.now()).toUtc().add(const Duration(hours: 1)),
   );
 
   Map<String, dynamic> toJson() => {

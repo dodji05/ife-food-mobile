@@ -122,10 +122,10 @@ class ProOrder {
       scheduledDeliveryAt: j['scheduledDeliveryAt'] != null
           ? DateTime.tryParse(j['scheduledDeliveryAt'] as String)
           : null,
-      createdAt:        DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt:        DateTime.tryParse(j['updatedAt'] as String? ?? '')
+      createdAt:        (DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now()).toLocal(),
+      updatedAt:        (DateTime.tryParse(j['updatedAt'] as String? ?? '')
                         ?? DateTime.tryParse(j['createdAt'] as String? ?? '')
-                        ?? DateTime.now(),
+                        ?? DateTime.now()).toLocal(),
       flatClientName:   j['clientName']         as String?,
     );
   }

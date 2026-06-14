@@ -255,7 +255,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return DateTime(
       _scheduledDate!.year, _scheduledDate!.month, _scheduledDate!.day,
       _scheduledTime!.hour, _scheduledTime!.minute,
-    ).toIso8601String();
+    ).toUtc().toIso8601String();
   }
 
   UserAddress? _effectiveAddress() => _manuallySelectedAddress ?? ref.read(defaultAddressProvider);

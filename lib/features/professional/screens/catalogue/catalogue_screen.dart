@@ -209,6 +209,7 @@ class _ProductCard extends ConsumerStatefulWidget {
 
 class _ProductCardState extends ConsumerState<_ProductCard> {
   bool _toggling = false;
+  bool _deleting = false;
 
   Future<void> _toggleAvailability() async {
     setState(() => _toggling = true);
@@ -251,20 +252,31 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
     );
     if (confirmed != true || !mounted) return;
 
+    setState(() => _deleting = true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       await ref.read(proProvider.notifier).deleteProduct(widget.product.id);
       ref.invalidate(productsProvider);
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Produit supprimé'),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
       if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(e.toString().replaceAll('Exception: ', '')),
         backgroundColor: AppColors.danger,
       ));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
     }
   }
 
@@ -351,6 +363,7 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
             color: context.cardColor,
             icon: Icon(Icons.more_vert_rounded, color: context.textSecondary, size: 20),
             onSelected: (v) {
+              if (_deleting) return;
               if (v == 'edit') _edit();
               if (v == 'delete') _delete();
             },

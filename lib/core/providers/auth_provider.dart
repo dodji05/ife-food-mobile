@@ -160,8 +160,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     final tokenKey = await _storage.read(key: AppConstants.accessTokenKey);
     final userRaw  = await _storage.read(key: AppConstants.userKey);
-    if (tokenKey == null || userRaw == null) {
-      // Pas de session active — on préserve lastPhone pour diriger vers /login
+    if (tokenKey == null) {
+      // Pas de token — session expirée ou logout. On restaure quand même le
+      // profil stocké pour que le LoginScreen puisse afficher le nom.
+      AppUser? storedUser;
+      if (userRaw != null) {
+        try { storedUser = AppUser.fromJson(json.decode(userRaw)); } catch (_) {}
+      }
+      state = state.copyWith(
+        lastPhone: lastPhone,
+        user: storedUser,
+      );
+      return;
+    }
+    if (userRaw == null) {
       if (lastPhone != null) state = state.copyWith(lastPhone: lastPhone);
       return;
     }
@@ -371,11 +383,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final lastPhone = state.user?.phone.isNotEmpty == true
         ? state.user!.phone
         : state.lastPhone;
+    final lastUser = state.user;
     await _api.clearAuth();
     await _storage.deleteAll();
-    // Re-écriture du dernier téléphone pour la prochaine ouverture
+    // Re-écriture du dernier téléphone + profil pour que le LoginScreen
+    // puisse afficher le nom de l'utilisateur sans token.
     if (lastPhone != null && lastPhone.isNotEmpty) {
       await _storage.write(key: AppConstants.lastPhoneKey, value: lastPhone);
+    }
+    if (lastUser != null) {
+      await _storage.write(key: AppConstants.userKey, value: json.encode(lastUser.toJson()));
     }
     state = AuthState(splashDone: true, lastPhone: lastPhone);
   }

@@ -1,4 +1,4 @@
-name: 📱 Flutter — Build APK Debug
+name: 📱 Flutter — Build APK Debug + AAB Release
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: 🏗️ Build APK Android
+    name: 🏗️ Build Android
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +36,20 @@ jobs:
       # cela évitait les mismatch silencieux qui cassaient l'init Firebase
       # (getToken null → fcmToken jamais enregistré).
 
+      # ── 4. Keystore pour la signature release ─────────────────────────────
+      - name: 🔑 Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
+      - name: 📝 Create key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
       # ── 5. Dépendances ─────────────────────────────────────────────────────
       - name: 📦 Install dependencies
         run: flutter pub get
@@ -52,7 +66,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
-      # ── 8. Build APK debug ─────────────────────────────────────────────────
+      # ── 8. Build APK debug (tests internes) ───────────────────────────────
       - name: 🏗️ Build APK debug
         run: |
           flutter build apk --debug \
@@ -60,20 +74,34 @@ jobs:
             --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
             --dart-define=WS_URL=https://ifeapi.associationireni.org
 
-      # ── 9. Upload artifact ─────────────────────────────────────────────────
-      - name: 📤 Upload APK
+      # ── 9. Build AAB release (Google Play) ────────────────────────────────
+      - name: 🚀 Build AAB release
+        run: |
+          flutter build appbundle --release \
+            --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
+            --dart-define=WS_URL=https://ifeapi.associationireni.org
+
+      # ── 10. Upload artifacts ───────────────────────────────────────────────
+      - name: 📤 Upload APK debug
         uses: actions/upload-artifact@v4
         with:
           name: ife-food-debug-${{ github.run_number }}
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
 
-      # ── 10. Résumé ─────────────────────────────────────────────────────────
+      - name: 📤 Upload AAB release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ife-food-release-${{ github.run_number }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # ── 11. Résumé ─────────────────────────────────────────────────────────
       - name: ✅ Build successful
         if: success()
         run: |
-          echo "✅ APK généré avec succès !"
-          echo "📥 Téléchargeable dans GitHub → Actions → ce workflow → Artifacts"
+          echo "✅ APK debug + AAB release générés avec succès !"
+          echo "📥 Téléchargeables dans GitHub → Actions → ce workflow → Artifacts"
 
       - name: ❌ Build failed
         if: failure()

@@ -252,8 +252,9 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
     );
     if (confirmed != true || !mounted) return;
 
-    // Capturer avant l'appel async : le widget peut être démonté
-    // après invalidation du provider (le produit disparaît de la liste).
+    // Capturer avant l'appel async : le widget peut être démonté après
+    // invalidation du provider (le produit disparaît de la liste).
+    // rootNavigator: true car showDialog() pousse sur le root navigator par défaut.
     final navigator = Navigator.of(context, rootNavigator: true);
     final messenger = ScaffoldMessenger.of(context);
 
@@ -264,21 +265,28 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
+    bool success = false;
+    Object? error;
     try {
       await ref.read(proProvider.notifier).deleteProduct(widget.product.id);
-      navigator.pop(); // fermer le dialog AVANT d'invalider le provider
-      ref.invalidate(productsProvider); // peut démonter ce widget
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Produit supprimé'),
-        backgroundColor: AppColors.success,
-      ));
+      success = true;
     } catch (e) {
-      navigator.pop();
-      if (mounted) setState(() => _deleting = false);
-      messenger.showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll('Exception: ', '')),
-        backgroundColor: AppColors.danger,
-      ));
+      error = e;
+    } finally {
+      navigator.pop(); // fermer le dialog dans tous les cas
+      ref.invalidate(productsProvider); // rafraîchir la liste dans tous les cas
+      if (success) {
+        messenger.showSnackBar(const SnackBar(
+          content: Text('Produit supprimé'),
+          backgroundColor: AppColors.success,
+        ));
+      } else {
+        if (mounted) setState(() => _deleting = false);
+        messenger.showSnackBar(SnackBar(
+          content: Text(error.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      }
     }
   }
 

@@ -252,6 +252,11 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
     );
     if (confirmed != true || !mounted) return;
 
+    // Capturer avant l'appel async : le widget peut être démonté
+    // après invalidation du provider (le produit disparaît de la liste).
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+
     setState(() => _deleting = true);
     showDialog(
       context: context,
@@ -261,22 +266,19 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
 
     try {
       await ref.read(proProvider.notifier).deleteProduct(widget.product.id);
-      ref.invalidate(productsProvider);
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      navigator.pop(); // fermer le dialog AVANT d'invalider le provider
+      ref.invalidate(productsProvider); // peut démonter ce widget
+      messenger.showSnackBar(const SnackBar(
         content: Text('Produit supprimé'),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      navigator.pop();
+      if (mounted) setState(() => _deleting = false);
+      messenger.showSnackBar(SnackBar(
         content: Text(e.toString().replaceAll('Exception: ', '')),
         backgroundColor: AppColors.danger,
       ));
-    } finally {
-      if (mounted) setState(() => _deleting = false);
     }
   }
 

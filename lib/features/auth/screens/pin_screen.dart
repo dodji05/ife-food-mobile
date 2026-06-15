@@ -179,12 +179,27 @@ class _PinScreenState extends ConsumerState<PinScreen> {
             const SizedBox(height: 6),
             Builder(builder: (_) {
               final user = ref.watch(authProvider).user;
-              final hasName = (user?.firstName ?? '').trim().isNotEmpty
-                  || (user?.name ?? '').trim().isNotEmpty;
-              return Text(
-                hasName ? 'Bonjour ${user!.displayName} !' : 'Entrez votre code PIN',
-                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary),
-              );
+              final firstName = (user?.firstName ?? '').trim();
+              final lastName  = (user?.name ?? '').trim();
+              final fullName  = [firstName, lastName].where((s) => s.isNotEmpty).join(' ');
+              final business  = (user?.businessName ?? '').trim();
+
+              if (fullName.isEmpty) {
+                return Text('Entrez votre code PIN',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary));
+              }
+              if (user!.isPro && business.isNotEmpty) {
+                return Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Bonjour $fullName !',
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
+                        fontWeight: FontWeight.w700, color: context.textPrimary)),
+                  const SizedBox(height: 2),
+                  Text(business,
+                    style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
+                ]);
+              }
+              return Text('Bonjour $fullName !',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary));
             }),
           ],
           const SizedBox(height: 40),

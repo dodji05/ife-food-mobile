@@ -232,7 +232,7 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         backgroundColor: context.cardColor,
         title: Text('Supprimer "${widget.product.localizedName('fr')}" ?',
           style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, color: context.textPrimary, fontSize: 16)),
@@ -240,11 +240,11 @@ class _ProductCardState extends ConsumerState<_ProductCard> {
           style: TextStyle(fontFamily: 'Nunito', color: context.textSecondary, fontSize: 14)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: Text('Annuler', style: TextStyle(color: context.textSecondary)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Supprimer', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
           ),
         ],

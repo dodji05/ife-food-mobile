@@ -27,6 +27,17 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// Force ExoPlayer 2.19.1 — la 2.18.7 crashe avec R8 sur AGP 8.x
+subprojects {
+    project.configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'com.google.android.exoplayer2') {
+                details.useVersion '2.19.1'
+            }
+        }
+    }
+}
+
 // Supprime -Werror de tous les plugins Flutter (warnings Java 8 obsolètes non bloquants)
 allprojects {
     tasks.withType(JavaCompile).configureEach {

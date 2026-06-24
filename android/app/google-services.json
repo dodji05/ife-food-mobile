@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "358690714175",
-    "project_id": "ife-food",
-    "storage_bucket": "ife-food.firebasestorage.app"
+    "project_number": "862819541250",
+    "project_id": "ife-food-33814",
+    "storage_bucket": "ife-food-33814.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:358690714175:android:9fd2468869cc3057e2fe8a",
+        "mobilesdk_app_id": "1:862819541250:android:e82be98f1c7f690b0ce21b",
         "android_client_info": {
-          "package_name": "com.swkfakey.ifefood"
+          "package_name": "com.oparatech.ifefood"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDNIVDeZ74lHrTW3E-b-yxIKwT0DjXS9z0"
+          "current_key": "AIzaSyB1XKUnvnnfFREmeGG5mQAjd98tDcXoi-g"
         }
       ],
       "services": {

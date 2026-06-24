@@ -32,7 +32,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.swkfakey.ife_food"
+    namespace "com.oparatech.ifefood"
     compileSdkVersion 34
     ndkVersion flutter.ndkVersion
 
@@ -50,7 +50,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.swkfakey.ifefood"
+        applicationId "com.oparatech.ifefood"
         minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

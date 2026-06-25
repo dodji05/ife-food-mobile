@@ -71,15 +71,15 @@ jobs:
         run: |
           flutter build apk --debug \
             --target-platform android-arm64 \
-            --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
-            --dart-define=WS_URL=https://ifeapi.associationireni.org
+            --dart-define=API_URL=https://api.ifefood.bj/api/v1 \
+            --dart-define=WS_URL=https://api.ifefood.bj
 
       # ── 9. Build AAB release (Google Play) ────────────────────────────────
       - name: 🚀 Build AAB release
         run: |
           flutter build appbundle --release \
-            --dart-define=API_URL=https://ifeapi.associationireni.org/api/v1 \
-            --dart-define=WS_URL=https://ifeapi.associationireni.org
+            --dart-define=API_URL=https://api.ifefood.bj/api/v1 \
+            --dart-define=WS_URL=https://api.ifefood.bj
 
       # ── 10. Upload artifacts ───────────────────────────────────────────────
       - name: 📤 Upload APK debug

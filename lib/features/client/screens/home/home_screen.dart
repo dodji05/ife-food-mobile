@@ -737,7 +737,7 @@ class _FilterSheetState extends State<_FilterSheet> {
         style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
             fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 10),
-      Row(children: [
+      Wrap(spacing: 8, runSpacing: 8, children: [
         for (final t in [null, 20, 30, 45]) _RatingChip(
           label: t == null ? 'Tout' : '< $t min',
           selected: _local.maxDeliveryMin == t,

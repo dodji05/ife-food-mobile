@@ -133,7 +133,7 @@ class ProProfileScreen extends ConsumerWidget {
             onTap: () async { await ref.read(authProvider.notifier).logout(); if (context.mounted) context.go('/onboarding'); }),
         ]),
         const SizedBox(height: 24),
-        Center(child: Text('ifè PRO v1.0.0 • Ets SWK FAKEYE',
+        Center(child: Text('ifè PRO v1.0.0 • By FAKÊYÊ HORTENSE BANKOLÉ',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),

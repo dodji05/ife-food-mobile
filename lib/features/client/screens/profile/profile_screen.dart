@@ -353,7 +353,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
 
         const SizedBox(height: 24),
         Center(child: Text(
-          'ifè FOOD v${AppConstants.appVersion} • Ets SWK FAKEYE',
+          'ifè FOOD v${AppConstants.appVersion} • By FAKÊYÊ HORTENSE BANKOLÉ',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted),
         )),
         const SizedBox(height: 20),

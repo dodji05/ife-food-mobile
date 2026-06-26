@@ -1369,7 +1369,7 @@ class _FilterSheetV2State extends State<_FilterSheetV2> {
       Text('Temps de livraison', style: TextStyle(fontFamily: 'Nunito', fontSize: 14,
           fontWeight: FontWeight.w700, color: context.textPrimary)),
       const SizedBox(height: 10),
-      Row(children: [
+      Wrap(spacing: 8, runSpacing: 8, children: [
         for (final t in [null, 20, 30, 45])
           _FilterChip(
             label: t == null ? 'Tout' : '< $t min',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/api/api_client.dart';
 import '../../../../core/notifications/fcm_service.dart';
 import '../../../../shared/widgets/contact_support_sheet.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -11,11 +12,57 @@ import '../../../../shared/widgets/language_picker.dart';
 import '../../../../shared/widgets/theme_selector_tile.dart';
 import '../../providers/pro_provider.dart';
 
-class ProProfileScreen extends ConsumerWidget {
+class ProProfileScreen extends ConsumerStatefulWidget {
   const ProProfileScreen({super.key});
+  @override
+  ConsumerState<ProProfileScreen> createState() => _ProProfileScreenState();
+}
+
+class _ProProfileScreenState extends ConsumerState<ProProfileScreen> {
+  bool _deleteLoading = false;
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer mon compte',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+        content: const Text(
+          'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer',
+                style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleteLoading = true);
+    try {
+      await ApiClient.instance.delete('/users/me');
+      await ref.read(authProvider.notifier).logout();
+      if (mounted) context.go('/onboarding');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _deleteLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final proState = ref.watch(proProvider);
     final pro = proState.professional;
@@ -131,6 +178,13 @@ class ProProfileScreen extends ConsumerWidget {
         _Section('Danger', [
           _Item(Icons.logout_rounded, 'Se déconnecter', danger: true,
             onTap: () async { await ref.read(authProvider.notifier).logout(); if (context.mounted) context.go('/onboarding'); }),
+          _Item(
+            _deleteLoading ? Icons.hourglass_empty_rounded : Icons.delete_forever_rounded,
+            'Supprimer mon compte',
+            sub: 'Action irréversible',
+            danger: true,
+            onTap: _deleteLoading ? () {} : _deleteAccount,
+          ),
         ]),
         const SizedBox(height: 24),
         Center(child: Text('ifè PRO v1.0.0 • By FAKÊYÊ HORTENSE BANKOLÉ',

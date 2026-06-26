@@ -29,11 +29,57 @@ import '../../../../shared/widgets/theme_selector_tile.dart';
 import '../../providers/driver_provider.dart';
 import 'driver_documents_screen.dart';
 
-class DriverProfileScreen extends ConsumerWidget {
+class DriverProfileScreen extends ConsumerStatefulWidget {
   const DriverProfileScreen({super.key});
+  @override
+  ConsumerState<DriverProfileScreen> createState() => _DriverProfileScreenState();
+}
+
+class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
+  bool _deleteLoading = false;
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer mon compte',
+            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+        content: const Text(
+          'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer',
+                style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleteLoading = true);
+    try {
+      await ApiClient.instance.delete('/users/me');
+      await ref.read(authProvider.notifier).logout();
+      if (mounted) context.go('/onboarding');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _deleteLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+        ));
+      }
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final driverState = ref.watch(driverProvider);
     final driver = driverState.driver;
@@ -202,6 +248,13 @@ class DriverProfileScreen extends ConsumerWidget {
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) context.go('/onboarding');
             }),
+          _Item(
+            _deleteLoading ? Icons.hourglass_empty_rounded : Icons.delete_forever_rounded,
+            'Supprimer mon compte',
+            sub: 'Action irréversible',
+            danger: true,
+            onTap: _deleteLoading ? () {} : _deleteAccount,
+          ),
         ]),
         const SizedBox(height: 24),
         Center(child: Text('ifè Livreur v1.0.0 • By FAKÊYÊ HORTENSE BANKOLÉ',
@@ -227,7 +280,6 @@ class DriverProfileScreen extends ConsumerWidget {
     'yo' => 'Yorùbá',
     _ => code,
   };
-
 }
 
 // ── Bottom sheet modification véhicule ───────────────────────────────────────

@@ -398,8 +398,10 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
 
   String _vehicleLabel(String type) => switch (type) {
     'MOTORCYCLE' => 'Moto',
+    'TRICYCLE'   => 'Tricycle',
     'BICYCLE'    => 'Vélo',
     'CAR'        => 'Voiture',
+    'ON_FOOT'    => 'À pied',
     'TRUCK'      => 'Camion',
     _            => type,
   };

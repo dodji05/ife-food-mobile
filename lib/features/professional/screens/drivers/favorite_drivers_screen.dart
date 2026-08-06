@@ -11,8 +11,6 @@
 //   • Retirer des favoris (DELETE)
 //
 // Ajout : FAB → bottom sheet de recherche par téléphone
-//
-// Pour réactiver l'ajout de livreur : passer _kAddDriverVisible à true
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -24,9 +22,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
 
-// Pour réactiver l'ajout de livreur favori : passer à true
 // ignore: constant_identifier_names
-const bool _kAddDriverVisible = false;
+const bool _kAddDriverVisible = true;
 
 class FavoriteDriversScreen extends ConsumerStatefulWidget {
   const FavoriteDriversScreen({super.key});
@@ -621,8 +618,10 @@ class _ErrorState extends StatelessWidget {
 
 String _vehicleLabel(String type) => switch (type.toUpperCase()) {
   'MOTORCYCLE' => 'Moto',
+  'TRICYCLE'   => 'Tricycle',
   'BICYCLE'    => 'Vélo',
   'CAR'        => 'Voiture',
+  'ON_FOOT'    => 'À pied',
   'TRUCK'      => 'Camion',
   _            => type,
 };

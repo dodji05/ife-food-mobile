@@ -267,6 +267,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
   // ── Helpers labels ─────────────────────────────────────────────────────
   String _vehicleLabel(String? type) => switch (type) {
     'MOTORCYCLE' => 'Moto',
+    'TRICYCLE'   => 'Tricycle',
     'CAR'        => 'Voiture',
     'BICYCLE'    => 'Vélo',
     'ON_FOOT'    => 'À pied',

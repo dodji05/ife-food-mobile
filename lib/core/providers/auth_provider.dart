@@ -34,14 +34,24 @@ import '../../shared/models/app_user.dart';
 //                          → redirect pousse vers /auth/pin
 //   setPin() succès →      { isAuth: true,  needsPinSetup: FALSE, hasProfile: false }
 //                          → redirect pousse vers /auth/complete-profile
-//   completeProfile() →    { isAuth: true,  needsPinSetup: false, hasProfile: TRUE,
-//                             needsRoleSetup: TRUE si role driver/professional }
+//   completeProfile() →    { isAuth: true, needsPinSetup: false, hasProfile: TRUE }
+//                          needsRoleSetup (GETTER, pas un flag stocké) devient
+//                          TRUE si role driver/professional car user.driver /
+//                          user.professional sont encore null à ce stade
 //                          → redirect pousse vers /auth/driver-vehicle,
 //                            /auth/pro-business-info, ou directement /home
 //                            (client / rôles sans étape spécifique)
-//   markRoleSetupDone() →  { needsRoleSetup: FALSE }
+//   markRoleSetupDone() →  recharge le profil (GET /users/me, inclut driver/
+//                          professional) → needsRoleSetup redevient FALSE
 //                          → redirect pousse vers /auth/pending (ou dashboard
 //                            si déjà validé)
+//
+// needsRoleSetup est un GETTER dérivé de user.driver/user.professional (pas
+// un booléen stocké) : ces relations survivent à un redémarrage de l'app
+// (persistées dans le cache local + toujours incluses par GET /users/me côté
+// backend via JwtStrategy), contrairement à un flag éphémère qui retomberait
+// silencieusement à false à chaque restauration de session (_bootstrapImpl
+// ne fait aucun appel réseau).
 // ─────────────────────────────────────────────────────────────────────────────
 class AuthState {
   final AppUser? user;
@@ -55,11 +65,6 @@ class AuthState {
   final bool needsPinSetup;
   /// True si l'utilisateur n'a pas encore de PIN côté backend (`!user.pinHash`).
   final bool isNewUser;
-  /// True entre `completeProfile()` réussi et la fin de l'étape spécifique
-  /// driver (véhicule + documents) ou professional (infos établissement).
-  /// Tant que c'est `true`, le redirect force l'utilisateur sur cette étape.
-  /// Repassé à `false` par `markRoleSetupDone()`.
-  final bool needsRoleSetup;
   /// Dernier numéro de téléphone utilisé (E.164). Persiste après logout pour
   /// diriger l'utilisateur de retour vers /login au lieu de /onboarding.
   final String? lastPhone;
@@ -76,7 +81,6 @@ class AuthState {
     this.splashDone = false,
     this.needsPinSetup = false,
     this.isNewUser = false,
-    this.needsRoleSetup = false,
     this.lastPhone,
     this.forgotPinMode = false,
     this.error,
@@ -88,6 +92,16 @@ class AuthState {
   bool get hasLastPhone => lastPhone != null && lastPhone!.isNotEmpty;
   /// True si l'utilisateur a complété son identité (prénom renseigné).
   bool get hasProfile => (user?.firstName ?? '').trim().isNotEmpty;
+  /// True si driver/professional n'a pas encore de fiche (Driver/Professional)
+  /// — dérivé de `user.driver`/`user.professional` (fiable et PERSISTANT,
+  /// contrairement à un flag éphémère qui se perdrait à chaque redémarrage
+  /// de l'app puisque _bootstrapImpl() restaure la session sans appel réseau).
+  /// GET /users/me et verifyOtp() incluent toujours ces relations
+  /// (JwtStrategy.validate()) ; PATCH /users/me aussi via refreshProfile()
+  /// appelé après création de la fiche (cf. AuthNotifier.markRoleSetupDone).
+  bool get needsRoleSetup =>
+      (role == UserRole.driver && user?.driver == null) ||
+      (role == UserRole.professional && user?.professional == null);
 
   AuthState copyWith({
     AppUser? user,
@@ -97,7 +111,6 @@ class AuthState {
     bool? splashDone,
     bool? needsPinSetup,
     bool? isNewUser,
-    bool? needsRoleSetup,
     String? lastPhone,
     bool? forgotPinMode,
     String? error,
@@ -110,7 +123,6 @@ class AuthState {
     splashDone: splashDone ?? this.splashDone,
     needsPinSetup: needsPinSetup ?? this.needsPinSetup,
     isNewUser: isNewUser ?? this.isNewUser,
-    needsRoleSetup: needsRoleSetup ?? this.needsRoleSetup,
     lastPhone: lastPhone ?? this.lastPhone,
     forgotPinMode: forgotPinMode ?? this.forgotPinMode,
     error: clearError ? null : (error ?? this.error),
@@ -319,11 +331,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (userData == null) throw Exception('Réponse serveur incomplète');
       final user = AppUser.fromJson(userData);
       await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
-      // Driver/professional doivent finir leur étape spécifique (véhicule+docs
-      // / infos établissement) avant d'accéder au reste de l'app — le redirect
-      // s'en charge tant que needsRoleSetup=true (cf. markRoleSetupDone()).
-      final needsSetup = user.role == UserRole.driver || user.role == UserRole.professional;
-      state = state.copyWith(user: user, isLoading: false, needsRoleSetup: needsSetup);
+      // needsRoleSetup (getter) se recalcule automatiquement à partir de
+      // user.driver/user.professional — rien à faire explicitement ici.
+      state = state.copyWith(user: user, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
       rethrow;
@@ -332,11 +342,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Appelé par pro_business_info_screen (après POST /professionals/register)
   /// et driver_documents_screen en mode onboarding (après upload de tous les
-  /// documents requis) — signale au redirect que l'étape spécifique du rôle
-  /// est terminée, débloquant la suite du flow (/auth/pending).
-  void markRoleSetupDone() {
-    state = state.copyWith(needsRoleSetup: false);
-  }
+  /// documents requis) — recharge le profil (GET /users/me, qui inclut
+  /// toujours driver/professional via JwtStrategy) pour que le getter
+  /// needsRoleSetup repasse à false et débloque la suite du flow
+  /// (/auth/pending). Volontairement un alias de refreshProfile() : nom
+  /// explicite côté appelant, comportement fiable et persistant (contrairement
+  /// à un flag manuel qui ne survivrait pas à un redémarrage de l'app).
+  Future<void> markRoleSetupDone() => refreshProfile();
 
   Future<void> refreshProfile() async {
     try {

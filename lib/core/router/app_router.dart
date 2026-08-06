@@ -539,6 +539,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
         || prev.needsPinSetup   != next.needsPinSetup
         || prev.hasProfile      != next.hasProfile
         || prev.hasLastPhone    != next.hasLastPhone
+        || prev.needsRoleSetup  != next.needsRoleSetup
         ;
   }
 

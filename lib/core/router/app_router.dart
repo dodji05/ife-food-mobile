@@ -210,15 +210,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
-      // Exceptions : /auth/driver-vehicle + /auth/driver-documents
-      // (onboarding driver) et /auth/pro-business-info (onboarding pro)
-      // DOIVENT s'exécuter avant le redirect /auth/pending (sinon le user
-      // ne peut jamais créer son Driver/Professional profile ni uploader
-      // ses documents). On les laisse passer.
+      // Exceptions : /auth/complete-profile (le user vient tout juste d'y
+      // finir sa saisie — user.status est encore PENDING à ce stade, cette
+      // garde interceptait AVANT que l'écran n'ait pu naviguer lui-même
+      // vers /auth/driver-vehicle ou /auth/pro-business-info, cf. bug
+      // symétrique déjà corrigé section (c) plus haut), /auth/driver-vehicle
+      // + /auth/driver-documents (onboarding driver) et /auth/pro-business-info
+      // (onboarding pro) DOIVENT s'exécuter avant le redirect /auth/pending
+      // (sinon le user ne peut jamais créer son Driver/Professional profile
+      // ni uploader ses documents). On les laisse passer.
       if (loc == '/auth/setup-address') return null;
 
       if (authState.isPending
           && loc != '/auth/pending'
+          && loc != '/auth/complete-profile'
           && loc != '/auth/driver-vehicle'
           && loc != '/auth/driver-documents'
           && loc != '/auth/pro-business-info') {

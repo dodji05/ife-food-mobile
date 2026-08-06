@@ -55,7 +55,15 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         });
         return;
       }
-      // Pro : hasProfile passe à true, redirect GoRouter envoie vers /pro/dashboard.
+      // Cas PROFESSIONAL : étape supplémentaire infos établissement avant
+      // /auth/pending — crée la fiche Professional immédiatement (au lieu
+      // d'attendre le 1er accès dashboard après validation admin).
+      if (widget.role == UserRole.professional && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) GoRouter.of(context).go('/auth/pro-business-info');
+        });
+        return;
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);

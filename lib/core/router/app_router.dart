@@ -73,6 +73,7 @@ import '../../features/client/screens/notifications/client_notifications_screen.
 import '../../features/driver/screens/notifications/driver_notifications_screen.dart';
 import '../../features/driver/screens/map/navigation_screen.dart';
 import '../../features/driver/screens/auth/driver_vehicle_screen.dart';
+import '../../features/professional/screens/auth/pro_business_info_screen.dart';
 import '../../features/professional/screens/schedule/schedule_screen.dart';
 import '../../features/professional/screens/earnings/pro_earnings_screen.dart';
 import '../../features/professional/screens/reviews/reviews_screen.dart';
@@ -193,14 +194,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
-      // Exception : /auth/driver-vehicle est une étape d'onboarding driver
-      // qui DOIT s'exécuter avant le redirect /auth/pending (sinon le user
-      // ne peut jamais créer son Driver profile). On laisse passer.
+      // Exceptions : /auth/driver-vehicle (onboarding driver) et
+      // /auth/pro-business-info (onboarding pro) DOIVENT s'exécuter avant
+      // le redirect /auth/pending (sinon le user ne peut jamais créer son
+      // Driver/Professional profile). On les laisse passer.
       if (loc == '/auth/setup-address') return null;
 
       if (authState.isPending
           && loc != '/auth/pending'
-          && loc != '/auth/driver-vehicle') {
+          && loc != '/auth/driver-vehicle'
+          && loc != '/auth/pro-business-info') {
         if (authState.role == UserRole.professional ||
             authState.role == UserRole.driver) {
           return '/auth/pending';
@@ -209,9 +212,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!authState.isPending && loc == '/auth/pending') {
         return _homeForRole(authState.role);
       }
-      // Si l'utilisateur n'est pas driver mais arrive sur /auth/driver-vehicle
-      // (deep link incorrect), on le redirige vers sa home.
+      // Si l'utilisateur n'est pas driver/pro mais arrive sur ces écrans
+      // d'onboarding (deep link incorrect), on le redirige vers sa home.
       if (loc == '/auth/driver-vehicle' && authState.role != UserRole.driver) {
+        return _homeForRole(authState.role);
+      }
+      if (loc == '/auth/pro-business-info' && authState.role != UserRole.professional) {
         return _homeForRole(authState.role);
       }
 
@@ -285,6 +291,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }),
       // Étape véhicule driver (entre complete-profile et pending).
       GoRoute(path: '/auth/driver-vehicle', builder: (_, __) => const DriverVehicleScreen()),
+      GoRoute(path: '/auth/pro-business-info', builder: (_, __) => const ProBusinessInfoScreen()),
 
       // ── Legal (partagé) ─────────────────────────────────────────────────────
       GoRoute(path: '/legal/:type', builder: (_, state) =>

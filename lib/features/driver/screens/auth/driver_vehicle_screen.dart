@@ -7,11 +7,11 @@
 // Flow :
 //   1. User choisit type de véhicule (Moto/Tricycle/Vélo/Voiture/À pied)
 //   2. Si Moto/Tricycle/Voiture : plaque + déclaration d'assurance obligatoires
-//      (à pied/vélo n'ont ni l'un ni l'autre — juste la pièce d'identité,
-//      demandée ensuite sur l'écran "Mes documents")
+//      (à pied/vélo n'ont ni l'un ni l'autre)
 //   3. POST /drivers/register {vehicleType, licensePlate?, isInsured?, zoneCity, zoneCountry, zoneRadiusKm}
 //   4. Le backend crée le Driver avec status='PENDING' → user.status devient PENDING aussi
-//   5. context.go('/auth/pending') (puis redirect GoRouter prend le relais)
+//   5. context.go('/auth/driver-documents') — upload obligatoire des documents
+//      requis selon le véhicule, avant /auth/pending (redirect GoRouter prend le relais)
 //
 // Source UI : porté depuis ife-food-driver/features/auth/screens/register_screen.dart
 // Adapté : zoneCity/Country en dur Cotonou/BJ (sera éditable plus tard).
@@ -76,11 +76,10 @@ class _DriverVehicleScreenState extends ConsumerState<DriverVehicleScreen> {
         'zoneRadiusKm': 10,
       });
       if (!mounted) return;
-      // Le backend met user.status='PENDING'. Le redirect GoRouter va
-      // détecter isPending et envoyer sur /auth/pending automatiquement.
-      // On force quand même la nav pour ne pas dépendre du timing du
-      // refreshProfile (qui n'est pas appelé ici).
-      context.go('/auth/pending');
+      // Le Driver existe désormais → étape suivante : upload des documents
+      // requis selon le véhicule (pièce d'identité, permis, assurance…)
+      // avant de basculer sur /auth/pending.
+      context.go('/auth/driver-documents');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

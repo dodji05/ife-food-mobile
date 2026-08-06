@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
@@ -18,7 +19,11 @@ final _driverDocsProvider = FutureProvider.autoDispose<List<_DocEntry>>((ref) as
 });
 
 class DriverDocumentsScreen extends ConsumerStatefulWidget {
-  const DriverDocumentsScreen({super.key});
+  // true = étape d'onboarding (juste après le choix du véhicule) : pas de
+  // bouton retour, bouton "Continuer" bloquant tant que tous les documents
+  // requis ne sont pas uploadés. false = accès libre depuis le profil.
+  final bool isOnboarding;
+  const DriverDocumentsScreen({super.key, this.isOnboarding = false});
   @override
   ConsumerState<DriverDocumentsScreen> createState() => _State();
 }
@@ -120,9 +125,46 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
         .map((t) => _allDocTypes[t])
         .whereType<_DocTypeInfo>()
         .toList();
+    // Tous les documents requis sont-ils uploadés ? (utilisé pour débloquer
+    // le bouton "Continuer" en mode onboarding)
+    final allUploaded = async.maybeWhen(
+      data: (docs) {
+        final uploadedTypes = docs.map((d) => d.type).toSet();
+        return docTypes.every((info) => uploadedTypes.contains(info.type));
+      },
+      orElse: () => false,
+    );
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(title: const Text('Mes documents'), leading: const BackButton()),
+      appBar: AppBar(
+        title: const Text('Mes documents'),
+        leading: widget.isOnboarding ? null : const BackButton(),
+        automaticallyImplyLeading: !widget.isOnboarding,
+      ),
+      bottomNavigationBar: widget.isOnboarding ? SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ElevatedButton(
+              onPressed: allUploaded ? () => context.go('/auth/pending') : null,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 54),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Continuer',
+                style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 15)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              allUploaded
+                  ? 'Votre dossier sera vérifié sous 24h'
+                  : 'Tous les documents ci-dessus sont obligatoires',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textMuted),
+            ),
+          ]),
+        ),
+      ) : null,
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error:   (e, _) => Center(child: Text(e.toString())),

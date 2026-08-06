@@ -224,23 +224,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // ─── 5. COMPTE PRO/DRIVER EN ATTENTE DE VALIDATION ─────────────────
-      // Exceptions : /auth/complete-profile (le user vient tout juste d'y
-      // finir sa saisie — user.status est encore PENDING à ce stade, cette
-      // garde interceptait AVANT que l'écran n'ait pu naviguer lui-même
-      // vers /auth/driver-vehicle ou /auth/pro-business-info, cf. bug
-      // symétrique déjà corrigé section (c) plus haut), /auth/driver-vehicle
-      // + /auth/driver-documents (onboarding driver) et /auth/pro-business-info
-      // (onboarding pro) DOIVENT s'exécuter avant le redirect /auth/pending
-      // (sinon le user ne peut jamais créer son Driver/Professional profile
-      // ni uploader ses documents). On les laisse passer.
+      // Exceptions : /auth/complete-profile (juste après la saisie, avant
+      // que needsRoleSetup n'ait forcé la nav vers l'étape suivante — cf.
+      // section b2) et /auth/driver-vehicle + /auth/driver-documents +
+      // /auth/pro-business-info UNIQUEMENT tant que needsRoleSetup=true.
+      //
+      // Important : l'exception sur ces 3 dernières routes est conditionnée
+      // à needsRoleSetup, PAS juste au nom de la route — sinon, une fois la
+      // fiche créée (needsRoleSetup repasse à false via markRoleSetupDone),
+      // rien ne pousse plus vers /auth/pending et l'utilisateur reste
+      // bloqué sur l'écran de soumission alors que tout s'est bien passé.
       if (loc == '/auth/setup-address') return null;
 
+      final stillDoingRoleSetup = authState.needsRoleSetup
+          && (loc == '/auth/driver-vehicle'
+              || loc == '/auth/driver-documents'
+              || loc == '/auth/pro-business-info');
       if (authState.isPending
           && loc != '/auth/pending'
           && loc != '/auth/complete-profile'
-          && loc != '/auth/driver-vehicle'
-          && loc != '/auth/driver-documents'
-          && loc != '/auth/pro-business-info') {
+          && !stillDoingRoleSetup) {
         if (authState.role == UserRole.professional ||
             authState.role == UserRole.driver) {
           return '/auth/pending';

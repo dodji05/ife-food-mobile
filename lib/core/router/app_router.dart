@@ -172,9 +172,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       // c) Tout est complet : si l'utilisateur traîne encore sur un écran
       //    d'auth, le pousser vers son dashboard.
       //
-      //    EXCEPTION : "Modifier mon PIN" depuis le profil pousse vers
+      //    EXCEPTION 1 : "Modifier mon PIN" depuis le profil pousse vers
       //    /auth/pin avec PinRouteParams(mode: 'set'). On laisse passer
       //    pour permettre le changement de PIN sans créer une route dédiée.
+      //
+      //    EXCEPTION 2 : juste après completeProfile(), hasProfile passe à
+      //    true AVANT que CompleteProfileScreen._save() n'ait eu le temps
+      //    de naviguer lui-même vers l'étape suivante (driver-vehicle /
+      //    pro-business-info / setup-address). Le changement d'état
+      //    déclenche GoRouterRefreshStream qui ré-évalue ce redirect sur
+      //    /auth/complete-profile AVANT le go() explicite de l'écran —
+      //    sans cette exception, on atterrit direct sur le dashboard/pending
+      //    en court-circuitant l'étape obligatoire, et le go() de l'écran
+      //    ne s'exécute jamais (widget déjà démonté, mounted=false).
+      //    On laisse ces 3 rôles gérer eux-mêmes leur navigation post-save.
       const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
           '/auth/otp', '/auth/pin', '/auth/complete-profile',
           '/login', '/login/phone'];
@@ -183,7 +194,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         final isChangePin = loc.startsWith('/auth/pin')
             && extra is PinRouteParams
             && extra.mode == 'set';
-        if (!isChangePin) return _homeForRole(authState.role);
+        final hasOwnPostProfileStep = loc.startsWith('/auth/complete-profile')
+            && (authState.role == UserRole.driver
+                || authState.role == UserRole.professional
+                || authState.role == UserRole.client);
+        if (!isChangePin && !hasOwnPostProfileStep) return _homeForRole(authState.role);
       }
 
       // ─── 4. ADMIN — accès limité aux écrans /admin/* ───────────────────

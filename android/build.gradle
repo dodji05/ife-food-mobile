@@ -1,16 +1,6 @@
-buildscript {
-    ext.kotlin_version = '1.9.0'
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath "com.android.tools.build:gradle:8.3.0"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "com.google.gms:google-services:4.4.2"
-    }
-}
+// AGP / Kotlin / google-services : déclarés via le plugins{} DSL dans
+// settings.gradle.kts (id "com.android.application" version "8.11.1", etc.)
+// — pas de buildscript{} classpath ici, ça créerait un doublon de version.
 
 allprojects {
     repositories {

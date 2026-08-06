@@ -6,10 +6,11 @@
 class Driver {
   final String id;
   final String userId;
-  final String vehicleType;   // BICYCLE | MOTORCYCLE | CAR | ON_FOOT
+  final String vehicleType;   // BICYCLE | MOTORCYCLE | TRICYCLE | CAR | ON_FOOT
   final String status;        // PENDING | VALIDATED | SUSPENDED | ONLINE | OFFLINE
   final bool isAvailable;
   final String? licensePlate;
+  final bool? isInsured;      // null = non concerné (à pied/vélo) ou pas déclaré
   final String? zoneCity;
   final String? zoneCountry;
   final double? zoneRadiusKm;
@@ -25,6 +26,7 @@ class Driver {
     required this.status,
     required this.isAvailable,
     this.licensePlate,
+    this.isInsured,
     this.zoneCity,
     this.zoneCountry,
     this.zoneRadiusKm,
@@ -41,6 +43,7 @@ class Driver {
     status:                    j['status'] as String? ?? 'PENDING',
     isAvailable:               j['isAvailable'] as bool? ?? false,
     licensePlate:              j['licensePlate'] as String?,
+    isInsured:                 j['isInsured'] as bool?,
     zoneCity:                  j['zoneCity'] as String?,
     zoneCountry:               j['zoneCountry'] as String?,
     zoneRadiusKm:              (j['zoneRadiusKm'] as num?)?.toDouble(),
@@ -59,6 +62,7 @@ class Driver {
     'status': status,
     'isAvailable': isAvailable,
     'licensePlate': licensePlate,
+    'isInsured': isInsured,
     'zoneCity': zoneCity,
     'zoneCountry': zoneCountry,
     'zoneRadiusKm': zoneRadiusKm,
@@ -76,16 +80,32 @@ class Driver {
   String get vehicleEmoji => switch (vehicleType) {
     'BICYCLE'    => '🚲',
     'MOTORCYCLE' => '🛵',
+    'TRICYCLE'   => '🛺',
     'CAR'        => '🚗',
     'ON_FOOT'    => '🚶',
     _            => '🛵',
   };
+
+  // Documents requis selon le type de véhicule + déclaration d'assurance.
+  List<String> get requiredDocumentTypes {
+    final types = switch (vehicleType) {
+      'CAR' => ['DRIVER_LICENSE'],
+      'MOTORCYCLE' || 'TRICYCLE' => ['ID_CARD'],
+      _ => ['ID_CARD'], // BICYCLE, ON_FOOT
+    };
+    if ((vehicleType == 'MOTORCYCLE' || vehicleType == 'TRICYCLE' || vehicleType == 'CAR')
+        && isInsured == true) {
+      types.add('INSURANCE_PROOF');
+    }
+    return types;
+  }
 
   Driver copyWith({
     String? vehicleType,
     String? status,
     bool? isAvailable,
     String? licensePlate,
+    bool? isInsured,
     String? zoneCity,
     double? currentLat,
     double? currentLng,
@@ -96,6 +116,7 @@ class Driver {
     status: status ?? this.status,
     isAvailable: isAvailable ?? this.isAvailable,
     licensePlate: licensePlate ?? this.licensePlate,
+    isInsured: isInsured ?? this.isInsured,
     zoneCity: zoneCity ?? this.zoneCity,
     zoneCountry: zoneCountry,
     zoneRadiusKm: zoneRadiusKm,

@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
+import '../../providers/driver_provider.dart';
 
 final _driverDocsProvider = FutureProvider.autoDispose<List<_DocEntry>>((ref) async {
   final res = await ApiClient.instance.get('/drivers/me/documents');
@@ -25,10 +26,13 @@ class DriverDocumentsScreen extends ConsumerStatefulWidget {
 class _State extends ConsumerState<DriverDocumentsScreen> {
   final Set<String> _uploading = {};
 
-  static const _docTypes = [
-    _DocTypeInfo('ID_CARD',         'Pièce d\'identité', Icons.credit_card_rounded),
-    _DocTypeInfo('DRIVER_LICENSE',  'Permis de conduire', Icons.drive_eta_rounded),
-  ];
+  // Catalogue complet — le sous-ensemble réellement affiché dépend du
+  // véhicule du livreur (voir Driver.requiredDocumentTypes).
+  static const _allDocTypes = {
+    'ID_CARD':        _DocTypeInfo('ID_CARD',        'Pièce d\'identité',     Icons.credit_card_rounded),
+    'DRIVER_LICENSE': _DocTypeInfo('DRIVER_LICENSE', 'Permis de conduire',    Icons.drive_eta_rounded),
+    'INSURANCE_PROOF':_DocTypeInfo('INSURANCE_PROOF','Justificatif d\'assurance', Icons.shield_rounded),
+  };
 
   Future<void> _upload(String docType) async {
     final choice = await showModalBottomSheet<_UploadChoice>(
@@ -108,6 +112,14 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(_driverDocsProvider);
+    final driver = ref.watch(driverProvider).driver;
+    // Fallback ID_CARD si le profil driver n'est pas encore chargé — mieux
+    // vaut demander une pièce d'identité par défaut que rien du tout.
+    final requiredTypes = driver?.requiredDocumentTypes ?? ['ID_CARD'];
+    final docTypes = requiredTypes
+        .map((t) => _allDocTypes[t])
+        .whereType<_DocTypeInfo>()
+        .toList();
     return Scaffold(
       backgroundColor: context.bgColor,
       appBar: AppBar(title: const Text('Mes documents'), leading: const BackButton()),
@@ -134,7 +146,7 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
                 )),
               ]),
             ),
-            ..._docTypes.map((info) {
+            ...docTypes.map((info) {
               final existing  = byType[info.type];
               final uploading = _uploading.contains(info.type);
               return _DocCard(

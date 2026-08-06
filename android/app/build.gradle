@@ -34,7 +34,9 @@ if (flutterVersionName == null) {
 android {
     namespace "com.oparatech.ifefood"
     compileSdkVersion 35
-    ndkVersion flutter.ndkVersion
+    // flutter.ndkVersion (26.x) est trop ancien pour plusieurs plugins
+    // (firebase, stripe, geolocator...) qui exigent 27.0.12077973.
+    ndkVersion "27.0.12077973"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

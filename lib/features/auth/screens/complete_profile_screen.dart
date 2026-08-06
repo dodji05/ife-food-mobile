@@ -41,28 +41,21 @@ class _State extends ConsumerState<CompleteProfileScreen> {
           debugPrint('[CGU] Enregistrement acceptation échoué: $e');
         }
       }
-      // Cas DRIVER : étape supplémentaire véhicule avant /auth/pending.
-      if (widget.role == UserRole.driver && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) GoRouter.of(context).go('/auth/driver-vehicle');
-        });
-        return;
-      }
+      // Cas DRIVER / PROFESSIONAL : le redirect (section b2 de app_router.dart)
+      // pousse automatiquement vers /auth/driver-vehicle ou
+      // /auth/pro-business-info dès que completeProfile() passe
+      // needsRoleSetup à true — pas de navigation manuelle ici, ça évite la
+      // race avec GoRouterRefreshStream (widget démonté avant qu'un go()
+      // programmé ici n'ait eu la main).
+      //
       // Cas CLIENT : étape adresse obligatoire avant d'accéder au /home.
+      // setup_address_screen.dart étant aussi réutilisé hors onboarding
+      // (checkout, ajout d'adresse), on garde ici une navigation explicite
+      // plutôt que de le convertir au pattern redirect-driven.
       if (widget.role == UserRole.client && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) GoRouter.of(context).go('/auth/setup-address');
         });
-        return;
-      }
-      // Cas PROFESSIONAL : étape supplémentaire infos établissement avant
-      // /auth/pending — crée la fiche Professional immédiatement (au lieu
-      // d'attendre le 1er accès dashboard après validation admin).
-      if (widget.role == UserRole.professional && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) GoRouter.of(context).go('/auth/pro-business-info');
-        });
-        return;
       }
     } catch (e) {
       if (!mounted) return;

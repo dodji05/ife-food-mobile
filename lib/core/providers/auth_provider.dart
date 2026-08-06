@@ -34,8 +34,14 @@ import '../../shared/models/app_user.dart';
 //                          → redirect pousse vers /auth/pin
 //   setPin() succès →      { isAuth: true,  needsPinSetup: FALSE, hasProfile: false }
 //                          → redirect pousse vers /auth/complete-profile
-//   completeProfile() →    { isAuth: true,  needsPinSetup: false, hasProfile: TRUE  }
-//                          → redirect pousse vers /home (ou dashboard du rôle)
+//   completeProfile() →    { isAuth: true,  needsPinSetup: false, hasProfile: TRUE,
+//                             needsRoleSetup: TRUE si role driver/professional }
+//                          → redirect pousse vers /auth/driver-vehicle,
+//                            /auth/pro-business-info, ou directement /home
+//                            (client / rôles sans étape spécifique)
+//   markRoleSetupDone() →  { needsRoleSetup: FALSE }
+//                          → redirect pousse vers /auth/pending (ou dashboard
+//                            si déjà validé)
 // ─────────────────────────────────────────────────────────────────────────────
 class AuthState {
   final AppUser? user;
@@ -49,6 +55,11 @@ class AuthState {
   final bool needsPinSetup;
   /// True si l'utilisateur n'a pas encore de PIN côté backend (`!user.pinHash`).
   final bool isNewUser;
+  /// True entre `completeProfile()` réussi et la fin de l'étape spécifique
+  /// driver (véhicule + documents) ou professional (infos établissement).
+  /// Tant que c'est `true`, le redirect force l'utilisateur sur cette étape.
+  /// Repassé à `false` par `markRoleSetupDone()`.
+  final bool needsRoleSetup;
   /// Dernier numéro de téléphone utilisé (E.164). Persiste après logout pour
   /// diriger l'utilisateur de retour vers /login au lieu de /onboarding.
   final String? lastPhone;
@@ -65,6 +76,7 @@ class AuthState {
     this.splashDone = false,
     this.needsPinSetup = false,
     this.isNewUser = false,
+    this.needsRoleSetup = false,
     this.lastPhone,
     this.forgotPinMode = false,
     this.error,
@@ -85,6 +97,7 @@ class AuthState {
     bool? splashDone,
     bool? needsPinSetup,
     bool? isNewUser,
+    bool? needsRoleSetup,
     String? lastPhone,
     bool? forgotPinMode,
     String? error,
@@ -97,6 +110,7 @@ class AuthState {
     splashDone: splashDone ?? this.splashDone,
     needsPinSetup: needsPinSetup ?? this.needsPinSetup,
     isNewUser: isNewUser ?? this.isNewUser,
+    needsRoleSetup: needsRoleSetup ?? this.needsRoleSetup,
     lastPhone: lastPhone ?? this.lastPhone,
     forgotPinMode: forgotPinMode ?? this.forgotPinMode,
     error: clearError ? null : (error ?? this.error),
@@ -305,11 +319,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (userData == null) throw Exception('Réponse serveur incomplète');
       final user = AppUser.fromJson(userData);
       await _storage.write(key: AppConstants.userKey, value: json.encode(user.toJson()));
-      state = state.copyWith(user: user, isLoading: false);
+      // Driver/professional doivent finir leur étape spécifique (véhicule+docs
+      // / infos établissement) avant d'accéder au reste de l'app — le redirect
+      // s'en charge tant que needsRoleSetup=true (cf. markRoleSetupDone()).
+      final needsSetup = user.role == UserRole.driver || user.role == UserRole.professional;
+      state = state.copyWith(user: user, isLoading: false, needsRoleSetup: needsSetup);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
       rethrow;
     }
+  }
+
+  /// Appelé par pro_business_info_screen (après POST /professionals/register)
+  /// et driver_documents_screen en mode onboarding (après upload de tous les
+  /// documents requis) — signale au redirect que l'étape spécifique du rôle
+  /// est terminée, débloquant la suite du flow (/auth/pending).
+  void markRoleSetupDone() {
+    state = state.copyWith(needsRoleSetup: false);
   }
 
   Future<void> refreshProfile() async {

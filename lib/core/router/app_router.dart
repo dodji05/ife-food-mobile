@@ -169,6 +169,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             ? null
             : '/auth/complete-profile';
       }
+      // b2) Profil complet mais driver/professional n'a pas fini son étape
+      //     spécifique (véhicule+documents / infos établissement). Géré ICI
+      //     — pas via context.go() dans l'écran — précisément pour éviter la
+      //     race avec GoRouterRefreshStream : dès que completeProfile() passe
+      //     hasProfile à true, ce redirect se ré-évalue immédiatement sur la
+      //     route courante (encore /auth/complete-profile) ; s'il fallait
+      //     attendre un go() explicite programmé après l'await, ce redirect
+      //     l'aurait déjà court-circuité vers le dashboard/pending avant que
+      //     l'écran n'ait eu la main (widget démonté entre-temps).
+      //     needsRoleSetup repasse à false via markRoleSetupDone(), appelé
+      //     par pro_business_info_screen / driver_documents_screen(onboarding).
+      if (authState.needsRoleSetup) {
+        if (authState.role == UserRole.driver) {
+          return (loc == '/auth/driver-vehicle' || loc == '/auth/driver-documents')
+              ? null : '/auth/driver-vehicle';
+        }
+        if (authState.role == UserRole.professional) {
+          return loc == '/auth/pro-business-info' ? null : '/auth/pro-business-info';
+        }
+      }
       // c) Tout est complet : si l'utilisateur traîne encore sur un écran
       //    d'auth, le pousser vers son dashboard.
       //
@@ -176,16 +196,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       //    /auth/pin avec PinRouteParams(mode: 'set'). On laisse passer
       //    pour permettre le changement de PIN sans créer une route dédiée.
       //
-      //    EXCEPTION 2 : juste après completeProfile(), hasProfile passe à
-      //    true AVANT que CompleteProfileScreen._save() n'ait eu le temps
-      //    de naviguer lui-même vers l'étape suivante (driver-vehicle /
-      //    pro-business-info / setup-address). Le changement d'état
-      //    déclenche GoRouterRefreshStream qui ré-évalue ce redirect sur
-      //    /auth/complete-profile AVANT le go() explicite de l'écran —
-      //    sans cette exception, on atterrit direct sur le dashboard/pending
-      //    en court-circuitant l'étape obligatoire, et le go() de l'écran
-      //    ne s'exécute jamais (widget déjà démonté, mounted=false).
-      //    On laisse ces 3 rôles gérer eux-mêmes leur navigation post-save.
+      //    EXCEPTION 2 : CLIENT juste après completeProfile() — même race
+      //    que driver/professional (cf. b2), mais setup_address_screen.dart
+      //    est aussi réutilisé hors onboarding (checkout, ajout d'adresse
+      //    avec `returnTo`), donc pas converti au pattern redirect-driven
+      //    pour éviter de casser ces autres usages. On laisse juste l'écran
+      //    faire son context.go() explicite sans le court-circuiter ici.
       const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
           '/auth/otp', '/auth/pin', '/auth/complete-profile',
           '/login', '/login/phone'];
@@ -194,11 +210,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         final isChangePin = loc.startsWith('/auth/pin')
             && extra is PinRouteParams
             && extra.mode == 'set';
-        final hasOwnPostProfileStep = loc.startsWith('/auth/complete-profile')
-            && (authState.role == UserRole.driver
-                || authState.role == UserRole.professional
-                || authState.role == UserRole.client);
-        if (!isChangePin && !hasOwnPostProfileStep) return _homeForRole(authState.role);
+        final isClientJustCompletedProfile = loc.startsWith('/auth/complete-profile')
+            && authState.role == UserRole.client;
+        if (!isChangePin && !isClientJustCompletedProfile) return _homeForRole(authState.role);
       }
 
       // ─── 4. ADMIN — accès limité aux écrans /admin/* ───────────────────

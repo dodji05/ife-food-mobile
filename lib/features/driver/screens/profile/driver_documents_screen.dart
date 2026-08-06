@@ -4,10 +4,10 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../providers/driver_provider.dart';
@@ -147,7 +147,12 @@ class _State extends ConsumerState<DriverDocumentsScreen> {
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             ElevatedButton(
-              onPressed: allUploaded ? () => context.go('/auth/pending') : null,
+              // Signale au redirect (app_router.dart, section b2) que
+              // l'étape driver est terminée — pas de context.go() manuel,
+              // ça évite la race avec GoRouterRefreshStream (cf. AuthNotifier).
+              onPressed: allUploaded
+                  ? () => ref.read(authProvider.notifier).markRoleSetupDone()
+                  : null,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 54),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

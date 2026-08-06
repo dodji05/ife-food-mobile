@@ -1,8 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ifè FOOD — Driver onboarding : choix du véhicule
 //
-// Sprint 4 : étape spécifique driver intercalée APRÈS /auth/complete-profile
-// (qui crée le AppUser) et AVANT /auth/pending (qui attend la validation admin).
+// Étape spécifique driver, imposée par le redirect (app_router.dart, section
+// b2) dès que needsRoleSetup=true côté AuthState — pas de navigation
+// manuelle pour y arriver (uniquement pour la transition interne vers
+// driver-documents, elle-même autorisée par ce même redirect).
 //
 // Flow :
 //   1. User choisit type de véhicule (Moto/Tricycle/Vélo/Voiture/À pied)
@@ -11,7 +13,8 @@
 //   3. POST /drivers/register {vehicleType, licensePlate?, isInsured?, zoneCity, zoneCountry, zoneRadiusKm}
 //   4. Le backend crée le Driver avec status='PENDING' → user.status devient PENDING aussi
 //   5. context.go('/auth/driver-documents') — upload obligatoire des documents
-//      requis selon le véhicule, avant /auth/pending (redirect GoRouter prend le relais)
+//      requis selon le véhicule ; markRoleSetupDone() y déclenchera ensuite
+//      /auth/pending via le redirect (pas de context.go() manuel là non plus)
 //
 // Source UI : porté depuis ife-food-driver/features/auth/screens/register_screen.dart
 // Adapté : zoneCity/Country en dur Cotonou/BJ (sera éditable plus tard).

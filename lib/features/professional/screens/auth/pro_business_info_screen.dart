@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ifè FOOD — Pro onboarding : infos établissement
 //
-// Étape spécifique pro intercalée APRÈS /auth/complete-profile (qui crée le
-// AppUser) et AVANT /auth/pending (qui attend la validation admin). Symétrique
-// de /auth/driver-vehicle côté livreur.
+// Étape spécifique pro, imposée par le redirect (app_router.dart, section
+// b2) dès que needsRoleSetup=true côté AuthState — pas de navigation
+// manuelle pour y arriver. Symétrique de /auth/driver-vehicle côté livreur.
 //
 // Flow :
 //   1. User saisit nom établissement, catégorie, adresse, ville, GPS
@@ -12,7 +12,8 @@
 //      country, lat, lng, ifu?, rccm?}
 //   4. Le backend crée le Professional avec status='PENDING' → user.status
 //      devient PENDING aussi (déjà le cas depuis l'inscription OTP)
-//   5. context.go('/auth/pending') (puis redirect GoRouter prend le relais)
+//   5. markRoleSetupDone() → le redirect prend le relais et pousse vers
+//      /auth/pending (pas de context.go() manuel, cf. AuthNotifier)
 //
 // Contrairement à l'ancien flow (fiche créée en douce au 1er accès dashboard,
 // avec businessName placeholder "Mon établissement"), la fiche existe
@@ -21,8 +22,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/api/api_client.dart';
+import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/utils/location_utils.dart';
@@ -114,9 +115,11 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
         if (_rccm.text.trim().isNotEmpty) 'rccm': _rccm.text.trim(),
       });
       if (!mounted) return;
-      // Le backend met user.status='PENDING'. Le redirect GoRouter va
-      // détecter isPending et envoyer sur /auth/pending automatiquement.
-      context.go('/auth/pending');
+      // Fiche créée : signale au redirect que l'étape pro est terminée.
+      // Le redirect (app_router.dart) prend le relais et pousse vers
+      // /auth/pending — pas de context.go() manuel ici (évite la race avec
+      // GoRouterRefreshStream, cf. section b2 du redirect).
+      ref.read(authProvider.notifier).markRoleSetupDone();
     } catch (e) {
       if (!mounted) return;
       _snack(e.toString().replaceAll('Exception: ', ''), error: true);

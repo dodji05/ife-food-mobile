@@ -17,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/api/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_colors.dart';
 import '../../providers/pro_provider.dart';
@@ -107,22 +106,22 @@ class _FavoriteDriversScreenState extends ConsumerState<FavoriteDriversScreen> {
 }
 
 // ── Recherche + ajout d'un livreur ───────────────────────────────────────────
+// Réécrit intégralement (voir historique git pour l'ancienne version) après
+// plusieurs tentatives de correction infructueuses sur le bottom sheet
+// précédent. Couleurs volontairement en dur (pas de context.X / Theme()) —
+// élimine toute dépendance au thème ambiant, cause probable des tentatives
+// précédentes ratées.
 Future<void> _showAddDriverSheet(BuildContext context, WidgetRef ref) async {
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: context.cardColor,
+    backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    // Theme.dark force les InputDecoration, ElevatedButton, etc. à hériter
-    // du thème sombre plutôt que du thème clair global de l'app.
-    builder: (_) => Theme(
-      data: AppTheme.dark,
-      child: _AddDriverSheet(
-        onSearch: (phone) => ref.read(proProvider.notifier).searchDriverByPhone(phone),
-        onAdd:    (id)    => ref.read(proProvider.notifier).addFavoriteDriver(id),
-      ),
+    builder: (_) => _AddDriverSheet(
+      onSearch: (phone) => ref.read(proProvider.notifier).searchDriverByPhone(phone),
+      onAdd:    (id)    => ref.read(proProvider.notifier).addFavoriteDriver(id),
     ),
   );
   ref.invalidate(favoriteDriversProvider);
@@ -155,9 +154,9 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
     setState(() { _searching = true; _found = null; _error = null; });
     try {
       final driver = await widget.onSearch(phone);
-      setState(() => _found = driver);
+      if (mounted) setState(() => _found = driver);
     } catch (e) {
-      setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+      if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _searching = false);
     }
@@ -169,9 +168,8 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
     try {
       await widget.onAdd(_found!.driverId);
       if (mounted) Navigator.pop(context);
-      AppMessenger.show('Livreur ajouté aux favoris ✓');
     } catch (e) {
-      AppMessenger.show(e.toString().replaceAll('Exception: ', ''), isError: true);
+      if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _adding = false);
     }
@@ -180,127 +178,122 @@ class _AddDriverSheetState extends State<_AddDriverSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Handle
-        Center(child: Container(width: 40, height: 4,
-          decoration: BoxDecoration(color: context.borderColor, borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 16),
-        Text('Ajouter un livreur',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 18, fontWeight: FontWeight.w900, color: context.textPrimary)),
-        const SizedBox(height: 4),
-        Text('Recherchez par numéro de téléphone',
-          style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: context.textSecondary)),
-        const SizedBox(height: 16),
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _phoneCtrl,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: TextStyle(fontFamily: 'Nunito', fontSize: 16, color: context.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Ex: 22961234567',
-                prefixIcon: Icon(Icons.phone_rounded, color: context.textSecondary, size: 20),
-              ),
-              onSubmitted: (_) => _search(),
-            ),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _searching ? null : _search,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-              ),
-              child: _searching
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.search_rounded, color: Colors.white),
-            ),
-          ),
-        ]),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.danger.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.danger.withOpacity(0.3)),
-            ),
-            child: Row(children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 16),
-              const SizedBox(width: 8),
-              Expanded(child: Text(_error!,
-                style: const TextStyle(fontFamily: 'Nunito', fontSize: 13, color: AppColors.danger))),
-            ]),
-
-          ),
-        ],
-        if (_found != null) ...[
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          const Text('Ajouter un livreur',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.black87)),
+          const SizedBox(height: 4),
+          const Text('Recherchez par numéro de téléphone',
+            style: TextStyle(fontSize: 13, color: Colors.black54)),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: _phoneCtrl,
+                autofocus: true,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: const TextStyle(fontSize: 16, color: Colors.black87),
+                decoration: InputDecoration(
+                  hintText: 'Ex: 22961234567',
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  prefixIcon: const Icon(Icons.phone_rounded, color: Colors.black54, size: 20),
+                ),
+                onSubmitted: (_) => _search(),
+              ),
             ),
-            child: Row(children: [
-              _DriverAvatar(name: _found!.userName, url: _found!.avatarUrl, size: 44),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_found!.userName,
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                      fontWeight: FontWeight.w800, color: context.textPrimary)),
-                const SizedBox(height: 2),
-                Text(_vehicleLabel(_found!.vehicleType),
-                  style: TextStyle(fontFamily: 'Nunito', fontSize: 12, color: context.textSecondary)),
-              ])),
-              _StatusDot(_found!.isAvailable),
-            ]),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: _found!.alreadyFavorite
-                ? ElevatedButton.icon(
-                    onPressed: null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.borderColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      disabledBackgroundColor: context.borderColor,
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 52, height: 52,
+              child: ElevatedButton(
+                onPressed: _searching ? null : _search,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.zero,
+                ),
+                child: _searching
+                    ? const SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.search_rounded, color: Colors.white),
+              ),
+            ),
+          ]),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Text(_error!, style: TextStyle(fontSize: 13, color: Colors.red.shade700)),
+            ),
+          ],
+          if (_found != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(children: [
+                _DriverAvatar(name: _found!.userName, url: _found!.avatarUrl, size: 44),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(_found!.userName,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.black87)),
+                  const SizedBox(height: 2),
+                  Text(_vehicleLabel(_found!.vehicleType),
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                ])),
+                _StatusDot(_found!.isAvailable),
+              ]),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity, height: 50,
+              child: _found!.alreadyFavorite
+                  ? ElevatedButton.icon(
+                      onPressed: null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade300,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.check_circle_rounded, color: Colors.black54),
+                      label: const Text('Déjà dans vos favoris',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.black54)),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: _adding ? null : _addToFavorites,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: _adding
+                          ? const SizedBox(width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check_rounded, color: Colors.white),
+                      label: Text(_adding ? 'Ajout en cours…' : 'Ajouter aux favoris',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                     ),
-                    icon: Icon(Icons.check_circle_rounded, color: context.textSecondary),
-                    label: Text('Déjà dans vos favoris',
-                      style: TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                          fontWeight: FontWeight.w800, color: context.textSecondary)),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _adding ? null : _addToFavorites,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    icon: _adding
-                        ? const SizedBox(width: 18, height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check_rounded, color: Colors.white),
-                    label: Text(_adding ? 'Ajout en cours…' : 'Ajouter aux favoris',
-                      style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
-                          fontWeight: FontWeight.w800, color: Colors.white)),
-                  ),
-          ),
-        ],
-        const SizedBox(height: 8),
-      ]),
+            ),
+          ],
+          const SizedBox(height: 8),
+        ]),
+      ),
     );
   }
 }

@@ -19,9 +19,14 @@
 // avec businessName placeholder "Mon établissement"), la fiche existe
 // désormais dès l'inscription, avec de vraies données.
 // ─────────────────────────────────────────────────────────────────────────────
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -45,6 +50,12 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
   double? _lng;
   bool _geoLoading = false;
   bool _loading = false;
+
+  // Pièce d'identité : sélectionnée localement, uploadée juste après la
+  // création de la fiche (POST /professionals/me/documents exige que le
+  // Professional existe déjà côté backend).
+  File? _idFile;
+  String? _idFileName;
 
   static const _categories = [
     {'id': 'RESTAURANT',  'label': 'Restaurant',    'emoji': '🍽️'},
@@ -92,6 +103,57 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
     }
   }
 
+  Future<void> _pickIdDocument() async {
+    final choice = await showModalBottomSheet<_UploadChoice>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+          title: const Text('Galerie photo', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: Colors.black87)),
+          onTap: () => Navigator.pop(context, _UploadChoice.gallery),
+        ),
+        ListTile(
+          leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+          title: const Text('Caméra', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: Colors.black87)),
+          onTap: () => Navigator.pop(context, _UploadChoice.camera),
+        ),
+        ListTile(
+          leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+          title: const Text('Fichier PDF', style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, color: Colors.black87)),
+          onTap: () => Navigator.pop(context, _UploadChoice.pdf),
+        ),
+        const SizedBox(height: 8),
+      ])),
+    );
+    if (choice == null || !mounted) return;
+
+    try {
+      if (choice == _UploadChoice.pdf) {
+        final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+        if (result == null || result.files.single.path == null) return;
+        setState(() {
+          _idFile = File(result.files.single.path!);
+          _idFileName = result.files.single.name;
+        });
+      } else {
+        final src = choice == _UploadChoice.camera ? ImageSource.camera : ImageSource.gallery;
+        final picked = await ImagePicker().pickImage(source: src, maxWidth: 1600, imageQuality: 88);
+        if (picked == null) return;
+        setState(() {
+          _idFile = File(picked.path);
+          _idFileName = picked.name;
+        });
+      }
+    } catch (e) {
+      if (mounted) _snack('Impossible d\'accéder au fichier', error: true);
+    }
+  }
+
   void _snack(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600)),
@@ -114,6 +176,27 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
         if (_ifu.text.trim().isNotEmpty) 'ifu': _ifu.text.trim(),
         if (_rccm.text.trim().isNotEmpty) 'rccm': _rccm.text.trim(),
       });
+
+      // Fiche créée : on peut maintenant uploader la pièce d'identité
+      // (l'endpoint exige un Professional existant). Best-effort : un échec
+      // ici ne doit pas bloquer la suite, la fiche est déjà créée — le pro
+      // pourra réessayer plus tard depuis son profil.
+      if (_idFile != null) {
+        try {
+          final name = _idFileName ?? 'id_card';
+          final isPdf = name.toLowerCase().endsWith('.pdf');
+          final formData = FormData.fromMap({
+            'file': await MultipartFile.fromFile(_idFile!.path,
+                filename: name,
+                contentType: MediaType.parse(isPdf ? 'application/pdf' : 'image/jpeg')),
+            'docType': 'ID_CARD',
+          });
+          await ApiClient.instance.post('/professionals/me/documents', data: formData);
+        } catch (_) {
+          if (mounted) _snack('Fiche créée, mais l\'envoi de la pièce d\'identité a échoué — réessayez depuis votre profil', error: true);
+        }
+      }
+
       if (!mounted) return;
       // Fiche créée : signale au redirect que l'étape pro est terminée.
       // Le redirect (app_router.dart) prend le relais et pousse vers
@@ -263,6 +346,43 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
       _label('RCCM', context),
       const SizedBox(height: 8),
       _textField(_rccm, 'Registre du Commerce et du Crédit Mobilier', context),
+      const SizedBox(height: 20),
+
+      _label('PIÈCE D\'IDENTITÉ', context),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: _pickIdDocument,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: context.cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _idFile != null ? AppColors.success : context.borderColor),
+          ),
+          child: Row(children: [
+            Icon(
+              _idFile != null ? Icons.check_circle_rounded : Icons.badge_outlined,
+              color: _idFile != null ? AppColors.success : context.textSecondary,
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(
+              _idFileName ?? 'Ajouter une photo ou un PDF',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w600,
+                color: _idFile != null ? context.textPrimary : context.textMuted),
+            )),
+            if (_idFile != null)
+              GestureDetector(
+                onTap: () => setState(() { _idFile = null; _idFileName = null; }),
+                child: Icon(Icons.close_rounded, color: context.textSecondary, size: 18),
+              )
+            else
+              Icon(Icons.upload_rounded, color: context.textSecondary, size: 18),
+          ]),
+        ),
+      ),
       const SizedBox(height: 40),
     ]),
   );
@@ -293,3 +413,5 @@ class _ProBusinessInfoScreenState extends ConsumerState<ProBusinessInfoScreen> {
     ),
   );
 }
+
+enum _UploadChoice { gallery, camera, pdf }

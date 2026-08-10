@@ -109,15 +109,7 @@ jobs:
       # ── 10bis. Publier l'APK release sur le VPS ─────────────────────────────
       # Lien direct téléchargeable (pas de zip GitHub, pas de compte requis) :
       # https://api.ifefood.bj/uploads/downloads/ife-food-pro-latest.apk
-      - name: 📁 Créer le dossier downloads sur le VPS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          script: mkdir -p /home/debian/PROJETS/Mouka/ife-food-backend/uploads/downloads
-
+      # Le dossier uploads/downloads doit déjà exister sur le VPS.
       - name: 🌐 Publier l'APK sur le VPS
         uses: appleboy/scp-action@master
         with:

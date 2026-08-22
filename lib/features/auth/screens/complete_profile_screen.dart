@@ -100,9 +100,9 @@ class _State extends ConsumerState<CompleteProfileScreen> {
         Text('Dernière étape avant de commencer !',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 14, color: context.textSecondary)),
         const SizedBox(height: 32),
-        _TF('Prénom *', _firstName, 'Ex: Gildas'),
+        _TF('Prénom *', _firstName, 'Ex: Kouassi'),
         const SizedBox(height: 14),
-        _TF('Nom *', _lastName, 'Ex: Aclinou'),
+        _TF('Nom *', _lastName, 'Ex: Ourou'),
         const SizedBox(height: 24),
         GestureDetector(
           onTap: () => setState(() => _accepted = !_accepted),

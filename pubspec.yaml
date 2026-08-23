@@ -1,7 +1,7 @@
 name: ife_food
 description: "ifè FOOD — Application mobile unifiée (Client · Livreur · Professionnel)"
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.1+4
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

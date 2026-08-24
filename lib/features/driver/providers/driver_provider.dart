@@ -397,6 +397,7 @@ class DriverNotifier extends StateNotifier<DriverState> {
       }
     } catch (e) {
       state = state.copyWith(error: e.toString());
+      rethrow;
     }
   }
 

@@ -83,6 +83,9 @@ class Order {
   final double tipAmount;
   final DateTime createdAt;
   final DateTime? deliveredAt;
+  /// Code de confirmation de livraison — présent uniquement pour le client
+  /// concerné (le backend le retire des réponses pro/livreur).
+  final String? deliveryCode;
 
   const Order({
     required this.id,
@@ -107,6 +110,7 @@ class Order {
     this.tipAmount  = 0.0,
     required this.createdAt,
     this.deliveredAt,
+    this.deliveryCode,
   });
 
   factory Order.fromJson(Map<String, dynamic> j) {
@@ -145,6 +149,7 @@ class Order {
       deliveredAt:     j['deliveredAt'] != null
           ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')?.toUtc().add(const Duration(hours: 1))
           : null,
+      deliveryCode:     j['deliveryCode']     as String?,
     );
   }
 

@@ -41,6 +41,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
   LatLng _driverPosition = const LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
   LatLng? _deliveryPosition;
   String _status = 'PAID';
+  String? _deliveryCode;
   int? _etaMinutes;
   bool _cancelLoading = false;
   final Map<MarkerId, Marker> _markers = {};
@@ -64,6 +65,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
           _deliveryPosition = LatLng(order.deliveryLat!, order.deliveryLng!);
         }
         _status = order.status;
+        _deliveryCode = order.deliveryCode;
       });
       _initMarkers();
     } catch (_) {}
@@ -363,6 +365,40 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                               fontSize: 13, color: context.textMuted)),
                       ])),
                   ]),
+
+                  // Code de confirmation de livraison — visible tant que la
+                  // commande n'est ni livrée ni annulée. Ne JAMAIS montrer
+                  // ce code au livreur : uniquement au client, qui le
+                  // communique de vive voix à la réception de la commande.
+                  if (_deliveryCode != null && !delivered && !cancelled) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          const Icon(Icons.verified_user_rounded, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text('Code de confirmation de livraison',
+                            style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                              fontWeight: FontWeight.w700, color: context.textSecondary)),
+                        ]),
+                        const SizedBox(height: 8),
+                        Text(_deliveryCode!,
+                          style: const TextStyle(fontFamily: 'Nunito', fontSize: 28,
+                            fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 4)),
+                        const SizedBox(height: 6),
+                        Text('Communiquez ce code au livreur uniquement à la réception de votre commande.',
+                          style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                            color: context.textSecondary, height: 1.4)),
+                      ]),
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
                   const Divider(),

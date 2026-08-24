@@ -56,33 +56,27 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     if (idx >= _steps.length - 1) return;
     final nextStep = _steps[idx + 1];
 
-    // Confirmation de livraison : si l'admin a activé le code de confirmation,
-    // on affiche un dialog de saisie avant d'appeler le backend.
+    // Confirmation de livraison : le code communiqué par le client est
+    // TOUJOURS exigé avant de marquer la commande livrée — pas de bypass.
     String? confirmCode;
     if (nextStep.id == 'DELIVERED') {
       final config = ref.read(driverConfigProvider).valueOrNull ?? {};
-      final codeEnabled = config['confirmationCodeEnabled'] as bool? ?? false;
-      if (codeEnabled) {
-        final digits = (config['confirmationCodeDigits'] as int?) ?? 4;
-        if (!mounted) return;
-        confirmCode = await _showConfirmCodeDialog(digits);
-        if (confirmCode == null) return; // annulé par le livreur
-      }
+      final digits = (config['confirmationCodeDigits'] as int?) ?? 6;
+      if (!mounted) return;
+      confirmCode = await _showConfirmCodeDialog(digits);
+      if (confirmCode == null) return; // annulé par le livreur
     }
 
     try {
       await ref.read(driverProvider.notifier)
           .updateDeliveryStep(mission.orderId, nextStep.id, confirmCode: confirmCode);
     } catch (_) {
-      // L'erreur est déjà stockée dans driverProvider.error — on la lit pour
-      // afficher le bon message (notamment "Code de confirmation invalide").
+      // Le backend renvoie déjà un message précis (code incorrect + tentatives
+      // restantes, code déjà utilisé, validation bloquée...) — on l'affiche tel quel.
       if (!mounted) return;
       final err = ref.read(driverProvider).error ?? 'Erreur lors de la mise à jour';
-      final msg = err.contains('invalide') || err.contains('400')
-          ? 'Code incorrect. Demandez le code au client.'
-          : err.replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(msg),
+        content: Text(err.replaceAll('Exception: ', '')),
         backgroundColor: AppColors.danger,
         duration: const Duration(seconds: 4),
       ));

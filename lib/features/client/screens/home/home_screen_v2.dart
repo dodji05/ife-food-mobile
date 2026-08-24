@@ -22,6 +22,7 @@ import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
+import '../../../../shared/models/order.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/providers/location_provider.dart';
@@ -187,6 +188,17 @@ class _HomeScreenV2State extends ConsumerState<HomeScreenV2> {
             }
           },
         )),
+
+        // ── 1bis. Codes de confirmation de livraison actifs ──────────────────
+        SliverToBoxAdapter(child: Consumer(builder: (context, ref, _) {
+          final codes = ref.watch(activeDeliveryCodesProvider);
+          return codes.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (orders) => orders.isEmpty ? const SizedBox.shrink()
+                : _DeliveryCodeBanner(orders: orders),
+          );
+        })),
 
         // ── 2. Search bar ────────────────────────────────────────────────────
         SliverToBoxAdapter(child: _SearchBar()),
@@ -1413,6 +1425,78 @@ class _FilterChip extends StatelessWidget {
       child: Text(label, style: TextStyle(
         fontFamily: 'Nunito', fontSize: 13, fontWeight: FontWeight.w700,
         color: selected ? Colors.white : context.textSecondary)),
+    ),
+  );
+}
+
+// ── Bannière codes de confirmation de livraison ─────────────────────────────
+// Même gabarit que l'alerte "nouvelle commande" du dashboard pro : bandeau
+// coloré juste sous le header, tap → popup avec le/les code(s).
+class _DeliveryCodeBanner extends StatelessWidget {
+  final List<Order> orders;
+  const _DeliveryCodeBanner({required this.orders});
+
+  @override
+  Widget build(BuildContext context) {
+    final multiple = orders.length > 1;
+    return GestureDetector(
+      onTap: () => _showDeliveryCodesDialog(context, orders),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 2),
+        ),
+        child: Row(children: [
+          const Text('🔑', style: TextStyle(fontSize: 28)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(multiple
+                ? '${orders.length} codes de confirmation de livraison'
+                : 'Code de confirmation de livraison',
+              style: const TextStyle(fontFamily: 'Nunito', fontSize: 15,
+                  fontWeight: FontWeight.w800, color: AppColors.primary)),
+            Text('Appuyez pour voir le code à donner au livreur',
+              style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                  color: context.textSecondary)),
+          ])),
+          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.primary),
+        ]),
+      ),
+    );
+  }
+}
+
+void _showDeliveryCodesDialog(BuildContext context, List<Order> orders) {
+  showDialog(
+    context: context,
+    builder: (dctx) => AlertDialog(
+      title: const Text('Code(s) de confirmation',
+        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min,
+          children: orders.map((o) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${o.professionalName} · #${o.id.substring(0, 8).toUpperCase()}',
+                style: TextStyle(fontFamily: 'Nunito', fontSize: 12,
+                    fontWeight: FontWeight.w700, color: dctx.textSecondary)),
+              const SizedBox(height: 6),
+              Text(o.deliveryCode!,
+                style: const TextStyle(fontFamily: 'Nunito', fontSize: 30,
+                    fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 4)),
+            ]),
+          )).toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dctx).pop(),
+          child: const Text('Fermer'),
+        ),
+      ],
     ),
   );
 }

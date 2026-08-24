@@ -9,6 +9,7 @@ import '../../../../core/theme/theme_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/models/professional.dart';
 import '../../../../shared/models/product.dart';
+import '../../../../shared/models/order.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/notifications_provider.dart';
 import '../../../../core/providers/location_provider.dart';
@@ -53,6 +54,20 @@ final popularProductsProvider = FutureProvider.autoDispose<List<Product>>((ref) 
 final bannersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final res = await ApiClient.instance.get('/config/banners');
   return List<Map<String, dynamic>>.from(res['data'] ?? []);
+});
+
+/// Commandes du client ayant un code de confirmation de livraison encore
+/// actif (non utilisé) — potentiellement plusieurs si le client a plusieurs
+/// livraisons en cours en parallèle.
+final activeDeliveryCodesProvider = FutureProvider.autoDispose<List<Order>>((ref) async {
+  final res  = await ApiClient.instance.get('/orders/my-orders', params: {'limit': '50'});
+  final raw  = res['data'];
+  final list = raw is List ? raw : (raw is Map ? (raw['data'] as List? ?? []) : []);
+  return list
+      .whereType<Map<String, dynamic>>()
+      .map(Order.fromJson)
+      .where((o) => o.hasActiveDeliveryCode)
+      .toList();
 });
 
 // ── Filtres ───────────────────────────────────────────────────────────────────

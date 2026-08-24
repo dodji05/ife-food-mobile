@@ -86,6 +86,8 @@ class Order {
   /// Code de confirmation de livraison — présent uniquement pour le client
   /// concerné (le backend le retire des réponses pro/livreur).
   final String? deliveryCode;
+  /// ACTIVE | USED | EXPIRED — null si aucun code n'a encore été généré.
+  final String? deliveryCodeStatus;
 
   const Order({
     required this.id,
@@ -111,6 +113,7 @@ class Order {
     required this.createdAt,
     this.deliveredAt,
     this.deliveryCode,
+    this.deliveryCodeStatus,
   });
 
   factory Order.fromJson(Map<String, dynamic> j) {
@@ -149,7 +152,8 @@ class Order {
       deliveredAt:     j['deliveredAt'] != null
           ? DateTime.tryParse(j['deliveredAt'] as String? ?? '')?.toUtc().add(const Duration(hours: 1))
           : null,
-      deliveryCode:     j['deliveryCode']     as String?,
+      deliveryCode:       j['deliveryCode']       as String?,
+      deliveryCodeStatus: j['deliveryCodeStatus'] as String?,
     );
   }
 
@@ -199,6 +203,11 @@ class Order {
                             'PICKED_UP', 'IN_DELIVERY'].contains(status);
   bool get isDelivered  => status == 'DELIVERED';
   bool get isCancelled  => status == 'CANCELLED';
+
+  /// True si un code de confirmation de livraison a été généré et n'a pas
+  /// encore été saisi par le livreur — à afficher au client.
+  bool get hasActiveDeliveryCode =>
+      deliveryCode != null && deliveryCodeStatus == 'ACTIVE';
 
   String get statusLabel => switch (status) {
     'PENDING_PAYMENT'  => 'En attente',

@@ -97,17 +97,12 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     }
   }
 
-  /// Dialogue de saisie du code de confirmation client.
-  /// Retourne le code saisi ou null si le livreur annule.
-  Future<String?> _showConfirmCodeDialog(int digits) async {
-    final ctrl = TextEditingController();
-    final result = await showDialog<String?>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _ConfirmCodeDialog(ctrl: ctrl, digits: digits),
-    );
-    ctrl.dispose();
-    return result;
+  /// Écran plein écran de saisie du code de confirmation client.
+  /// Retourne le code saisi ou null si le livreur annule. Écran séparé (pas
+  /// un Dialog superposé) : évite le crash Flutter lié à la combinaison
+  /// GoogleMap (PlatformView) + clavier auto-focus d'un dialog par-dessus.
+  Future<String?> _showConfirmCodeDialog(int digits) {
+    return context.push<String?>('/driver/confirm-delivery-code', extra: digits);
   }
 
   @override
@@ -605,138 +600,7 @@ class _CallButton extends StatelessWidget {
   );
 }
 
-// ── Dialog saisie code de confirmation ────────────────────────────────────────
-class _ConfirmCodeDialog extends StatefulWidget {
-  final TextEditingController ctrl;
-  final int digits;
-  const _ConfirmCodeDialog({required this.ctrl, required this.digits});
-  @override State<_ConfirmCodeDialog> createState() => _ConfirmCodeDialogState();
-}
-
-class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
-  bool _obscure = false;
-
-  // Couleurs codées en dur — précaution supplémentaire, pas la cause
-  // confirmée du crash (testé, n'a pas suffi seul).
-  static const _bg          = Colors.white;
-  static const _textPrimary = Colors.black87;
-  static const _textMuted   = Colors.black54;
-  static const _border      = Color(0xFFE0E0E0);
-
-  /// Ferme le dialog. Le TextField a `autofocus: true` → le clavier est
-  /// ouvert quand on appuie sur Annuler/Confirmer. Fermer le clavier ET la
-  /// route en même temps déclenche un crash framework connu
-  /// (InheritedElement.debugDeactivated: '_dependents.isEmpty' is not
-  /// true) — cause confirmée par les stack traces reproduites sur les deux
-  /// boutons, y compris Annuler (donc indépendant de la logique métier).
-  /// On force la fermeture du clavier D'ABORD pour désynchroniser les deux
-  /// animations de fermeture.
-  void _closeDialog(String? result) {
-    FocusScope.of(context).unfocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context, rootNavigator: true).pop(result);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: _bg,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 64, height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.verified_user_rounded,
-                color: AppColors.success, size: 32),
-          ),
-          const SizedBox(height: 16),
-          const Text('Code de confirmation',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: _textPrimary)),
-          const SizedBox(height: 8),
-          Text(
-            'Demandez le code à ${widget.digits} chiffres au client\npour confirmer la livraison.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: _textMuted, height: 1.4),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: widget.ctrl,
-            autofocus: true,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            maxLength: widget.digits,
-            obscureText: _obscure,
-            style: const TextStyle(
-              fontFamily: 'Nunito', fontSize: 28,
-              fontWeight: FontWeight.w900, color: _textPrimary,
-              letterSpacing: 12,
-            ),
-            decoration: InputDecoration(
-              counterText: '',
-              hintText: '·' * widget.digits,
-              hintStyle: const TextStyle(
-                fontSize: 28, letterSpacing: 12,
-                color: _border),
-              filled: true,
-              fillColor: const Color(0xFFF5F5F5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: _border)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: _border)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.success, width: 2)),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                  color: _textMuted, size: 20),
-                onPressed: () => setState(() => _obscure = !_obscure),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(children: [
-            Expanded(child: OutlinedButton(
-              onPressed: () => _closeDialog(null),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: _border),
-                foregroundColor: _textMuted,
-                minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: const Text('Annuler',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700)),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: ElevatedButton(
-              onPressed: () {
-                final code = widget.ctrl.text.trim();
-                if (code.length == widget.digits) {
-                  _closeDialog(code);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: const Text('Confirmer',
-                  style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
-            )),
-          ]),
-        ]),
-      ),
-    );
-  }
-}
+// La saisie du code de confirmation de livraison est désormais un écran
+// plein écran séparé (ConfirmDeliveryCodeScreen, route
+// /driver/confirm-delivery-code) plutôt qu'un Dialog superposé — voir
+// _showConfirmCodeDialog() ci-dessus.

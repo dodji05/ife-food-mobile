@@ -59,6 +59,7 @@ import '../../features/driver/screens/profile/driver_profile_screen.dart';
 
 // MISSIONS (emplacement canonique : features/driver)
 import '../../features/driver/screens/mission/active_mission_screen.dart';
+import '../../features/driver/screens/mission/confirm_delivery_code_screen.dart';
 
 // PROFESSIONAL screens
 import '../../features/professional/screens/dashboard/pro_shell.dart';
@@ -398,6 +399,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/driver/active-mission', builder: (_, __) => const ActiveMissionScreen()),
+      GoRoute(path: '/driver/confirm-delivery-code', builder: (_, state) =>
+          ConfirmDeliveryCodeScreen(digits: state.extra as int? ?? 6)),
       GoRoute(path: '/driver/notifications', builder: (_, __) => const DriverNotificationsScreen()),
       GoRoute(path: '/driver/chat/:orderId', builder: (_, state) =>
           ChatScreen(orderId: state.pathParameters['orderId']!, title: 'Messagerie client')),

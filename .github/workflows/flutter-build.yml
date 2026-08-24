@@ -82,14 +82,15 @@ jobs:
             --dart-define=WS_URL=https://api.ifefood.bj
 
       # ── 9bis. Build APK release signé (partage direct aux testeurs) ────────
-      # Contrairement à l'APK debug : signé release, optimisé, beaucoup moins
-      # souvent bloqué/retardé par Google Play Protect à l'installation.
-      - name: 📱 Build APK release (partage testeurs)
-        run: |
-          flutter build apk --release \
-            --target-platform android-arm64 \
-            --dart-define=API_URL=https://api.ifefood.bj/api/v1 \
-            --dart-define=WS_URL=https://api.ifefood.bj
+      # DÉSACTIVÉ le 24/08/2026 : plus aucune étape ne consomme cet APK
+      # (publication VPS commentée ci-dessous). Téléchargement manuel via
+      # les artefacts GitHub (APK debug / AAB release) en attendant.
+      # - name: 📱 Build APK release (partage testeurs)
+      #   run: |
+      #     flutter build apk --release \
+      #       --target-platform android-arm64 \
+      #       --dart-define=API_URL=https://api.ifefood.bj/api/v1 \
+      #       --dart-define=WS_URL=https://api.ifefood.bj
 
       # ── 10. Upload artifacts ───────────────────────────────────────────────
       - name: 📤 Upload APK debug
@@ -107,31 +108,31 @@ jobs:
           retention-days: 30
 
       # ── 10bis. Publier l'APK release sur le VPS ─────────────────────────────
-      # Lien direct téléchargeable (pas de zip GitHub, pas de compte requis) :
-      # https://api.ifefood.bj/uploads/downloads/ife-food-pro-latest.apk
-      # Le dossier uploads/downloads doit déjà exister sur le VPS.
-      - name: 🌐 Publier l'APK sur le VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          source: 'build/app/outputs/flutter-apk/app-release.apk'
-          target: '/home/debian/PROJETS/Mouka/ife-food-backend/uploads/downloads'
-          strip_components: 4
-          rm: false
+      # DÉSACTIVÉ le 24/08/2026 — téléchargement manuel via les artefacts
+      # GitHub en attendant. Dépend de l'étape 9bis (Build APK release),
+      # elle aussi désactivée.
+      # - name: 🌐 Publier l'APK sur le VPS
+      #   uses: appleboy/scp-action@master
+      #   with:
+      #     host: ${{ secrets.VPS_HOST }}
+      #     username: ${{ secrets.VPS_USER }}
+      #     key: ${{ secrets.VPS_SSH_KEY }}
+      #     port: 22
+      #     source: 'build/app/outputs/flutter-apk/app-release.apk'
+      #     target: '/home/debian/PROJETS/Mouka/ife-food-backend/uploads/downloads'
+      #     strip_components: 4
+      #     rm: false
 
-      - name: 📝 Renommer en nom fixe
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          script: |
-            cd /home/debian/PROJETS/Mouka/ife-food-backend/uploads/downloads
-            mv -f app-release.apk ife-food-pro-latest.apk
+      # - name: 📝 Renommer en nom fixe
+      #   uses: appleboy/ssh-action@master
+      #   with:
+      #     host: ${{ secrets.VPS_HOST }}
+      #     username: ${{ secrets.VPS_USER }}
+      #     key: ${{ secrets.VPS_SSH_KEY }}
+      #     port: 22
+      #     script: |
+      #       cd /home/debian/PROJETS/Mouka/ife-food-backend/uploads/downloads
+      #       mv -f app-release.apk ife-food-pro-latest.apk
 
       # ── 11. Résumé ─────────────────────────────────────────────────────────
       - name: ✅ Build successful

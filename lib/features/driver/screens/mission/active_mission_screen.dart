@@ -148,6 +148,15 @@ class _ActiveMissionScreenState extends ConsumerState<ActiveMissionScreen>
     final targetLabel   = isPickupPhase ? mission.professionalName : 'Client';
 
     return Scaffold(
+      // GoogleMap (PlatformView) est présent dans body. Le TextField du
+      // dialog de confirmation a autofocus:true → le clavier s'ouvre, et
+      // par défaut le Scaffold redimensionne tout son body pour l'éviter,
+      // ce qui force GoogleMap à se désactiver/réactiver au clavier
+      // ouvert/fermé — bug Flutter connu avec les PlatformViews qui
+      // provoque le crash "_dependents.isEmpty". Le dialog gère déjà son
+      // propre évitement de clavier en overlay, donc cet écran n'a pas
+      // besoin de réagir au clavier.
+      resizeToAvoidBottomInset: false,
       backgroundColor: context.bgColor,
       bottomNavigationBar: Container(
         color: context.surfaceColor,

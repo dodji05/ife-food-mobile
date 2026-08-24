@@ -630,7 +630,12 @@ class FavoriteDriverEntry {
       vehicleType:             driver['vehicleType'] as String? ?? '',
       licensePlate:            driver['licensePlate'] as String?,
       driverStatus:            driver['status'] as String? ?? 'PENDING',
-      isValidated:             driver['validatedAt'] != null,
+      // Les livreurs validés avant l'ajout de validatedAt en base ont ce
+      // champ à null malgré une approbation déjà passée — status
+      // ONLINE/OFFLINE (accessible uniquement après validation admin) est
+      // un signal de repli fiable dans ce cas.
+      isValidated: driver['validatedAt'] != null ||
+          const ['VALIDATED', 'ONLINE', 'OFFLINE'].contains(driver['status']),
       isAvailable:             driver['isAvailable'] as bool? ?? false,
       isPrivate:               driver['isPrivate'] as bool? ?? false,
       privateForProfessionalId: driver['privateForProfessionalId'] as String?,

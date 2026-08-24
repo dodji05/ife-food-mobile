@@ -301,7 +301,9 @@ class _AssignDriverSection extends ConsumerStatefulWidget {
 }
 
 class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
-  bool _loading = false;
+  // ID du livreur en cours d'assignation — un seul bool partagé faisait
+  // tourner le spinner sur TOUS les boutons "Assigner" à la fois.
+  String? _loadingDriverId;
   List<FavoriteDriverEntry>? _drivers;
 
   @override
@@ -320,7 +322,7 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
   }
 
   Future<void> _assign(FavoriteDriverEntry driver) async {
-    setState(() => _loading = true);
+    setState(() => _loadingDriverId = driver.driverId);
     try {
       await ref.read(proProvider.notifier).assignDriver(widget.orderId, driver.driverId);
       widget.onAssigned();
@@ -332,7 +334,7 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
         ));
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _loadingDriverId = null);
     }
   }
 
@@ -387,14 +389,14 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
             ])),
             TextButton(
-              onPressed: _loading ? null : () => _assign(d),
+              onPressed: _loadingDriverId != null ? null : () => _assign(d),
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.primary.withOpacity(0.12),
                 foregroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: _loading
+              child: _loadingDriverId == d.driverId
                   ? const SizedBox(width: 14, height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                   : const Text('Assigner',

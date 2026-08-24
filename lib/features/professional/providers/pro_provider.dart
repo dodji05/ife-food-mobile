@@ -537,10 +537,12 @@ class ProNotifier extends StateNotifier<ProState> {
   Future<List<FavoriteDriverEntry>> availableDriversForOrder() async {
     final res = await ApiClient.instance.get('/professionals/me/favorite-drivers');
     final list = res['data'] as List? ?? [];
+    // En ligne ou non, un livreur favori validé peut être assigné directement
+    // — il reçoit la notification même hors-ligne (push FCM).
     return list
         .whereType<Map<String, dynamic>>()
         .map(FavoriteDriverEntry.fromJson)
-        .where((d) => d.isAvailable && d.driverStatus == 'VALIDATED')
+        .where((d) => d.driverStatus == 'VALIDATED')
         .toList();
   }
 

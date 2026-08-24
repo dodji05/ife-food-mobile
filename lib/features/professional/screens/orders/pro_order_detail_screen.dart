@@ -348,7 +348,7 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
     }
     if (_drivers!.isEmpty) {
       return _Card('Assigner un livreur', Builder(builder: (ctx) => Text(
-        'Aucun livreur favori disponible actuellement.\n'
+        'Aucun livreur favori pour le moment.\n'
         'Un livreur sera assigné automatiquement.',
         style: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: ctx.textSecondary),
       )));
@@ -356,24 +356,34 @@ class _AssignDriverSectionState extends ConsumerState<_AssignDriverSection> {
     return _Card('Assigner un livreur favori', Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Livreurs disponibles',
+        Text('Vos livreurs favoris',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11,
               color: context.textSecondary, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         ..._drivers!.map((d) => Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15), shape: BoxShape.circle),
-              child: const Icon(Icons.two_wheeler_rounded, size: 18, color: AppColors.primary),
-            ),
+            Stack(children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.15), shape: BoxShape.circle),
+                child: const Icon(Icons.two_wheeler_rounded, size: 18, color: AppColors.primary),
+              ),
+              Positioned(right: 0, bottom: 0, child: Container(
+                width: 11, height: 11,
+                decoration: BoxDecoration(
+                  color: d.isAvailable ? AppColors.success : context.textSecondary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.cardColor, width: 2),
+                ),
+              )),
+            ]),
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(d.userName, style: TextStyle(
                 fontFamily: 'Nunito', fontSize: 14, fontWeight: FontWeight.w700, color: context.textPrimary)),
-              Text(_vehicleLabel(d.vehicleType),
+              Text('${_vehicleLabel(d.vehicleType)} · ${d.isAvailable ? "En ligne" : "Hors ligne"}',
                 style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textSecondary)),
             ])),
             TextButton(

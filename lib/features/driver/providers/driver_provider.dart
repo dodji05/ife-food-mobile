@@ -350,6 +350,21 @@ class DriverNotifier extends StateNotifier<DriverState> {
     }
   }
 
+  /// Réclame manuellement une mission via le code communiqué par le pro
+  /// (téléphone, en personne...). Même traitement que l'acceptation d'une
+  /// mission proposée : ajout aux missions actives + jonction du socket.
+  Future<void> claimMissionByCode(String code) async {
+    final res     = await _api.post('/orders/claim-by-code', data: {'code': code});
+    final orderId = (res['data'] as Map<String, dynamic>)['orderId'] as String;
+    final orderRes = await _api.get('/orders/$orderId');
+    final mission   = Mission.fromOrderJson(orderRes['data']);
+    state = state.copyWith(
+      activeMissions:         [...state.activeMissions, mission],
+      selectedMissionOrderId: mission.orderId,
+    );
+    _socket?.emit('join_mission', {'orderId': orderId});
+  }
+
   Future<void> declineMission(String orderId) async {
     try {
       await _api.post('/drivers/missions/$orderId/decline');

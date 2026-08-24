@@ -68,6 +68,30 @@ class DriverDashboardScreen extends ConsumerWidget {
           ),
         )),
 
+        // ── Ajouter une mission via code ─────────────────────────────────────
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          child: GestureDetector(
+            onTap: () => _showClaimByCodeDialog(context, ref),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: context.borderColor),
+              ),
+              child: Row(children: [
+                Icon(Icons.pin_rounded, size: 20, color: context.textSecondary),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Ajouter une mission avec un code',
+                  style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                      fontWeight: FontWeight.w700, color: context.textPrimary))),
+                Icon(Icons.chevron_right_rounded, size: 20, color: context.textSecondary),
+              ]),
+            ),
+          ),
+        )),
+
         // ── Missions disponibles ───────────────────────────────────────────────
         if (isOnline && driver.availableMissions.isNotEmpty) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -467,4 +491,67 @@ class _StatsShimmer extends StatelessWidget {
           color: context.cardColor, borderRadius: BorderRadius.circular(14)))),
     ]),
   ]);
+}
+
+/// Dialog "Ajouter une mission" — le livreur saisit le code (6 derniers
+/// caractères du n° de commande) que le professionnel lui a communiqué
+/// directement, et récupère la mission sans attendre de proposition.
+void _showClaimByCodeDialog(BuildContext context, WidgetRef ref) {
+  final ctrl = TextEditingController();
+  bool loading = false;
+  String? error;
+
+  showDialog(
+    context: context,
+    builder: (dctx) => StatefulBuilder(builder: (dctx, setState) => AlertDialog(
+      title: const Text('Ajouter une mission',
+        style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800)),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Entrez le n° de commande (ex : #A1B2C3D4) communiqué par le professionnel.',
+          style: TextStyle(fontFamily: 'Nunito', fontSize: 13)),
+        const SizedBox(height: 14),
+        TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, letterSpacing: 2),
+          decoration: const InputDecoration(hintText: 'Ex : A1B2C3D4'),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 10),
+          Text(error!, style: const TextStyle(color: AppColors.danger, fontFamily: 'Nunito', fontSize: 12)),
+        ],
+      ]),
+      actions: [
+        TextButton(
+          onPressed: loading ? null : () => Navigator.of(dctx).pop(),
+          child: const Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: loading ? null : () async {
+            final code = ctrl.text.trim();
+            if (code.isEmpty) return;
+            setState(() { loading = true; error = null; });
+            try {
+              await ref.read(driverProvider.notifier).claimMissionByCode(code);
+              if (dctx.mounted) Navigator.of(dctx).pop();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Mission ajoutée ✓'), backgroundColor: AppColors.success));
+              }
+            } catch (e) {
+              setState(() {
+                loading = false;
+                error = e.toString().replaceAll('Exception: ', '');
+              });
+            }
+          },
+          child: loading
+              ? const SizedBox(width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Valider'),
+        ),
+      ],
+    )),
+  );
 }

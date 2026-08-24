@@ -35,6 +35,7 @@ import 'home_screen.dart'
         nearbyProfessionalsProvider,
         popularProductsProvider,
         bannersProvider,
+        activeDeliveryCodesProvider,
         HomeFilters;
 
 // ── Catégories avec couleurs distinctives ─────────────────────────────────────

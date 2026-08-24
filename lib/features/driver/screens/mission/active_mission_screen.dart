@@ -607,15 +607,27 @@ class _ConfirmCodeDialog extends StatefulWidget {
 class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
   bool _obscure = false;
 
-  // Couleurs codées en dur (pas de context.cardColor/textPrimary/...) —
-  // ces getters de thème dépendent de InheritedWidget (Theme.of(context))
-  // et provoquaient une instabilité de rendu dans une Dialog transitoire
-  // (crash Flutter "_dependents.isEmpty" à l'ouverture/fermeture, y
-  // compris sur Annuler). Même fix que le bottom sheet livreurs favoris.
+  // Couleurs codées en dur — précaution supplémentaire, pas la cause
+  // confirmée du crash (testé, n'a pas suffi seul).
   static const _bg          = Colors.white;
   static const _textPrimary = Colors.black87;
   static const _textMuted   = Colors.black54;
   static const _border      = Color(0xFFE0E0E0);
+
+  /// Ferme le dialog. Le TextField a `autofocus: true` → le clavier est
+  /// ouvert quand on appuie sur Annuler/Confirmer. Fermer le clavier ET la
+  /// route en même temps déclenche un crash framework connu
+  /// (InheritedElement.debugDeactivated: '_dependents.isEmpty' is not
+  /// true) — cause confirmée par les stack traces reproduites sur les deux
+  /// boutons, y compris Annuler (donc indépendant de la logique métier).
+  /// On force la fermeture du clavier D'ABORD pour désynchroniser les deux
+  /// animations de fermeture.
+  void _closeDialog(String? result) {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop(result);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -686,7 +698,7 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
           const SizedBox(height: 20),
           Row(children: [
             Expanded(child: OutlinedButton(
-              onPressed: () => Navigator.of(context, rootNavigator: true).pop(null),
+              onPressed: () => _closeDialog(null),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: _border),
                 foregroundColor: _textMuted,
@@ -701,7 +713,7 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
               onPressed: () {
                 final code = widget.ctrl.text.trim();
                 if (code.length == widget.digits) {
-                  Navigator.of(context, rootNavigator: true).pop(code);
+                  _closeDialog(code);
                 }
               },
               style: ElevatedButton.styleFrom(

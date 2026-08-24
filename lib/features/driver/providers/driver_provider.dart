@@ -129,10 +129,15 @@ class DriverNotifier extends StateNotifier<DriverState> {
       final driver = Driver.fromJson(data);
       state = state.copyWith(driver: driver, isOnline: driver.isOnline);
 
+      // Toujours chargé, même hors ligne — une mission peut avoir été
+      // assignée directement par un pro (favori) pendant que le livreur
+      // était déconnecté ; sans ça, il ne la verrait jamais dans son
+      // dashboard tant qu'il ne passe pas manuellement en ligne.
+      await loadActiveMissions();
+
       if (driver.isOnline) {
         _startLocationUpdates();
         await _connectSocket();
-        await loadActiveMissions();
         _startAvailablePolling();
       }
     } catch (e) {

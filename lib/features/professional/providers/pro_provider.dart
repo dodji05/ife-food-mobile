@@ -538,11 +538,13 @@ class ProNotifier extends StateNotifier<ProState> {
     final res = await ApiClient.instance.get('/professionals/me/favorite-drivers');
     final list = res['data'] as List? ?? [];
     // En ligne ou non, un livreur favori validé peut être assigné directement
-    // — il reçoit la notification même hors-ligne (push FCM).
+    // — il reçoit la notification même hors-ligne (push FCM). isValidated
+    // (pas driverStatus) car le statut brut vaut ONLINE/OFFLINE dès que le
+    // livreur a basculé sa disponibilité au moins une fois.
     return list
         .whereType<Map<String, dynamic>>()
         .map(FavoriteDriverEntry.fromJson)
-        .where((d) => d.driverStatus == 'VALIDATED')
+        .where((d) => d.isValidated)
         .toList();
   }
 
@@ -591,7 +593,11 @@ class FavoriteDriverEntry {
   final String  driverId;
   final String  vehicleType;
   final String? licensePlate;
-  final String  driverStatus;   // PENDING | VALIDATED | SUSPENDED
+  final String  driverStatus;   // PENDING | VALIDATED | REJECTED | ONLINE | OFFLINE
+  /// true si le livreur a déjà été validé par un admin — fiable même quand
+  /// [driverStatus] vaut ONLINE/OFFLINE (écrasé à chaque bascule de
+  /// disponibilité, cf. backend toggleAvailability).
+  final bool    isValidated;
   final bool    isAvailable;
   final bool    isPrivate;
   final String? privateForProfessionalId;
@@ -605,6 +611,7 @@ class FavoriteDriverEntry {
     required this.vehicleType,
     this.licensePlate,
     required this.driverStatus,
+    required this.isValidated,
     required this.isAvailable,
     required this.isPrivate,
     this.privateForProfessionalId,
@@ -623,6 +630,7 @@ class FavoriteDriverEntry {
       vehicleType:             driver['vehicleType'] as String? ?? '',
       licensePlate:            driver['licensePlate'] as String?,
       driverStatus:            driver['status'] as String? ?? 'PENDING',
+      isValidated:             driver['validatedAt'] != null,
       isAvailable:             driver['isAvailable'] as bool? ?? false,
       isPrivate:               driver['isPrivate'] as bool? ?? false,
       privateForProfessionalId: driver['privateForProfessionalId'] as String?,

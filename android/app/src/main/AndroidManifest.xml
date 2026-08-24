@@ -4,15 +4,19 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-    <!-- Localisation -->
+    <!-- Localisation. Pas de ACCESS_BACKGROUND_LOCATION : aucun vrai tracking
+         arrière-plan n'est implémenté (pas de foreground service actif) —
+         Google Play exige un écran de "Prominent Disclosure" avant toute
+         demande de cette permission ; à ré-ajouter avec cet écran quand un
+         vrai foreground service GPS sera implémenté. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
-    <!-- Caméra & stockage -->
+    <!-- Caméra. Pas de READ_EXTERNAL_STORAGE/READ_MEDIA_IMAGES : image_picker
+         et file_picker utilisent le sélecteur système (Photo Picker / SAF),
+         qui ne nécessite aucune permission de stockage — Google Play refuse
+         l'app si ces permissions larges sont déclarées sans être requises. -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
     <!-- Foreground service (requis Android 9+ pour localisation en arrière-plan) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>

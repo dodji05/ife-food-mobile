@@ -607,10 +607,20 @@ class _ConfirmCodeDialog extends StatefulWidget {
 class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
   bool _obscure = false;
 
+  // Couleurs codées en dur (pas de context.cardColor/textPrimary/...) —
+  // ces getters de thème dépendent de InheritedWidget (Theme.of(context))
+  // et provoquaient une instabilité de rendu dans une Dialog transitoire
+  // (crash Flutter "_dependents.isEmpty" à l'ouverture/fermeture, y
+  // compris sur Annuler). Même fix que le bottom sheet livreurs favoris.
+  static const _bg          = Colors.white;
+  static const _textPrimary = Colors.black87;
+  static const _textMuted   = Colors.black54;
+  static const _border      = Color(0xFFE0E0E0);
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: context.cardColor,
+      backgroundColor: _bg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -625,15 +635,15 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
                 color: AppColors.success, size: 32),
           ),
           const SizedBox(height: 16),
-          Text('Code de confirmation',
+          const Text('Code de confirmation',
             style: TextStyle(fontFamily: 'Nunito', fontSize: 18,
-                fontWeight: FontWeight.w900, color: context.textPrimary)),
+                fontWeight: FontWeight.w900, color: _textPrimary)),
           const SizedBox(height: 8),
           Text(
             'Demandez le code à ${widget.digits} chiffres au client\npour confirmer la livraison.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 13,
-                color: context.textSecondary, height: 1.4),
+            style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
+                color: _textMuted, height: 1.4),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -643,32 +653,32 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
             keyboardType: TextInputType.number,
             maxLength: widget.digits,
             obscureText: _obscure,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'Nunito', fontSize: 28,
-              fontWeight: FontWeight.w900, color: context.textPrimary,
+              fontWeight: FontWeight.w900, color: _textPrimary,
               letterSpacing: 12,
             ),
             decoration: InputDecoration(
               counterText: '',
               hintText: '·' * widget.digits,
-              hintStyle: TextStyle(
+              hintStyle: const TextStyle(
                 fontSize: 28, letterSpacing: 12,
-                color: context.borderColor),
+                color: _border),
               filled: true,
-              fillColor: context.surfaceColor,
+              fillColor: const Color(0xFFF5F5F5),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: context.borderColor)),
+                borderSide: const BorderSide(color: _border)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: context.borderColor)),
+                borderSide: const BorderSide(color: _border)),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.success, width: 2)),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                  color: context.textSecondary, size: 20),
+                  color: _textMuted, size: 20),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
@@ -676,10 +686,10 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
           const SizedBox(height: 20),
           Row(children: [
             Expanded(child: OutlinedButton(
-              onPressed: () => Navigator.pop(context, null),
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(null),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: context.borderColor),
-                foregroundColor: context.textSecondary,
+                side: const BorderSide(color: _border),
+                foregroundColor: _textMuted,
                 minimumSize: const Size(0, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
@@ -691,7 +701,7 @@ class _ConfirmCodeDialogState extends State<_ConfirmCodeDialog> {
               onPressed: () {
                 final code = widget.ctrl.text.trim();
                 if (code.length == widget.digits) {
-                  Navigator.pop(context, code);
+                  Navigator.of(context, rootNavigator: true).pop(code);
                 }
               },
               style: ElevatedButton.styleFrom(

@@ -189,7 +189,7 @@ class _ProProfileScreenState extends ConsumerState<ProProfileScreen> {
           ),
         ]),
         const SizedBox(height: 24),
-        Center(child: Text('ifè PRO v1.0.0 • by FIHB',
+        Center(child: Text('ifè PRO v1.0.0 • by FHBIS',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),

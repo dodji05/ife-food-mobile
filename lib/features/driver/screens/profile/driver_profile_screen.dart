@@ -257,7 +257,7 @@ class _DriverProfileScreenState extends ConsumerState<DriverProfileScreen> {
           ),
         ]),
         const SizedBox(height: 24),
-        Center(child: Text('ifè Livreur v1.0.0 • by FIHB',
+        Center(child: Text('ifè Livreur v1.0.0 • by FHBIS',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),

@@ -162,7 +162,8 @@ class _ProProfileScreenState extends ConsumerState<ProProfileScreen> {
           }),
           _Item(Icons.badge_rounded, 'Mes documents', onTap: () => context.push('/pro/documents')),
           _Item(Icons.notifications_rounded, 'Notifications', onTap: () => context.push('/pro/notifications')),
-          _Item(Icons.notifications_active_rounded, 'État des notifications', onTap: () => FcmService.showDiagnosticDialog(context, ref)),
+          if (kDebugMode)
+            _Item(Icons.notifications_active_rounded, 'État des notifications', onTap: () => FcmService.showDiagnosticDialog(context, ref)),
         ]),
         const SizedBox(height: 12),
 
@@ -187,7 +188,7 @@ class _ProProfileScreenState extends ConsumerState<ProProfileScreen> {
           ),
         ]),
         const SizedBox(height: 24),
-        Center(child: Text('ifè PRO v1.0.0 • By FAKÊYÊ HORTENSE BANKOLÉ',
+        Center(child: Text('ifè PRO v1.0.0 • by FIHB',
           style: TextStyle(fontFamily: 'Nunito', fontSize: 11, color: context.textMuted))),
         const SizedBox(height: 20),
       ]),

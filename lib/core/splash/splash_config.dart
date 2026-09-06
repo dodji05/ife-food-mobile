@@ -123,16 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
       child: Center(child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Logo textuel
-          RichText(text: const TextSpan(
-            style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900),
-            children: [
-              TextSpan(text: 'ifè ', style: TextStyle(fontSize: 28, color: AppColors.primary)),
-              TextSpan(text: 'FOOD', style: TextStyle(fontSize: 28, color: AppColors.yellow)),
-            ],
-          )),
           if (SplashConfig.tagline != null) ...[
-            const SizedBox(height: 8),
             Text(SplashConfig.tagline!,
               style: const TextStyle(fontFamily: 'Nunito', fontSize: 13,
                   color: Color(0xFF7a9e82), fontWeight: FontWeight.w600)),

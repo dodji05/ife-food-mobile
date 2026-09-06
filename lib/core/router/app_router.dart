@@ -203,8 +203,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       //    avec `returnTo`), donc pas converti au pattern redirect-driven
       //    pour éviter de casser ces autres usages. On laisse juste l'écran
       //    faire son context.go() explicite sans le court-circuiter ici.
+      // /auth/driver-vehicle, /auth/driver-documents et /auth/pro-business-info
+      // sont inclus ici : avec la validation automatique à l'inscription
+      // (needsRoleSetup ET isPending passent tous les deux à false dès la
+      // soumission, sans plus jamais transiter par /auth/pending), c'est
+      // cette section qui doit pousser l'utilisateur vers son dashboard —
+      // avant, seul /auth/pending le faisait une fois l'admin validé
+      // manuellement. Sans ça, l'utilisateur reste bloqué sur l'écran de
+      // soumission alors que tout s'est bien passé côté backend.
       const authRoutes = ['/onboarding', '/auth/role', '/auth/phone',
           '/auth/otp', '/auth/pin', '/auth/complete-profile',
+          '/auth/driver-vehicle', '/auth/driver-documents', '/auth/pro-business-info',
           '/login', '/login/phone'];
       if (authRoutes.any((r) => loc.startsWith(r))) {
         final extra = state.extra;

@@ -123,8 +123,6 @@ class _SplashScreenState extends State<SplashScreen>
       child: Center(child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildAsset(),
-          const SizedBox(height: 32),
           // Logo textuel
           RichText(text: const TextSpan(
             style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w900),
